@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Ajax Header Verification</title>
+<script type="text/javascript">
+function ajax(method, uri, body) {
+	var xhr = new XMLHttpRequest();
+
+	xhr.onreadystatechange = function() {
+		//alert("readyState: " + xhr.readyState + " status: " + xhr.status + " text: " + xhr.statusText);
+		if(xhr.readyState == 4) {
+			if(xhr.status == 200) {
+				alert('200: passed csrf check');
+			} else {
+				alert(xhr.status + ': failed csrf check');
+			}
+		}
+	}
+
+	xhr.open(method, uri, true);
+	xhr.send(body);
+}
+
+function sendForm() {
+	var form = document.getElementById('form');
+
+	var body = 'text=' + document.getElementById('text').value;
+	body = body + '&submit=' + document.getElementById('submit').value;
+
+	ajax('POST', 'protect.html', body);
+}
+
+function domTest() {
+	div = document.getElementById('ajax');
+
+	anchor = document.createElement('a');
+	anchor.setAttribute('href', 'protect.html');
+	anchor.appendChild(document.createTextNode('protect.html'));
+	
+	div.appendChild(anchor);
+	div.appendChild(document.createElement('br'));
+	div.appendChild(document.createElement('br'));
+	
+	anchor = document.createElement('a');
+	anchor.setAttribute('href', 'google.com');
+	anchor.appendChild(document.createTextNode('google.com'));
+	
+	div.appendChild(anchor);
+	div.appendChild(document.createElement('br'));
+	div.appendChild(document.createElement('br'));
+}
+
+</script>
+</head>
+<body onload="javascript:domTest();">
+<h3>Test Link(s)</h3>
+<ul>
+	<li><a href="#" onclick="ajax('GET', 'protect.html', '')">protect.html</a></li>
+	<li><a href="#" onclick="ajax('GET', '/protect.html', '')">/protect.html</a></li>
+	<li><a href="#" onclick="ajax('GET', 'http://localhost/test.html', '')">http://localhost/test.html</a></li>
+	<li><a href="#">javascript:alert('test')</a></li>
+</ul>
+<br/>
+<h3>Test Form(s)</h3>
+<form id="form" name="test1" action="#" onsubmit="return false">
+	<input id="text" type="text" name="text" value="text"/>
+	<input id="submit" type="submit" name="submit" value="submit" onclick="sendForm()"/>
+</form>
+<h3>Dom Test</h3>
+<div id="ajax"></div>
+</body>
+<!-- OWASP CSRFGuard Ajax Support -->
+<script src="/JavaScriptServlet"></script>
+</html>

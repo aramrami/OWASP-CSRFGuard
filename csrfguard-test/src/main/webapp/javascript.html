@@ -1,0 +1,41 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>JavaScript Token Injection</title>
+</head>
+<body>
+<h3>Test Link(s)</h3>
+<ul>
+	<li><a href="protect.html">protect.html</a></li>
+	<li><a href="/protect.html">/protect.html</a></li>
+	<li><a href="http://localhost/test.html">http://localhost/test.html</a></li>
+	<li><a href="javascript:alert('test')">javascript:alert('test')</a></li>
+</ul>
+<br/>
+<h3>Test Form(s)</h3>
+<form name="test1" action="protect.html">
+	<input type="text" name="text" value="text"/>
+	<input type="submit" name="submit" value="submit"/>
+</form>
+</body>
+<br/>
+<br/>
+<h3>Evil Form(s)</h3>
+<form name="test2" action="http://www.evilsite.com/protect.html">
+	<input type="text" name="text" value="text"/>
+	<input type="submit" name="submit" value="submit"/>
+</form>
+<br/>
+<br/>
+<h3>IFrame</h3>
+<iframe src="/protect.html"></iframe>
+<br/>
+<br/>
+<h3>Image Tag</h3>
+<img src="protect.html" />
+<img src="/protect.html" />
+</body>
+<!-- OWASP CSRFGuard JavaScript Support -->
+<script src="/JavaScriptServlet"></script>
+</html>
