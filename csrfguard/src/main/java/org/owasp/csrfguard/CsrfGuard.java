@@ -125,6 +125,7 @@ public final class CsrfGuard {
 	public static void load(Properties theProperties) throws NoSuchAlgorithmException, InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, NoSuchProviderException {
 
 		getInstance().properties = theProperties;
+		configurationProviderExpirableCache.clear();
 	}
 	
 	public CsrfGuard() {
