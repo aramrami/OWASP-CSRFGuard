@@ -28,6 +28,7 @@
  */
 package org.owasp.csrfguard.config;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -274,10 +275,12 @@ public final class PropertiesConfigurationProvider implements ConfigurationProvi
 	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent("META-INF/csrfguard.js", true);
 	            } else if (this.javascriptSourceFile.startsWith("META-INF/")) {
 	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(this.javascriptSourceFile, true);
-	            } else {
+	            } else if (servletConfig.getServletContext().getRealPath(this.javascriptSourceFile) != null) {
 	            	this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(
 	            			servletConfig.getServletContext().getRealPath(this.javascriptSourceFile));
-	            }
+	            } else {
+                    throw new IllegalStateException("getRealPath failed for file " + this.javascriptSourceFile);
+                }
 										
 	    		this.javascriptParamsInitted = true;
 			}
