@@ -87,8 +87,11 @@ public class CsrfGuardServletContextListener implements ServletContextListener {
 	}
 
 	/**
-	 * @param context
-	 * @param prefix 
+	 * Prints the configuration to the ServletContext log file with the given prefix.
+	 * Has no effect unless the CONFIG_PRINT_PARAM init parameter is "true."
+	 * @param context The ServletContext
+	 * @param prefix  The string used as a prefix when printing the configuration to the log
+	 * @see javax.servlet.ServletContext#log(String)
 	 */
 	public static void printConfigIfConfigured(ServletContext context, String prefix) {
 		String printConfig = context.getInitParameter(CONFIG_PRINT_PARAM);

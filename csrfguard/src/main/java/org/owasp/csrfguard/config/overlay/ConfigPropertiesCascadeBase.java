@@ -76,7 +76,7 @@ public abstract class ConfigPropertiesCascadeBase {
 	/**
 	 * retrieve a config from the config file or from cache
 	 * @param <T> class which is the return type of config class
-	 * @param configClass 
+	 * @param configClass  The configuration object
 	 * @return the config object never null
 	 */
 	@SuppressWarnings("unchecked")
@@ -99,7 +99,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 
 	/**
-	 * if its ok to put the config file in the same directory as a jar,
+	 * if it's ok to put the config file in the same directory as a jar,
 	 * then return a class in the jar here
 	 * @return the class or null if not available
 	 */
@@ -124,7 +124,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * override map for properties in thread local to be used in a web server or the like, based on property class
-	 * this is static since the properties class can get reloaded, but these shouldnt
+	 * this is static since the properties class can get reloaded, but these shouldn't
 	 * @return the override map
 	 */
 	public Map<String, String> propertiesThreadLocalOverrideMap() {
@@ -146,14 +146,14 @@ public abstract class ConfigPropertiesCascadeBase {
 	}
 
 	/** override map for properties, for testing, put properties in here, based on config class
-	 * this is static since the properties class can get reloaded, but these shouldnt
+	 * this is static since the properties class can get reloaded, but these shouldn't
 	 */
 	private static Map<Class<? extends ConfigPropertiesCascadeBase>, Map<String, String>> propertiesOverrideMap 
 	= null;
 
 	/**
-	 * 
-	 * @return the set of names
+	 * @return the set of property names
+	 * @see java.util.Hashtable#keySet()
 	 */
 	@SuppressWarnings("unchecked")
 	public Set<String> propertyNames() {    
@@ -243,8 +243,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get the property value as a string
-	 * @param key
-	 * @return the property value
+	 * @param key The property name
+	 * @return the property value, or null if not found
 	 */
 	public String propertyValueStringRequired(String key) {
 		return propertyValueString(key, null, true).getTheValue();
@@ -252,8 +252,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get the property value as a string
-	 * @param key
-	 * @param defaultValue
+	 * @param key The property name
+	 * @param defaultValue The value used when such property value is found (in place of null)
 	 * @return the property value
 	 */
 	public String propertyValueString(String key, String defaultValue) {
@@ -262,7 +262,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get the property value as a string or null if not there
-	 * @param key
+	 * @param key The property name
 	 * @return the property value
 	 */
 	public String propertyValueString(String key) {
@@ -277,8 +277,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 		/**
 		 * 
-		 * @param theValue1
-		 * @param hasKey1
+		 * @param theValue1 property value
+		 * @param hasKey1 whether or not the key exists
 		 */
 		public PropertyValueResult(String theValue1, boolean hasKey1) {
 			super();
@@ -333,9 +333,9 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get the property value as a string
-	 * @param key
-	 * @param defaultValue
-	 * @param required true if required, if doesnt exist, throw exception
+	 * @param key property key
+	 * @param defaultValue value to use when key is not found
+	 * @param required When true, throw an exception if the key does not exist
 	 * @return the property value
 	 */
 	protected PropertyValueResult propertyValueString(String key, String defaultValue, boolean required) {
@@ -347,9 +347,9 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get the property value as a string
-	 * @param key
-	 * @param defaultValue
-	 * @param required true if required, if doesnt exist, throw exception
+	 * @param key property key
+	 * @param defaultValue value to use when key is not found
+	 * @param required When true, throw an exception if the key does not exist
 	 * @return the property value
 	 */
 	protected PropertyValueResult propertyValueStringHelper(String key, String defaultValue, boolean required) {
@@ -413,8 +413,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * substitute common vars like $space$ and $newline$
-	 * @param string
-	 * @return the string
+	 * @param string input string
+	 * @return new string with some dollar-delimited tokens replaced
 	 */
 	protected static String substituteCommonVars(String string) {
 		if (string == null) {
@@ -548,7 +548,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 		/**
 		 * get the inputstream to read the config 
-		 * @param configFileTypeConfig
+		 * @param configFileTypeConfig The reference to the config file, used either as pathname for a File or a URL
 		 * @param configPropertiesCascadeBase add the config object in case
 		 * @return the input stream to get this config
 		 */
@@ -557,7 +557,7 @@ public abstract class ConfigPropertiesCascadeBase {
 		/**
 		 * do a case-insensitive matching
 		 * 
-		 * @param string
+		 * @param string the config file type
 		 * @return the enum or null or exception if not found
 		 */
 		public static ConfigFileType valueOfIgnoreCase(String string) {
@@ -607,7 +607,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 		/**
 		 * get the contents from the config file
-		 * @param configPropertiesCascadeBase 
+		 * @param configPropertiesCascadeBase the config properties cascade base
 		 * @return the contents
 		 */
 		public String retrieveContents(ConfigPropertiesCascadeBase configPropertiesCascadeBase) {
@@ -624,7 +624,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 		/**
 		 * 
-		 * @param configFileFullConfig
+		 * @param configFileFullConfig The config file location reference such as file:/some/path/config.properties
 		 */
 		public ConfigFile(String configFileFullConfig) {
 
@@ -798,8 +798,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * make sure LOG is there, after things are initialized
-	 * @param logMessage
-	 * @param t 
+	 * @param logMessage Message to log
+	 * @param t Exception to log, or null
 	 */
 	protected static void logInfo(String logMessage, Exception t) {
 		ILogger iLogger = iLogger();
@@ -815,8 +815,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * make sure LOG is there, after things are initialized
-	 * @param logMessage
-	 * @param t 
+	 * @param logMessage Message to log
+	 * @param t Exception to log, or null
 	 */
 	protected static void logError(String logMessage, Exception t) {
 		ILogger iLogger = iLogger();
@@ -977,9 +977,9 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get a boolean and validate from csrf guard properties
-	 * @param key
-	 * @param defaultValue
-	 * @return the string
+	 * @param key property key
+	 * @param defaultValue valud to use when key is missing
+	 * @return true when the property value represents an affirmative string such as {true, t, yes, y}
 	 */
 	public boolean propertyValueBoolean(String key, boolean defaultValue) {
 		return propertyValueBoolean(key, defaultValue, false);
@@ -987,7 +987,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * if the key is there, whether or not the value is blank
-	 * @param key
+	 * @param key property key
 	 * @return true or false
 	 */
 	public boolean containsKey(String key) {
@@ -998,7 +998,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get a boolean and validate from csrf guard properties or null if not there
-	 * @param key
+	 * @param key property key
 	 * @return the boolean or null
 	 */
 	public Boolean propertyValueBoolean(String key) {
@@ -1007,11 +1007,11 @@ public abstract class ConfigPropertiesCascadeBase {
 
 
 	/**
-	 * get a boolean and validate from the config file
-	 * @param key
-	 * @param defaultValue
-	 * @param required
-	 * @return the string
+	 * get a boolean pop and validate from the config file
+	 * @param key property key
+	 * @param defaultValue Used when no property value is found for the given key, when the 'required' option is not set
+	 * @param required Whether or not a value is required to be present
+	 * @return true when property value is string is one of {true, t, yes, y} and false when one of {false, f, no, n}
 	 */
 	protected Boolean propertyValueBoolean(String key, Boolean defaultValue, boolean required) {
 		String value = propertyValueString(key, null, false).getTheValue();
@@ -1052,10 +1052,10 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get an int and validate from the config file
-	 * @param key
-	 * @param defaultValue
-	 * @param required
-	 * @return the string
+	 * @param key property key
+	 * @param defaultValue Used when no property value is found for the given key, when the 'required' option is not set
+	 * @param required Whether or not a value is required to be present
+	 * @return the property value
 	 */
 	protected Integer propertyValueInt(String key, Integer defaultValue, boolean required) {
 		String value = propertyValueString(key, null, false).getTheValue();
@@ -1077,8 +1077,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get a boolean and validate from csrf guard properties
-	 * @param key
-	 * @return the string
+	 * @param key property key
+	 * @return the boolean property value 
 	 */
 	public boolean propertyValueBooleanRequired(String key) {
 
@@ -1088,8 +1088,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get a boolean and validate from csrf guard properties
-	 * @param key
-	 * @return the string
+	 * @param key property key
+	 * @return the integer property value 
 	 */
 	public int propertyValueIntRequired(String key) {
 
@@ -1099,9 +1099,9 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get a boolean and validate from csrf guard properties
-	 * @param key
-	 * @param defaultValue
-	 * @return the string
+	 * @param key property key
+	 * @param defaultValue Used when key not found
+	 * @return the property value
 	 */
 	public int propertyValueInt(String key, int defaultValue ) {
 
@@ -1111,7 +1111,7 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * get a boolean and validate from csrf guard properties
-	 * @param key
+	 * @param key property key
 	 * @return the int or null if there
 	 */
 	public Integer propertyValueInt(String key ) {
@@ -1121,9 +1121,9 @@ public abstract class ConfigPropertiesCascadeBase {
 	}
 
 	/**
-	 * read properties from a resource, dont modify the properties returned since they are cached
-	 * @param resourceName
-	 * @param exceptionIfNotExist 
+	 * read properties from a resource, don't modify the properties returned since they are cached
+	 * @param resourceName Name of properties resource
+	 * @param exceptionIfNotExist When true, throw an exception if an URL for the resource name cannot be constructued
 	 * @return the properties or null if not exist
 	 */
 	protected static Properties propertiesFromResourceName(String resourceName, 
@@ -1168,8 +1168,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * make sure a value exists in properties
-	 * @param key
-	 * @return true if ok, false if not
+	 * @param key property key
+	 * @return true if property exists with non-blank value, false otherwise
 	 */
 	public boolean assertPropertyValueRequired(String key) {
 		String value = propertyValueString(key);
@@ -1187,8 +1187,8 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * make sure a value is boolean in properties
-	 * @param key
-	 * @param required
+	 * @param key property key
+	 * @param required whether or not the key is required to be present
 	 * @return true if ok, false if not
 	 */
 	public boolean assertPropertyValueBoolean(String key, boolean required) {
@@ -1219,9 +1219,9 @@ public abstract class ConfigPropertiesCascadeBase {
 
 	/**
 	 * make sure a property is a class of a certain type
-	 * @param key
-	 * @param classType
-	 * @param required 
+	 * @param key property key
+	 * @param classType Desired class type
+	 * @param required Whether or not key must be present and have non-blank value
 	 * @return true if ok
 	 */
 	public boolean assertPropertyValueClass(
@@ -1264,8 +1264,8 @@ public abstract class ConfigPropertiesCascadeBase {
 	/**
 	 * find all keys/values with a certain pattern in a properties file.
 	 * return the keys.  if none, will return the empty set, not null set
-	 * @param pattern
-	 * @return the keys.  if none, will return the empty set, not null set
+	 * @param pattern expression matched against property names
+	 * @return the matching keys.  if none, will return the empty set, not null set
 	 */
 	public Map<String, String> propertiesMap(Pattern pattern) {
 		Map<String, String> result = new LinkedHashMap<String, String>();
