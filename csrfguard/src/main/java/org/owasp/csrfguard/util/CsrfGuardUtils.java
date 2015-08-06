@@ -63,7 +63,7 @@ public class CsrfGuardUtils {
 
 	/**
 	 * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
-	 * @param url
+	 * @param url a string representing a URL
 	 * @return the protocol and path
 	 */
 	public static String httpProtocolAndDomain(String url) {
@@ -279,8 +279,8 @@ public class CsrfGuardUtils {
 
 	/**
 	 * If we can, inject this into the exception, else return false
-	 * @param t
-	 * @param message
+	 * @param t the throwable
+	 * @param message the method to inject
 	 * @return true if success, false if not
 	 */
 	public static boolean injectInException(Throwable t, String message) {
@@ -306,7 +306,7 @@ public class CsrfGuardUtils {
 
 	/**
 	 * See if the input is null or if string, if it is empty or blank (whitespace)
-	 * @param input
+	 * @param input the object being tested for blank
 	 * @return true if blank
 	 */
 	public static boolean isBlank(Object input) {
@@ -412,8 +412,8 @@ public class CsrfGuardUtils {
 	/**
 	 * Null safe array length or map
 	 *
-	 * @param arrayOrCollection
-	 * @return the length of the array (0 for null)
+	 * @param arrayOrCollection an arrar, Collection, or Map
+	 * @return the length of the array (0 for null, 1 for non-array non-collection objects)
 	 */
 	public static int length(Object arrayOrCollection) {
 		if (arrayOrCollection == null) {
@@ -475,7 +475,7 @@ public class CsrfGuardUtils {
 	 *
 	 * @param method
 	 *            to invoke
-	 * @param invokeOn
+	 * @param invokeOn the object on which to invoke the method
 	 * if NO_PARAMS then will not pass in params.
 	 * @return the result
 	 */
@@ -488,7 +488,7 @@ public class CsrfGuardUtils {
 	 *
 	 * @param method
 	 *            to invoke
-	 * @param invokeOn
+	 * @param invokeOn the object on which to invoke the method
 	 * @param paramsOrListOrArray must be an arg.  If null, will pass null.
 	 * if NO_PARAMS then will not pass in params.
 	 * @return the result
@@ -529,7 +529,7 @@ public class CsrfGuardUtils {
 	/**
 	 * null safe classname method, gets the unenhanced name
 	 *
-	 * @param object
+	 * @param object the object for which to get the class name
 	 * @return the classname
 	 */
 	public static String className(Object object) {
@@ -540,7 +540,7 @@ public class CsrfGuardUtils {
 	/**
 	 * null safe classname method, max out at 20
 	 *
-	 * @param object
+	 * @param object the collection
 	 * @return the classname
 	 */
 	public static String classNameCollection(Object object) {
@@ -563,14 +563,14 @@ public class CsrfGuardUtils {
 	/**
 	 * null safe iterator getter if the type if collection
 	 *
-	 * @param collection
+	 * @param collection the collection for which to return an iterator
 	 * @return the iterator
 	 */
 	public static Iterator iterator(Object collection) {
 		if (collection == null) {
 			return null;
 		}
-		// array list doesnt need an iterator
+		// array list doesn't need an iterator
 		if (collection instanceof Collection
 				&& !(collection instanceof ArrayList)) {
 			return ((Collection) collection).iterator();
@@ -582,10 +582,10 @@ public class CsrfGuardUtils {
 	 * If array, get the element based on index, if Collection, get it based on
 	 * iterator.
 	 *
-	 * @param arrayOrCollection
-	 * @param iterator
-	 * @param index
-	 * @return the object
+	 * @param arrayOrCollection an array, ArraList, or Collection
+	 * @param iterator the iterator for the collection
+	 * @param index the index into the array
+	 * @return the object at the specified index or iterator.next()
 	 */
 	public static Object next(Object arrayOrCollection, Iterator iterator,
 			int index) {
@@ -648,8 +648,8 @@ public class CsrfGuardUtils {
 	/**
 	 * get a field object for a class, potentially in superclasses
 	 *
-	 * @param theClass
-	 * @param fieldName
+	 * @param theClass the class containing the desired field
+	 * @param fieldName the name of the field
 	 * @param callOnSupers
 	 *            true if superclasses should be looked in for the field
 	 * @param throwExceptionIfNotFound
@@ -720,8 +720,8 @@ public class CsrfGuardUtils {
 	 * If necessary, convert an object to another type.  if type is Object.class, just return the input.
 	 * Do not convert null to an empty primitive
 	 * @param <T> is template type
-	 * @param value
-	 * @param theClass
+	 * @param value the value object
+	 * @param theClass the class type
 	 * @return the object of that instance converted into something else
 	 */
 	public static <T> T typeCast(Object value, Class<T> theClass) {
@@ -732,8 +732,8 @@ public class CsrfGuardUtils {
 	/**
 	 * If necessary, convert an object to another type.  if type is Object.class, just return the input
 	 * @param <T> is the type to return
-	 * @param value
-	 * @param theClass
+	 * @param value the value object
+	 * @param theClass the class type
 	 * @param convertNullToDefaultPrimitive if the value is null, and theClass is primitive, should we
 	 * convert the null to a primitive default value
 	 * @param useNewInstanceHooks if theClass is not recognized, then honor the string "null", "newInstance",
@@ -785,7 +785,7 @@ public class CsrfGuardUtils {
 	/**
 	 * Construct a class
 	 * @param <T> template type
-	 * @param theClass
+	 * @param theClass the class on which to invoke newInstance()
 	 * @return the instance
 	 */
 	public static <T> T newInstance(Class<T> theClass) {
@@ -800,8 +800,8 @@ public class CsrfGuardUtils {
 	}
 
 	/**
-	 * close a connection null safe and dont throw exception
-	 * @param connection
+	 * close a connection null safe and don't throw exception
+	 * @param connection the connection to close
 	 */
 	public static void closeQuietly(Connection connection) {
 		if (connection != null) {
@@ -849,7 +849,7 @@ public class CsrfGuardUtils {
 	 * Unconditionally close an <code>Reader</code>.
 	 * Equivalent to {@link Reader#close()}, except any exceptions will be ignored.
 	 *
-	 * @param input A (possibly null) Reader
+	 * @param input A (possibly null) Reader to close
 	 */
 	public static void closeQuietly(Reader input) {
 		if (input == null) {
@@ -864,7 +864,7 @@ public class CsrfGuardUtils {
 
 	/**
 	 * close a resultSet null safe and dont throw exception
-	 * @param resultSet
+	 * @param resultSet the result set to close
 	 */
 	public static void closeQuietly(ResultSet resultSet) {
 		if (resultSet != null) {
@@ -878,7 +878,7 @@ public class CsrfGuardUtils {
 
 	/**
 	 * close a statement null safe and dont throw exception
-	 * @param statement
+	 * @param statement the statement to close
 	 */
 	public static void closeQuietly(Statement statement) {
 		if (statement != null) {
@@ -892,7 +892,7 @@ public class CsrfGuardUtils {
 
 	/**
 	 * close a writer quietly
-	 * @param writer
+	 * @param writer the writer to close
 	 */
 	public static void closeQuietly(Writer writer) {
 		if (writer != null) {
@@ -906,7 +906,7 @@ public class CsrfGuardUtils {
 
 	/**
 	 * close a writer quietly
-	 * @param writer
+	 * @param writer the xml stream writer to close
 	 */
 	public static void closeQuietly(XMLStreamWriter writer) {
 		if (writer != null) {
@@ -921,7 +921,7 @@ public class CsrfGuardUtils {
 	/**
 	 * print out various types of objects
 	 *
-	 * @param object
+	 * @param object the object for which to generate a string representation
 	 * @return the string value
 	 */
 	public static String toStringForLog(Object object) {
@@ -933,7 +933,7 @@ public class CsrfGuardUtils {
 	/**
 	 * print out various types of objects
 	 *
-	 * @param object
+	 * @param object the object for which to generate a string representation
 	 * @param maxChars is the max chars that should be returned (abbreviate if longer), or -1 for any amount
 	 * @return the string value
 	 */
@@ -950,7 +950,7 @@ public class CsrfGuardUtils {
 	/**
 	 * print out various types of objects
 	 *
-	 * @param object
+	 * @param object the object for which to generate a string representation
 	 * @param maxChars is where it should stop when figuring out object.  note, result might be longer than max...
 	 * need to abbreviate when back
 	 * @param result is where to append to
@@ -1006,7 +1006,7 @@ public class CsrfGuardUtils {
 	 * <p>Abbreviates a String using ellipses. This will turn
 	 * "Now is the time for all good men" into "Now is the time for..."</p>
 	 *
-	 * <p>Specifically:
+	 * <p>Specifically:</p>
 	 * <ul>
 	 *   <li>If <code>str</code> is less than <code>maxWidth</code> characters
 	 *       long, return it.</li>
@@ -1016,7 +1016,6 @@ public class CsrfGuardUtils {
 	 *   <li>In no case will it return a String of length greater than
 	 *       <code>maxWidth</code>.</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * <pre>
 	 * StringUtils.abbreviate(null, *)      = null
@@ -1212,8 +1211,9 @@ public class CsrfGuardUtils {
 	 *
 	 * <p>The method searches for methods with specific names that return a
 	 * <code>Throwable</code> object. This will pick up most wrapping exceptions,
-	 * including those from JDK 1.4, and
-	 * {@link org.apache.commons.lang.exception.NestableException NestableException}.</p>
+	 * including those from JDK 1.4, and Apache Commons Lang&#8482; 
+	 * <a href="https://commons.apache.org/proper/commons-lang/javadocs/api-2.6/org/apache/commons/lang/exception/NestableException.html">
+	 * NestableException</a>.
 	 *
 	 * <p>The default list searched for are:</p>
 	 * <ul>

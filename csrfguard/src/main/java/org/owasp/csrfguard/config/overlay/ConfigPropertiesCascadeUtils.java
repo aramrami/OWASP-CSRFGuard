@@ -38,10 +38,10 @@ import java.util.Map;
 public class ConfigPropertiesCascadeUtils extends ConfigPropertiesCascadeCommonUtils {
 
   /**
-   * substitute an EL for objects.  Dont worry if something returns null
-   * @param stringToParse
-   * @param variableMap
-   * @return the string
+   * substitute an EL for objects.  Don't worry if something returns null
+   * @param stringToParse  The string to parse
+   * @param variableMap    replacement mappings
+   * @return the string    The modified strings, with replacements
    */
   public static String substituteExpressionLanguage(String stringToParse, Map<String, Object> variableMap) {
     
@@ -52,8 +52,8 @@ public class ConfigPropertiesCascadeUtils extends ConfigPropertiesCascadeCommonU
 
   /**
    * substitute an EL for objects
-   * @param stringToParse
-   * @param variableMap
+   * @param stringToParse the String containing EL
+   * @param variableMap replacement mappings
    * @param allowStaticClasses if true allow static classes not registered with context
    * @param silent if silent mode, swallow exceptions (warn), and dont warn when variable not found
    * @param lenient false if undefined variables should throw an exception.  if lenient is true (default)
@@ -64,7 +64,7 @@ public class ConfigPropertiesCascadeUtils extends ConfigPropertiesCascadeCommonU
   public static String substituteExpressionLanguage(String stringToParse, 
       Map<String, Object> variableMap, boolean allowStaticClasses, boolean silent, boolean lenient, boolean logOnNull) {
     
-    //we dont have jexl so dont do this logic
+    //we don't have jexl so don't do this logic
     return stringToParse;
   }
 

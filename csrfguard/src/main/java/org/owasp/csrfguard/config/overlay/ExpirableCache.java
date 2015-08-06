@@ -36,15 +36,22 @@ import java.util.Set;
 
 
 /**
+ * <p>
  * This is like a map, but the setters also take an expire time which 
  * will mean the items in the cache will be automatically deleted.  
  * Also, every so often (e.g. 2 minutes) all items are checked for expiration.
  * If no timetolive is set, it will default to 1 day.  The max time to live is
  * one day.
- * This is synchronized so that all access is safe.
- * <p />
- * Note, evictions are check for periodically, but only when the map is accessed (and even then only every few minutes).
- * so you can check for evictions externally, or clear the map if you are done with it.
+ * </p>
+ *
+ * <p>This is synchronized so that all access is safe.</p>
+ *
+ * <p>
+ * <b>Note:</b> evictions are checked for periodically, but only when the map 
+ * is accessed (and even then only every few minutes).
+ * You can check for evictions externally, or clear the map if you are done with it.
+ * </p>
+ *
  * @version $Id: ExpirableCache.java,v 1.1 2008-11-27 14:25:50 mchyzer Exp $
  * @author mchyzer
  * @param <K> key type
@@ -154,7 +161,7 @@ public class ExpirableCache<K,V> implements Serializable {
     
     /** 
      * default time to live based on units
-     * @param input
+     * @param input A number of units (seconds or minutes) before cache expires to be converted into milliseconds
      * @return the millis
      */
     public abstract long defaultTimeToLiveMillis(int input);
@@ -187,8 +194,8 @@ public class ExpirableCache<K,V> implements Serializable {
 
   /**
    * put a value into the cache, accept the default time to live for this cache
-   * @param key
-   * @param value
+   * @param key key type
+   * @param value value type
    */
   public synchronized void put(K key, V value) {
     this.putHelper(key, value, this.defaultTimeToLiveInMillis);
@@ -196,8 +203,8 @@ public class ExpirableCache<K,V> implements Serializable {
   
   /**
    * put a value into the cache, accept the default time to live for this cache
-   * @param key
-   * @param value
+   * @param key key type
+   * @param value value type
    * @param timeToLiveInMinutes time to live for this item in minutes.
    * If -1 then use the default
    */
@@ -217,8 +224,8 @@ public class ExpirableCache<K,V> implements Serializable {
 
   /**
    * put a value into the cache, accept the default time to live for this cache
-   * @param key
-   * @param value
+   * @param key key type
+   * @param value value type
    * @param proposedTimeToLiveInMillis millis time to live
    */
   synchronized void putHelper(K key, V value, long proposedTimeToLiveInMillis) {
@@ -283,7 +290,7 @@ public class ExpirableCache<K,V> implements Serializable {
   /**
    * get a value or null if not there or expired
    * this will check for eviction, and evict if evictable
-   * @param key
+   * @param key key type
    * @return the value or null if not there or evicted
    */
   public synchronized V get(K key) {
@@ -294,7 +301,7 @@ public class ExpirableCache<K,V> implements Serializable {
   /**
    * get a value or null if not there or expired
    * this will check for eviction, and evict if evictable
-   * @param key
+   * @param key key for the cached value
    * @return the value or null if not there or evicted
    */
   private synchronized V getHelper(K key) {

@@ -107,9 +107,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * return the arg after the argBefore, or null if not there, or exception
    * if argBefore is not found
-   * @param args
-   * @param argBefore
-   * @return the arg
+   * @param args array of arguments
+   * @param argBefore the argument immediately preceeding the desired value
+   * @return the arg that appears just after argBefore
    */
   public static String argAfter(String[] args, String argBefore) {
     if (length(args) <= 1) {
@@ -133,9 +133,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * append and maybe put a separator in there
-   * @param result
-   * @param separatorIfResultNotEmpty
-   * @param stringToAppend
+   * @param result The containier for the modified StringBuilder
+   * @param separatorIfResultNotEmpty the separator string to append when adding to a non-blank result
+   * @param stringToAppend the string to append
    */
   public static void append(StringBuilder result, 
       String separatorIfResultNotEmpty, String stringToAppend) {
@@ -174,8 +174,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
    *
    * @param size The number of bytes.
    * @return     A human-readable display value (includes units).
-   * @todo need for I18N?
    */
+
+  //TODO: need for I18N?
   public static String byteCountToDisplaySize(long size) {
     String displaySize;
 
@@ -193,9 +194,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   /**
    * see if options have a specific option by int bits
-   * @param options
-   * @param option
-   * @return if the option is there
+   * @param options The options integer that holds option flag bits
+   * @param option  The option flag bit to check
+   * @return true if the option flag is set in the options int 
    */
   public static boolean hasOption(int options, int option) {
     return (options & option) > 0;
@@ -203,8 +204,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get canonical path of file
-   * @param file
-   * @return the path
+   * @param file The file from which the canonical path will be extracted
+   * @return the canonical path
+   * @see File#getCanonicalPath()
    */
   public static String fileCanonicalPath(File file) {
     try {
@@ -215,10 +217,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /**
-   * return the suffix after a char.  If the char doesnt exist, just return the string
+   * return the suffix after a char.  If the char doesn't exist, just return the string
    * @param input string
-   * @param theChar char
-   * @return new string
+   * @param theChar the marker character such as "."
+   * @return Suffix of string after the last index of the specified character
    */
   public static String suffixAfterChar(String input, char theChar) {
     if (input == null) {
@@ -233,10 +235,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * get the oracle underscore name e.g. javaNameHere -> JAVA_NAME_HERE
+   * get the oracle underscore name e.g. javaNameHere &rarr; JAVA_NAME_HERE
    *
    * @param javaName
-   *          the java convention name
+   *          the java convention name, in camelCase
    *
    * @return the oracle underscore name based on the java name
    */
@@ -251,7 +253,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
     //if package is specified, only look at class name
     javaName = suffixAfterChar(javaName, '.');
   
-    //dont check the first char
+    //don't check the first char
     result.append(javaName.charAt(0));
   
     char currChar;
@@ -283,10 +285,11 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * see if two maps are the equivalent (based on number of entries, 
    * and the equals() method of the keys and values)
-   * @param <K> 
-   * @param <V> 
-   * @param first
-   * @param second
+   *
+   * @param <K> key type
+   * @param <V> value type
+   * @param first the first map to compare
+   * @param second the second map to compare
    * @return true if equal
    */
   public static <K,V> boolean mapEquals(Map<K,V> first, Map<K,V> second) {
@@ -305,12 +308,12 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * see if two maps are the equivalent (based on number of entries, 
    * and the equals() method of the keys and values)
-   * @param <K> 
-   * @param <V> 
+   * @param <K> key type
+   * @param <V> value type
    * @param first map to check diffs
    * @param second map to check diffs
    * @param differences set of keys (with prefix) of the diffs
-   * @param prefix for the entries in the diffs (e.g. "attribute__"
+   * @param prefix for the entries in the diffs (e.g. "attribute__")
    */
   @SuppressWarnings("unchecked")
   public static <K,V> void mapDifferences(Map<K,V> first, Map<K,V> second, Set<K> differences, String prefix) {
@@ -354,8 +357,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /**
-   * sleep, if interrupted, throw runtime
-   * @param millis
+   * Sleep for the specified number of milliseconds and throw RuntimeExeption if interrupted.
+   *
+   * @param millis Number of milliseconds to sleep
+   * @see Thread#sleep
    */
   public static void sleep(long millis) {
     try {
@@ -367,8 +372,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * If we can, inject this into the exception, else return false
-   * @param t
-   * @param message
+   * @param t The Throwable to inject
+   * @param message The message to append to the throwable's message
    * @return true if success, false if not
    */
   public static boolean injectInException(Throwable t, String message) {
@@ -437,9 +442,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * compute a url of a resource
-   * @param resourceName
-   * @param canBeNull if cant be null, throw runtime
-   * @return the URL
+   * @param resourceName The resource name for which a URL will be built
+   * @param canBeNull if can't be null, throw runtime
+   * @return the URL for the resource name
+   * @see ClassLoader#getResource(String)
    */
   public static URL computeUrl(String resourceName, boolean canBeNull) {
     //get the url of the navigation file
@@ -476,8 +482,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * make sure a array is non null.  If null, then return an empty array.
    * Note: this will probably not work for primitive arrays (e.g. int[])
-   * @param <T>
-   * @param array
+   * @param <T> template type
+   * @param array the array to check
    * @param theClass to make array from
    * @return the list or empty list if null
    */
@@ -531,8 +537,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get the extension from name.  if name is a:b:c, name is c
-   * @param name
-   * @return the name
+   * @param name a name, potentially containing colon separators such as "a:b:c"
+   * @return the extension a.k.a. part of the name after the last colon character
    */
   public static String extensionFromName(String name) {
     if (isBlank(name)) {
@@ -547,8 +553,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /**
-   * <pre>Returns the class object.</pre>
-   * @param origClassName is fully qualified
+   * Returns the class object for the given name.
+   * @param origClassName fully qualified class name
    * @return the class
    */
   public static Class forName(String origClassName) {
@@ -564,7 +570,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * Construct a class
    * @param <T> template type
-   * @param theClass
+   * @param theClass the class
    * @return the instance
    */
   public static <T> T newInstance(Class<T> theClass) {
@@ -581,7 +587,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * Construct a class
    * @param <T> template type
-   * @param theClass
+   * @param theClass the class
    * @param allowPrivateConstructor true if should allow private constructors
    * @return the instance
    */
@@ -613,7 +619,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * get the parent stem name from name.  if already a root stem
    * then just return null.  e.g. if the name is a:b:c then
    * the return value is a:b
-   * @param name
+   * @param name a colon-delimited name such as "a:b:c"
    * @return the parent stem name or null if none
    */
   public static String parentStemNameFromName(String name) {
@@ -628,9 +634,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * return the string or the other if the first is blank
-   * @param string
-   * @param defaultStringIfBlank
-   * @return the string or the default one
+   * @param string The string
+   * @param defaultStringIfBlank The string used when the first parameter is blank
+   * @return the string or the default one if the string was blank
    */
   public static String defaultIfBlank(String string, String defaultStringIfBlank) {
     return isBlank(string) ? defaultStringIfBlank : string;
@@ -638,7 +644,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * genericized method to see if first is null, if so then return second, else first.
-   * @param <T>
+   * @param <T> template type
    * @param theValue first input
    * @param defaultIfTheValueIsNull second input
    * @return the first if not null, second if no
@@ -649,7 +655,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * add each element of listToAdd if it is not already in list
-   * @param <T>
+   * @param <T> template type
    * @param list to add to
    * @param listToAdd each element will be added to list, or null if none
    */
@@ -669,7 +675,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * print out various types of objects
    * 
-   * @param object
+   * @param object the object to convert into a human-readable string
    * @param maxChars is where it should stop when figuring out object.  note, result might be longer than max...
    * need to abbreviate when back
    * @param result is where to append to
@@ -724,7 +730,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert a set to a string (comma separate)
-   * @param set
+   * @param set the set to convert into a human-readable string
    * @return the String
    */
   public static String setToString(Set set) {
@@ -748,7 +754,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * convert a set to a string (comma separate)
-   * @param map
+   * @param map the map to convert into a human-readable string
    * @return the String
    * @deprecated use mapToString(map)
    */
@@ -759,7 +765,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert a set to a string (comma separate)
-   * @param map
+   * @param map the map to convert into a human-readable string
    * @return the String
    */
   public static String mapToString(Map map) {
@@ -784,7 +790,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * print out various types of objects
    * 
-   * @param object
+   * @param object the object to convert to a human-readable string
    * @return the string value
    */
   public static String toStringForLog(Object object) {
@@ -796,7 +802,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * print out various types of objects
    * 
-   * @param object
+   * @param object the object to convert to a human-readable string
    * @param maxChars is the max chars that should be returned (abbreviate if longer), or -1 for any amount
    * @return the string value
    */
@@ -813,7 +819,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * If batching this is the number of batches
    * @param count is size of set
-   * @param batchSize
+   * @param batchSize the batch size
    * @return the number of batches
    */
   public static int batchNumberOfBatches(int count, int batchSize) {
@@ -824,8 +830,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * If batching this is the number of batches
-   * @param collection
-   * @param batchSize
+   * @param collection the collection
+   * @param batchSize the batch size
    * @return the number of batches
    */
   public static int batchNumberOfBatches(Collection<?> collection, int batchSize) {
@@ -839,9 +845,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * the remainder. the array will be full of elements. Note, this requires an
    * ordered input (so use linkedhashset not hashset if doing sets)
    * @param <T> template type
-   * @param collection
-   * @param batchSize
-   * @param batchIndex
+   * @param collection the collection
+   * @param batchSize the batch size
+   * @param batchIndex the batch index
    * @return the list
    *         This never returns null, only empty list
    */
@@ -945,7 +951,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    *          is the delimited input to split and trim
    * @param separator
    *          is what to split on
-   * @param treatAdjacentSeparatorsAsOne
+   * @param treatAdjacentSeparatorsAsOne when true, adjacent separators are treaded as one
    * @return the array of items after split and trimmed, or null if input is null.  will be trimmed to empty
    */
   public static String[] splitTrim(String input, String separator, boolean treatAdjacentSeparatorsAsOne) {
@@ -998,8 +1004,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * make sure a list is non null.  If null, then return an empty list
-   * @param <T>
-   * @param list
+   * @param <T> template type
+   * @param list the list, or null
    * @return the list or empty list if null
    */
   public static <T> List<T> nonNull(List<T> list) {
@@ -1008,8 +1014,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * make sure a list is non null.  If null, then return an empty set
-   * @param <T>
-   * @param set
+   * @param <T> template type
+   * @param set the set, or null
    * @return the set or empty set if null
    */
   public static <T> Set<T> nonNull(Set<T> set) {
@@ -1034,7 +1040,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * 
    * @param <T>
    *            template type of the objects
-   * @param objects
+   * @param objects The arguments to be returned as a List
    * @return the list or null if objects is null
    */
   @SuppressWarnings("unchecked")
@@ -1055,7 +1061,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert classes to a list
-   * @param classes
+   * @param classes The classes to be returned as a List
    * @return list of classes
    */
   public static List<Class<?>> toListClasses(Class<?>... classes) {
@@ -1068,7 +1074,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * return a set of objects from varargs.
    * 
    * @param <T> template type of the objects
-   * @param objects
+   * @param objects The objects to be returned as a Set
    * @return the set
    */
   public static <T> Set<T> toSet(T... objects) {
@@ -1141,8 +1147,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * If false, throw an assertException, and give a reason
    * 
-   * @param isTrue
-   * @param reason
+   * @param isTrue when false, throw a RuntimeException.  When true, do nothing.
+   * @param reason the message used for the exception
    */
   public static void assertion(boolean isTrue, String reason) {
     if (!isTrue) {
@@ -1329,7 +1335,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * null safe iterator getter if the type if collection
    * 
-   * @param collection
+   * @param collection the collection
    * @return the iterator
    */
   public static Iterator iterator(Object collection) {
@@ -1347,7 +1353,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * Null safe array length or map
    * 
-   * @param arrayOrCollection
+   * @param arrayOrCollection  The array, Collection, or Map for which to find the length or size.
    * @return the length of the array (0 for null)
    */
   public static int length(Object arrayOrCollection) {
@@ -1371,9 +1377,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * If array, get the element based on index, if Collection, get it based on
    * iterator.
    * 
-   * @param arrayOrCollection
-   * @param iterator
-   * @param index
+   * @param arrayOrCollection The array, ArrayList, or Collection from which to get the specified element
+   * @param iterator          for Collections, this iterator is used to find the next object
+   * @param index             The object at this specified index, or when 0, the arrayOrCollection itself
    * @return the object
    */
   public static Object next(Object arrayOrCollection, Iterator iterator,
@@ -1398,8 +1404,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * Remove the iterator or index
    * 
-   * @param arrayOrCollection
-   * @param index
+   * @param arrayOrCollection The Array, List, or Collection from which to remove the object referenced by the iterator or index number
+   * @param index             Index of the item that should be removed. 
    * @return the object list or new array
    */
   public static Object remove(Object arrayOrCollection, 
@@ -1410,15 +1416,15 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * Remove the iterator or index
    * 
-   * @param arrayOrCollection
-   * @param iterator
-   * @param index
+   * @param arrayOrCollection The Array, List, or Collection from which to remove the object referenced by the iterator or index number
+   * @param iterator          Iterator for the collection used to remove the object. Takes precedence over index parameter when non-null.
+   * @param index             Index of the item that should be removed. 
    * @return the object list or new array
    */
   public static Object remove(Object arrayOrCollection, Iterator iterator,
       int index) {
     
-    //if theres an iterator, just use that
+    //if there's an iterator, just use that
     if (iterator != null) {
       iterator.remove();
       return arrayOrCollection;
@@ -1451,8 +1457,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * print the simple names of a list of classes
-   * @param object
-   * @return the simple names
+   * @param object  An array of objects
+   * @return the simple names for the objects in the array
+   * @see Class#getSimpleName()
    */
   public static String classesString(Object object) {
     StringBuilder result = new StringBuilder();
@@ -1473,7 +1480,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * null safe classname method, max out at 20
    * 
-   * @param object
+   * @param object  The object over which to iterate, producing a comma separated list of class names
    * @return the classname
    */
   public static String classNameCollection(Object object) {
@@ -1496,8 +1503,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * null safe classname method, gets the unenhanced name
    * 
-   * @param object
-   * @return the classname
+   * @param object The object whose class name is desired
+   * @return the classname, or null if the object was null
    */
   public static String className(Object object) {
     return object == null ? null : object.getClass().getName();
@@ -1563,13 +1570,16 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * get a field object for a class, potentially in superclasses
    * 
    * @param theClass
+   *            The class potentially containing the field 
    * @param fieldName
+   *            The name of the desired class field
    * @param callOnSupers
    *            true if superclasses should be looked in for the field
    * @param throwExceptionIfNotFound
    *            will throw runtime exception if not found
    * @return the field object or null if not found (or exception if param is
    *         set)
+   * @see Class#getDeclaredField(String)
    */
   public static Field field(Class theClass, String fieldName,
       boolean callOnSupers, boolean throwExceptionIfNotFound) {
@@ -1597,10 +1607,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * return a set of Strings for a class and type. This is not for any
    * supertypes, only for the type at hand. includes final fields
    * 
-   * @param theClass
+   * @param theClass the class to look for fields in
    * @param fieldType
    *            or null for all
-   * @param includeStaticFields
+   * @param includeStaticFields when true, include static fields
    * @return the set of strings, or the empty Set if none
    */
   @SuppressWarnings("unchecked")
@@ -1850,10 +1860,11 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * compare two objects, compare primitives, Strings, maps of string attributes.
    * if both objects equal each others references, then return empty set.
-   * then, if not, then if either is null, return all fields
-   * @param first
-   * @param second
-   * @param fieldsToCompare
+   * Otherwise if not, then if either is null, return all fields
+   *
+   * @param first The first object to compare.
+   * @param second The second object to compare.
+   * @param fieldsToCompare The field names on both objects that should be compared
    * @param mapPrefix is the prefix for maps which are compared (e.g. attribute__)
    * @return the set of fields which are different.  never returns null
    */
@@ -1916,9 +1927,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * clone an object, assign primitives, Strings, maps of string attributes.  Clone GrouperCloneable fields.
-   * @param <T> template
-   * @param object
-   * @param fieldsToClone
+   * @param <T> the type
+   * @param object  the object to clone
+   * @param fieldsToClone the desired fields from the object
    * @return the cloned object or null if input is null
    */
   @SuppressWarnings("unchecked")
@@ -1934,10 +1945,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * clone an object, assign primitives, Strings, maps of string attributes.  Clone GrouperCloneable fields.
-   * @param <T> template
-   * @param object
-   * @param result 
-   * @param fieldsToClone
+   * @param <T> the type
+   * @param object  the object to clone
+   * @param result  the resulting object
+   * @param fieldsToClone the desired fields from the object
    */
   public static <T> void cloneFields(T object, T result,
       Set<String> fieldsToClone) {
@@ -1977,7 +1988,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * and will throw exception if not expecting the type.  Will clone sets, lists, maps.
    * @param <T> template
    * 
-   * @param value
+   * @param value The value to clone
    * @return the cloned value
    */
   @SuppressWarnings("unchecked")
@@ -2022,7 +2033,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
       
     } else {
 
-      //this means lets add support for a new type of object
+      //this means let's add support for a new type of object
       throw new RuntimeException("Unexpected class in clone method: " + value.getClass());
     
     }
@@ -2032,9 +2043,13 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * simple method to get method names
    * @param theClass
+   *          class with methods
    * @param superclassToStopAt 
+   *          when recursing, stop at this class
    * @param includeSuperclassToStopAt 
+   *          when true, bound is inclusive of stop class
    * @param includeStaticMethods 
+   *          when true, include static methods (otherwise static methods are excluded)
    * @return the set of method names
    */
   public static Set<String> methodNames(Class<?> theClass, Class<?> superclassToStopAt, 
@@ -2051,14 +2066,22 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * get the set of methods
+   * get the set of methods and add them to the provided set
    * @param theClass
+   *          class with methods
    * @param superclassToStopAt 
+   *          when recursing, stop at this class
    * @param includeSuperclassToStopAt 
+   *          when true, bound is inclusive of stop class
    * @param includeStaticMethods
+   *          when true, include static methods (otherwise static methods are excluded)
    * @param markerAnnotation 
+   *          a marker annotation
    * @param includeAnnotation 
+   *          when true, include annotation
    * @param methodSet
+   *            Holds resulting Methods
+   * @see Class#getDeclaredMethods()
    */
   public static void methodsHelper(Class<?> theClass, Class<?> superclassToStopAt, 
       boolean includeSuperclassToStopAt,
@@ -2100,16 +2123,20 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /**
-   * get the set of methods
+   * get the method
    * @param theClass
+   *          class with methods
    * @param methodName 
+   *          the method name
    * @param paramTypesOrArrayOrList
-   *            types of the params
+   *          types of the params
    * @param superclassToStopAt 
+   *          the super class beyond which no more searching is performed
    * @param includeSuperclassToStopAt 
+   *          when true, the superclassToStopAt is included in the search
    * @param isStaticOrInstance true if static
-   * @param markerAnnotation 
-   * @param includeAnnotation 
+   * @param markerAnnotation the annotation to look for
+   * @param includeAnnotation when true, include the annotation
    * @return the method or null if not found
    *            
    */
@@ -2271,8 +2298,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * get the value of a field, override security if needbe
    * 
-   * @param field
-   * @param invokeOn
+   * @param field the field
+   * @param invokeOn the object on which to invoke the field
    * @return the value of the field
    */
   public static Object fieldValue(Field field, Object invokeOn) {
@@ -2282,10 +2309,11 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * get the value of a field
    * 
-   * @param field
-   * @param invokeOn
-   * @param overrideSecurity
+   * @param field the field
+   * @param invokeOn the object on which to invoke the field
+   * @param overrideSecurity when true, set accessible on the field
    * @return the value of the field
+   * @see java.lang.reflect.Field#get(Object)
    */
   public static Object fieldValue(Field field, Object invokeOn,
       boolean overrideSecurity) {
@@ -2318,7 +2346,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * get the decalred methods for a class, perhaps from cache
    * 
-   * @param theClass
+   * @param theClass the class
    * @return the declared methods
    */
   @SuppressWarnings("unused")
@@ -2398,10 +2426,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * construct an instance by reflection
-   * @param <T>
-   * @param theClass
-   * @param args
-   * @param types
+   * @param <T> the type 
+   * @param theClass the class
+   * @param types the types array
+   * @param args the arguments array
    * @return the instance
    */
   public static <T> T construct(Class<T> theClass, Class[] types, Object[] args) {
@@ -2477,7 +2505,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * 
    * @param method
    *            to invoke
-   * @param invokeOn
+   * @param invokeOn the object on which to invoke the method
    * if NO_PARAMS then will not pass in params.
    * @return the result
    */
@@ -2490,7 +2518,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * 
    * @param method
    *            to invoke
-   * @param invokeOn
+   * @param invokeOn the object on which to invoke the method
    * @param paramsOrListOrArray must be an arg.  If null, will pass null.
    * if NO_PARAMS then will not pass in params.
    * @return the result
@@ -3272,8 +3300,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * Get a specific index of an array or collection (note for collections and
    * iterating, it is more efficient to get an iterator and iterate
    * 
-   * @param arrayOrCollection
-   * @param index
+   * @param arrayOrCollection the array, List, or Collection
+   * @param index the index of the desired object
    * @return the object at that index
    */
   public static Object get(Object arrayOrCollection, int index) {
@@ -3315,7 +3343,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * fail safe toString for Exception blocks, and include the stack
    * if there is a problem with toString()
-   * @param object
+   * @param object object to convert to human-readable string.
    * @return the toStringSafe string
    */
   @SuppressWarnings("unchecked")
@@ -3347,7 +3375,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * get the boolean value for an object, cant be null or blank
    * 
-   * @param object
+   * @param object object to convert to a boolean.  Supports string values of "true", "t", "yes" and "y" as true.
    * @return the boolean
    */
   public static boolean booleanValue(Object object) {
@@ -3388,7 +3416,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * get the boolean value for an object
    * 
-   * @param object
+   * @param object object to convert to a boolean
    * @param defaultBoolean
    *            if object is null or empty
    * @return the boolean
@@ -3403,7 +3431,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * get the Boolean value for an object
    * 
-   * @param object
+   * @param object object to convert to a boolean
    * @return the Boolean or null if null or empty
    */
   public static Boolean booleanObjectValue(Object object) {
@@ -3416,7 +3444,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * is an object null or blank
    * 
-   * @param object
+   * @param object object to test for null or String to test for blank
    * @return true if null or blank
    */
   public static boolean nullOrBlank(Object object) {
@@ -3433,8 +3461,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get a getter method object for a class, potentially in superclasses
-   * @param theClass
-   * @param fieldName
+   * @param theClass the class
+   * @param fieldName the field name
    * @param callOnSupers true if superclasses should be looked in for the getter
    * @param throwExceptionIfNotFound will throw runtime exception if not found
    * @return the getter object or null if not found (or exception if param is set)
@@ -3447,8 +3475,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get a setter method object for a class, potentially in superclasses
-   * @param theClass
-   * @param fieldName
+   * @param theClass the class
+   * @param fieldName the field name
    * @param getterName name of setter
    * @param callOnSupers true if superclasses should be looked in for the setter
    * @param throwExceptionIfNotFound will throw runtime exception if not found
@@ -3480,9 +3508,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * generate getBb from bb
-   * @param propertyName
-   * @return the getter 
+   * generate getFoo from foo
+   * @param propertyName the property name such as "foo" for which to generate method name "getFoo"
+   * @return the getter method name
    */
   public static String getterNameFromPropertyName(String propertyName) {
     return "get" + capitalize(propertyName);
@@ -3596,8 +3624,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * if the method name starts with get, and takes no args, and returns something, 
    * then getter
-   * @param method 
-   * @return true if getter
+   * @param method the method to check for "getter" semantics, such as starting with "get" or "is"
+   * @return true if method name starts with "get" or "is", is not static, is not void return type, and does not take arguments
    */
   public static boolean isGetter(Method method) {
     
@@ -3651,14 +3679,14 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * if the method name starts with get, and takes no args, and returns something, 
-   * then getter
-   * @param method 
-   * @return true if getter
+   * Test for setter method.
+   * @param method the method to test for being a setter
+   * @return true if the method starts with "set", has a void return type,
+   *         is not static, and takes only one argument.
    */
   public static boolean isSetter(Method method) {
     
-    //must start with get
+    //must start with set
     if (!method.getName().startsWith("set")) {
       return false;
     }
@@ -3683,8 +3711,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get a setter method object for a class, potentially in superclasses
-   * @param theClass
-   * @param fieldName
+   * @param theClass the class
+   * @param fieldName the field name
    * @param callOnSupers true if superclasses should be looked in for the setter
    * @param throwExceptionIfNotFound will throw runtime exception if not found
    * @return the setter object or null if not found (or exception if param is set)
@@ -3697,8 +3725,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get a setter method object for a class, potentially in superclasses
-   * @param theClass
-   * @param fieldName
+   * @param theClass the class
+   * @param fieldName the field name 
    * @param setterName name of setter
    * @param callOnSupers true if superclasses should be looked in for the setter
    * @param throwExceptionIfNotFound will throw runtime exception if not found
@@ -3730,9 +3758,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * generate setBb from bb
-   * @param propertyName
-   * @return the setter 
+   * generate setFoo from foo
+   * @param propertyName the property such as "foo"
+   * @return the setter method name such as "setFoo" 
    */
   public static String setterNameFromPropertyName(String propertyName) {
     return "set" + capitalize(propertyName);
@@ -3846,8 +3874,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * If this is a getter or setter, then get the property name
-   * @param method
-   * @return the property name
+   * @param method a method with name like "getFoo," "setFoo," or "isFoo."
+   * @return the property name inferred from the method name.  For example, "getFoo" returns "foo."
    */
   public static String propertyName(Method method) {
     String methodName = method.getName();
@@ -3870,8 +3898,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * use reflection to get a property type based on getter or setter or field
-   * @param theClass
-   * @param propertyName
+   * @param theClass the class
+   * @param propertyName the property name
    * @return the property type
    */
   public static Class propertyType(Class theClass, String propertyName) {
@@ -3893,8 +3921,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * If necessary, convert an object to another type.  if type is Object.class, just return the input.
    * Do not convert null to an empty primitive
    * @param <T> is template type
-   * @param value
-   * @param theClass
+   * @param value The object to cast
+   * @param theClass the type of class to cast to
    * @return the object of that instance converted into something else
    */
   public static <T> T typeCast(Object value, Class<T> theClass) {
@@ -4049,8 +4077,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * See if the input is null or if string, if it is empty or blank (whitespace)
-   * @param input
-   * @return true if blank
+   * @param input object to test for null or String to check for blank
+   * @return true if null or blank string
    */
   public static boolean isBlank(Object input) {
     if (null == input) {
@@ -4062,8 +4090,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * If necessary, convert an object to another type.  if type is Object.class, just return the input
    * @param <T> is the type to return
-   * @param value
-   * @param theClass
+   * @param value The object to cast
+   * @param theClass The desired cast class type
    * @param convertNullToDefaultPrimitive if the value is null, and theClass is primitive, should we
    * convert the null to a primitive default value
    * @param useNewInstanceHooks if theClass is not recognized, then honor the string "null", "newInstance",
@@ -4152,7 +4180,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * see if a class is a scalar (not bean, not array or list, etc)
-   * @param type
+   * @param type the type to check
    * @return true if scalar
    */
   public static boolean isScalar(Class<?> type) {
@@ -4201,7 +4229,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * 
    * </pre>
    * 
-   * @param input
+   * @param input a String, java.sql.Timestamp, or java.sql.Date
    * @return the timestamp 
    * @throws RuntimeException if invalid format
    */
@@ -4227,7 +4255,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * convert an object to a string
    * 
    * @param input
-   *          is the object to convert
+   *          is the object to convert, such as a Timestamp, Date, or Number.
    * 
    * @return the String conversion of the object
    */
@@ -4259,7 +4287,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * Convert a timestamp into a string: yyyy/MM/dd HH:mm:ss.SSS
-   * @param timestamp
+   * @param timestamp Date object to be formatted as a string
    * @return the string representation
    */
   public synchronized static String timestampToString(Date timestamp) {
@@ -4280,7 +4308,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert a date to the standard string yyyymmdd
-   * @param date 
+   * @param date the date to format
    * @return the string value
    */
   public static String stringValue(java.util.Date date) {
@@ -4296,14 +4324,16 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * <pre>convert a string to timestamp based on the following formats:
+   * convert a string to timestamp based on the following formats:
+   * <pre>
    * yyyyMMdd
    * yyyy/MM/dd HH:mm:ss
    * yyyy/MM/dd HH:mm:ss.SSS
    * yyyy/MM/dd HH:mm:ss.SSSSSS
    * </pre>
-   * @param input
+   * @param input the string to be converted into a Timestamp
    * @return the timestamp object
+   * @see #stringToTimestampHelper(String)
    */
   public static Timestamp stringToTimestamp(String input) {
     Date date = stringToTimestampHelper(input);
@@ -4320,13 +4350,15 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * return a date based on input, null safe.  Allow any of the three 
    * formats:
+   * <pre>
    * yyyyMMdd
    * yyyy/MM/dd HH:mm:ss
    * yyyy/MM/dd HH:mm:ss.SSS
    * yyyy/MM/dd HH:mm:ss.SSSSSS
+   * </pre>
    * 
-   * @param input
-   * @return the millis, -1 for null
+   * @param input The string to be converted into a Date
+   * @return a Date parsed from the input string
    */
   synchronized static Date stringToTimestampHelper(String input) {
     //trim and handle null and empty
@@ -4381,9 +4413,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
     + ", " + DATE_MINUTES_SECONDS_FORMAT + ": ";
 
   /**
-   * Convert an object to a byte, allow nulls
-   * @param input
-   * @return the boolean object value
+   * Convert an object to a BigDecimal, allow nulls
+   * @param input the object to cast, or null
+   * @return the BigDecimal value of the input object
+   * @see java.math.BigDecimal#valueOf(double)
    */
   public static BigDecimal bigDecimalObjectValue(Object input) {
     if (input instanceof BigDecimal) {
@@ -4396,9 +4429,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * Convert an object to a byte, allow nulls
-   * @param input
-   * @return the boolean object value
+   * Convert an object to a Byte, allow nulls
+   * @param input the object to cast, or null
+   * @return the Byte object value
    */
   public static Byte byteObjectValue(Object input) {
     if (input instanceof Byte) {
@@ -4412,8 +4445,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert an object to a byte
-   * @param input
-   * @return the byte
+   * @param input the object to convert to a byte
+   * @return the byte value of the given number, or the parsed byte of the string
    */
   public static byte byteValue(Object input) {
     if (input instanceof String) {
@@ -4579,7 +4612,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert an object to a int
-   * @param input
+   * @param input the object (String or Number) to parse or convert to an int
    * @return the number
    */
   public static int intValue(Object input) {
@@ -4604,9 +4637,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert an object to a int
-   * @param input
+   * @param input the object to convert to an int
    * @param valueIfNull is if the input is null or empty, return this value
-   * @return the number
+   * @return the integer primitive represented by the object
    */
   public static int intValue(Object input, int valueIfNull) {
     if (input == null || "".equals(input)) {
@@ -4670,7 +4703,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert an object to a long
-   * @param input
+   * @param input String or Number
    * @return the number
    */
   public static long longValue(Object input) {
@@ -4686,7 +4719,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert an object to a long
-   * @param input
+   * @param input value to convert
    * @param valueIfNull is if the input is null or empty, return this value
    * @return the number
    */
@@ -4743,7 +4776,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert an object to a short
-   * @param input
+   * @param input String or Number value to convert
    * @return the number
    */
   public static short shortValue(Object input) {
@@ -4774,7 +4807,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert an object to a char
-   * @param input
+   * @param input Character or String
    * @return the number
    */
   public static char charValue(Object input) {
@@ -4794,7 +4827,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * Create the parent directories for a file if they do not already exist
-   * @param file
+   * @param file the File whose parent directories need creating
+   * @see File#mkdirs()
    */
   public static void createParentDirectories(File file) {
     if (!file.getParentFile().exists()) {
@@ -4932,7 +4966,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * read resource into string
-   * @param resourceName
+   * @param resourceName the resource name
    * @param classInJar if not null, then look for the jar where this file is, and look in the same dir
    * @return the properties or null if not exist
    */
@@ -4980,9 +5014,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * replace all whitespace with space
-   * @param input
-   * @return the string
+   * replace all consecutive whitespace with single space character
+   * @param input the input string
+   * @return the string with redundant whitespace collapsed
    */
   public static String replaceWhitespaceWithSpace(String input) {
     if (input == null) {
@@ -5041,8 +5075,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * close a writer quietly
-   * @param writer
+   * close a writer quietly, swallowing IOException
+   * @param writer the writer to close
    */
   public static void closeQuietly(Writer writer) {
     if (writer != null) {
@@ -5194,9 +5228,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * increment a character (A-Z then 0-9)
    * 
-   * @param theChar
+   * @param theChar The charater to be "incremented"
    * 
-   * @return the value
+   * @return the charcter that follows the input character, wrapping from 'Z' to '0' and '9' to 'A' in the set [A-Z0-9]
    */
   public static char incrementChar(char theChar) {
     if (theChar == 'Z') {
@@ -5214,9 +5248,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * Increment a string with A-Z and 0-9 (no lower case so case insensitive apps
    * like windows IE will still work)
    * 
-   * @param string
+   * @param string  the character array to increment.
    * 
-   * @return the value
+   * @return the incremented character array
    */
   public static char[] incrementStringInt(char[] string) {
     if (string == null) {
@@ -5245,8 +5279,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * read properties from a resource, dont modify the properties returned since they are cached
-   * @param resourceName
+   * read properties from a resource, don't modify the properties returned since they are cached
+   * @param resourceName the resource name
    * @return the properties
    */
   public synchronized static Properties propertiesFromResourceName(String resourceName) {
@@ -5262,7 +5296,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * read properties from file
-   * @param file
+   * @param file the properties file
    * @return properties
    */
   public static Properties propertiesFromFile(File file) {
@@ -5283,11 +5317,11 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * read properties from a resource, dont modify the properties returned since they are cached
-   * @param resourceName
-   * @param useCache 
-   * @param exceptionIfNotExist 
+   * @param resourceName the resource name (property key)
+   * @param useCache  whether or not to use cache
+   * @param exceptionIfNotExist throw an exception if the resource does not exist
    * @param classInJar if not null, then look for the jar where this file is, and look in the same dir
-   * @param callingLog 
+   * @param callingLog container for "Reading resource ... from" log messages
    * @return the properties or null if not exist
    */
   public synchronized static Properties propertiesFromResourceName(String resourceName, boolean useCache, 
@@ -5361,7 +5395,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * @param theEnumClass class of the enum
    * @param <E> generic type
    * 
-   * @param string
+   * @param string The name of an enum constant
    * @param exceptionOnNotFound true if exception should be thrown on not found
    * @return the enum or null or exception if not found
    * @throws RuntimeException if there is a problem
@@ -5390,8 +5424,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * this assumes the property exists, and is a simple property
-   * @param object
-   * @param property
+   * @param object the object
+   * @param property the property
    * @return the value
    */
   public static Object propertyValue(Object object, String property)  {
@@ -5402,8 +5436,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get a value (trimmed to e) from a property file
-   * @param properties
-   * @param key
+   * @param properties the properties
+   * @param key the key used to lookup the property value
    * @return the property value
    */
   public static String propertiesValue(Properties properties, String key) {
@@ -5412,9 +5446,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get a value (trimmed to e) from a property file
-   * @param properties
+   * @param properties the properties
    * @param overrideMap for testing, to override some properties values
-   * @param key
+   * @param key the key used to lookup the property value
    * @return the property value
    */
   public static String propertiesValue(Properties properties, Map<String, String> overrideMap, String key) {
@@ -5423,10 +5457,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get a value (trimmed to e) from a property file
-   * @param properties
+   * @param properties the properties
    * @param overrideMap for testing or threadlocal, to override some properties values
    * @param overrideMap2 for testing, to provide some properties values
-   * @param key
+   * @param key the key used to lookup the property value
    * @return the property value
    */
   public static String propertiesValue(Properties properties, Map<String, String> overrideMap, Map<String, String> overrideMap2, String key) {
@@ -5444,8 +5478,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * substitute common vars like $space$ and $newline$
-   * @param string
-   * @return the string
+   * @param string The string that potentially contains '$space$' and '$newline$' tokens
+   * @return the string with tokens replaced by their represented characters
    */
   public static String substituteCommonVars(String string) {
     if (string == null) {
@@ -5464,10 +5498,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /**
-   * get a boolean property, or the default if cant find
-   * @param properties
-   * @param propertyName
-   * @param defaultValue 
+   * get a boolean property, or the default if can't find
+   * @param properties the properties
+   * @param propertyName the property name key
+   * @param defaultValue the value to use when key lookup is blank
    * @return the boolean
    */
   public static boolean propertiesValueBoolean(Properties properties,
@@ -5477,12 +5511,12 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get a boolean property, or the default if cant find.  Validate also with a descriptive exception if problem
-   * @param resourceName 
-   * @param properties
+   * @param resourceName the resource name
+   * @param properties the properties
    * @param overrideMap for testing to override properties
-   * @param propertyName
-   * @param defaultValue 
-   * @param required 
+   * @param propertyName the property name key
+   * @param defaultValue the value to use when key lookup is blank
+   * @param required whether or not a value is required
    * @return the boolean
    */
   public static boolean propertiesValueBoolean(String resourceName, Properties properties, 
@@ -5495,13 +5529,13 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /**
-   * get an int property, or the default if cant find.  Validate also with a descriptive exception if problem
-   * @param resourceName 
-   * @param properties
+   * get an int property, or the default if can't find.  Validate also with a descriptive exception if problem
+   * @param resourceName the resource name
+   * @param properties the properties
    * @param overrideMap for testing to override properties
-   * @param propertyName
-   * @param defaultValue 
-   * @param required 
+   * @param propertyName the property name key
+   * @param defaultValue the value to use when key lookup is blank
+   * @param required whether or not a value is required
    * @return the int
    */
   public static int propertiesValueInt(String resourceName, Properties properties, 
@@ -5515,12 +5549,12 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * get a boolean property, or the default if cant find.  Validate also with a descriptive exception if problem
-   * @param resourceName 
-   * @param properties
+   * get a property.  Validate also with a descriptive exception if problem
+   * @param resourceName the resource name
+   * @param properties the properties
    * @param overrideMap for threadlocal or testing to override properties
-   * @param propertyName
-   * @param required 
+   * @param propertyName the property name
+   * @param required whether or not a value is required
    * @return the string
    */
   public static String propertiesValue(String resourceName, Properties properties, 
@@ -5536,10 +5570,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get a int property, or the default if cant find
-   * @param properties
+   * @param properties the properties
    * @param overrideMap for testing to override properties
-   * @param propertyName
-   * @param defaultValue 
+   * @param propertyName the name of the property
+   * @param defaultValue the value to use when the property value is blank
    * @return the int
    */
   public static int propertiesValueInt(Properties properties, 
@@ -5549,12 +5583,12 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
 
   /**
-   * get a int property, or the default if cant find
-   * @param properties
+   * get a int property, or the default if can't find
+   * @param properties the properties
    * @param overrideMap for testing to override properties
-   * @param overrideMap2 
-   * @param propertyName
-   * @param defaultValue 
+   * @param overrideMap2 for testing to override properties
+   * @param propertyName the name of the property
+   * @param defaultValue the value to use when the property value is blank
    * @return the int
    */
   public static int propertiesValueInt(Properties properties, 
@@ -5574,11 +5608,11 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /**
-   * get a boolean property, or the default if cant find
-   * @param properties
+   * get a boolean property, or the default if can't find
+   * @param properties the properties being searched
    * @param overrideMap for testing to override properties
-   * @param propertyName
-   * @param defaultValue 
+   * @param propertyName the name of the property
+   * @param defaultValue the value to use when the property value is blank
    * @return the boolean
    */
   public static boolean propertiesValueBoolean(Properties properties, 
@@ -5587,12 +5621,12 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * get a boolean property, or the default if cant find
-   * @param properties
+   * get a boolean property, or the default if can't find
+   * @param properties the properties being searched
    * @param overrideMap for testing or threadlocal to override properties
    * @param overrideMap2 for testing or threadlocal to override properties
-   * @param propertyName
-   * @param defaultValue 
+   * @param propertyName the name of the property
+   * @param defaultValue the value to use when the property value is blank
    * @return the boolean
    */
   public static boolean propertiesValueBoolean(Properties properties, 
@@ -5621,8 +5655,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /**
-   * close a connection null safe and dont throw exception
-   * @param connection
+   * close a connection null safe and don't throw exception
+   * @param connection the connection to close
    */
   public static void closeQuietly(Connection connection) {
     if (connection != null) {
@@ -5635,8 +5669,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * close a statement null safe and dont throw exception
-   * @param statement
+   * close a statement null safe and don't throw exception
+   * @param statement the statement to close
    */
   public static void closeQuietly(Statement statement) {
     if (statement != null) {
@@ -5649,8 +5683,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * close a resultSet null safe and dont throw exception
-   * @param resultSet
+   * close a resultSet null safe and don't throw exception
+   * @param resultSet the ResultSet to close
    */
   public static void closeQuietly(ResultSet resultSet) {
     if (resultSet != null) {
@@ -5662,7 +5696,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
     }
   }
 
-  /** cache the hostname, it wont change */
+  /** cache the hostname, it won't change */
   private static String hostname = null;
 
   /**
@@ -5691,8 +5725,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * is ascii char
-   * @param input
-   * @return true if ascii
+   * @param input the charater to test
+   * @return true if ascii (has value below 128)
    */
   public static boolean isAscii(char input) {
     return input < 128;
@@ -5700,7 +5734,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * find the length of ascii chars (non ascii are counted as two)
-   * @param input
+   * @param input the input string
    * @return the length of ascii chars
    */
   public static int lengthAscii(String input) {
@@ -5722,7 +5756,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * rollback a connection quietly
-   * @param connection
+   * @param connection the connection to roll back
    */
   public static void rollbackQuietly(Connection connection) {
     if (connection != null) {
@@ -5775,9 +5809,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * if the input is a file, read string from file.  if not, or if disabled from grouper.properties, return the input
-   * @param in
-   * @param disableExternalFileLookup 
-   * @return the result
+   * @param in A path to a file
+   * @param disableExternalFileLookup when true, no attempt is made to read the input file reference into a String
+   * @return the contents of the file referred to by the input, or the original input string
    */
   public static String readFromFileIfFile(String in, boolean disableExternalFileLookup) {
     
@@ -5802,7 +5836,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * Create directories, throw exception if not possible.
    * This is will be ok if the directory already exists (will not delete it)
-   * @param dir
+   * @param dir the directory to create
    */
   public static void mkdirs(File dir) {
     if (!dir.exists()) {
@@ -5819,8 +5853,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * null safe string compare
-   * @param first
-   * @param second
+   * @param first first string, or null
+   * @param second second string, or null
    * @return true if equal
    */
   public static boolean equals(String first, String second) {
@@ -5863,7 +5897,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * 
-   * @param str
+   * @param str string to check
    * @return true if not blank
    */
   public static boolean isNotBlank(String str) {
@@ -5872,7 +5906,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * trim whitespace from string
-   * @param str
+   * @param str string to trim
    * @return trimmed string
    */
   public static String trim(String str) {
@@ -5880,9 +5914,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * equalsignorecase
-   * @param str1
-   * @param str2
+   * null-safe equalsignorecase
+   * @param str1 first string
+   * @param str2 second string
    * @return true if the strings are equal ignore case
    */
   public static boolean equalsIgnoreCase(String str1, String str2) {
@@ -5891,8 +5925,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * trim to empty, convert null to empty
-   * @param str
-   * @return trimmed
+   * @param str a string containing whitespace, or null
+   * @return A trimmed string, potentially of length 0 in the case of all-whitespace or null input
    */
   public static String trimToEmpty(String str) {
     return str == null ? "" : str.trim();
@@ -5902,7 +5936,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * <p>Abbreviates a String using ellipses. This will turn
    * "Now is the time for all good men" into "Now is the time for..."</p>
    *
-   * <p>Specifically:
+   * <p>Specifically:</p>
    * <ul>
    *   <li>If <code>str</code> is less than <code>maxWidth</code> characters
    *       long, return it.</li>
@@ -5912,7 +5946,6 @@ public class ConfigPropertiesCascadeCommonUtils  {
    *   <li>In no case will it return a String of length greater than
    *       <code>maxWidth</code>.</li>
    * </ul>
-   * </p>
    *
    * <pre>
    * StringUtils.abbreviate(null, *)      = null
@@ -6765,7 +6798,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * <p>Capitalizes a String changing the first letter to title case as
    * per {@link Character#toTitleCase(char)}. No other letters are changed.</p>
    *
-   * A <code>null</code> input String returns <code>null</code>.</p>
+   * <p>A <code>null</code> input String returns <code>null</code>.</p>
    *
    * <pre>
    * StringUtils.capitalize(null)  = null
@@ -7163,8 +7196,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /** 
    * from a command line arg, get the key.  e.g. if input is --whatever=something
    * then key is whatever, value is something 
-   * @param option 
-   * @return the key */
+   * @param option string such as "--key=value"
+   * @return the key portion of the argument
+   */
   public static String argKey(String option) {
     int equalsIndex = option.indexOf("=");
     if (equalsIndex == -1) {
@@ -7181,8 +7215,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /** 
    * from a command line arg, get the key.  e.g. if input is --whatever=something
    * then key is whatever, value is something 
-   * @param option 
-   * @return the value
+   * @param option The option string such as "--someOption=value"
+   * @return the value of the option
    */
   public static String argValue(String option) {
     int equalsIndex = option.indexOf("=");
@@ -7194,7 +7228,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
   
   /** add an option: --whatever=val   to a map of options where --whatever is key, and val is value 
-   * @param args 
+   * @param args Arguments array
    * @return the map
    */
   public static Map<String, String> argMap(String[] args) {
@@ -7215,10 +7249,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get the value from the argMap, throw exception if not there and required
-   * @param argMap
-   * @param argMapNotUsed 
-   * @param key
-   * @param required
+   * @param argMap map of argument key/values
+   * @param argMapNotUsed keeps track of unused arguments
+   * @param key the key to lookup
+   * @param required whether or not the key is required to be present
    * @return the value or null or exception
    */
   public static String argMapString(Map<String, String> argMap, Map<String, String> argMapNotUsed, 
@@ -7240,11 +7274,11 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get the value from the argMap, throw exception if not there and required
-   * @param argMap
-   * @param argMapNotUsed 
-   * @param key
-   * @param required
-   * @param defaultValue 
+   * @param argMap map of argument key/values
+   * @param argMapNotUsed keeps track of unused arguments
+   * @param key the key to lookup
+   * @param required whether or not the key is required to be present
+   * @param defaultValue the value to use when the key lookup results in blank / null
    * @return the value or null or exception
    */
   public static boolean argMapBoolean(Map<String, String> argMap, Map<String, String> argMapNotUsed, 
@@ -7259,9 +7293,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get the value from the argMap, throw exception if not there and required
-   * @param argMap
-   * @param argMapNotUsed 
-   * @param key
+   * @param argMap map of argument key/values
+   * @param argMapNotUsed keeps track of unused arguments
+   * @param key the key to lookup
    * @return the value or null or exception
    */
   public static Timestamp argMapTimestamp(Map<String, String> argMap, Map<String, String> argMapNotUsed, 
@@ -7276,9 +7310,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get the value from the argMap
-   * @param argMap
-   * @param argMapNotUsed 
-   * @param key
+   * @param argMap map of argument key/values
+   * @param argMapNotUsed keeps track of unused arguments
+   * @param key the key to lookup
    * @return the value or null or exception
    */
   public static Boolean argMapBoolean(Map<String, String> argMap, Map<String, String> argMapNotUsed, 
@@ -7290,10 +7324,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get the set from comma separated from the argMap, throw exception if not there and required
-   * @param argMap
-   * @param argMapNotUsed 
-   * @param key
-   * @param required
+   * @param argMap map of argument key/values
+   * @param argMapNotUsed keeps track of unused arguments
+   * @param key the key to lookup
+   * @param required whether or not the key is required to be present
    * @return the value or null or exception
    */
   public static Set<String> argMapSet(Map<String, String> argMap, Map<String, String> argMapNotUsed, 
@@ -7304,10 +7338,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get the list from comma separated from the argMap, throw exception if not there and required
-   * @param argMap
-   * @param argMapNotUsed 
-   * @param key
-   * @param required
+   * @param argMap map of argument key/values
+   * @param argMapNotUsed keeps track of unused arguments
+   * @param key the key to lookup
+   * @param required whether or not the key is required to be present
    * @return the value or null or exception
    */
   public static List<String> argMapList(Map<String, String> argMap, Map<String, String> argMapNotUsed, 
@@ -7321,10 +7355,10 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * get the list from comma separated from the argMap, throw exception if not there and required
-   * @param argMap
-   * @param argMapNotUsed 
-   * @param key
-   * @param required
+   * @param argMap map of argument key/values
+   * @param argMapNotUsed keeps track of unused arguments
+   * @param key the key to lookup
+   * @param required whether or not the key is required to be present
    * @return the value or null or exception
    */
   public static List<String> argMapFileList(Map<String, String> argMap, Map<String, String> argMapNotUsed, 
@@ -7432,7 +7466,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get a jar file from a sample class
-   * @param sampleClass
+   * @param sampleClass the class for which the jar is looked up
    * @return the jar file
    */
   public static File jarFile(Class sampleClass) {
@@ -7469,9 +7503,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * strip the last slash (/ or \) from a string if it exists
    * 
-   * @param input
+   * @param input A string potentially ending in '\' or '/'
    * 
-   * @return input - the last / or \
+   * @return input without the last / or \
    */
   public static String stripLastSlashIfExists(String input) {
     if ((input == null) || (input.length() == 0)) {
@@ -7489,7 +7523,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * retrieve a password from stdin
-   * @param dontMask
+   * @param dontMask when true, the user's typing will appear on the screen
    * @param prompt to print to user
    * @return the password
    */
@@ -7528,7 +7562,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * @param in stream to be used (e.g. System.in)
    * @param prompt The prompt to display to the user.
    * @return The password as entered by the user.
-   * @throws IOException 
+   * @throws IOException when there was a problem with the input stream
    */
   public static final char[] retrievePasswordFromStdin(InputStream in, String prompt) throws IOException {
     MaskingThread maskingthread = new MaskingThread(prompt);
@@ -7639,11 +7673,11 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * make sure a value exists in properties
-   * @param resourceName
-   * @param properties 
-   * @param overrideMap 
-   * @param key
-   * @param exceptionOnError 
+   * @param resourceName the resource name
+   * @param properties the properties
+   * @param overrideMap a map overriding some properties, used in testing or debug
+   * @param key the property key
+   * @param exceptionOnError when true, throw an exception if property is not the proper value type 
    * @return true if ok, false if not
    */
   public static boolean propertyValidateValueRequired(String resourceName, Properties properties, 
@@ -7668,12 +7702,12 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * make sure a value is boolean in properties
-   * @param resourceName
-   * @param properties 
-   * @param overrideMap
-   * @param key
-   * @param required
-   * @param exceptionOnError 
+   * @param resourceName the resource name
+   * @param properties the properties
+   * @param overrideMap a map overriding some properties, used in testing or debug
+   * @param key the property key
+   * @param required whether or not a value is required for the key
+   * @param exceptionOnError when true, throw an exception if property is not the proper value type 
    * @return true if ok, false if not
    */
   public static boolean propertyValidateValueBoolean(String resourceName, Properties properties, 
@@ -7709,12 +7743,12 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * make sure a value is int in properties
-   * @param resourceName
-   * @param properties 
-   * @param overrideMap
-   * @param key
-   * @param required
-   * @param exceptionOnError 
+   * @param resourceName the resource name
+   * @param properties the properties
+   * @param overrideMap a map overriding some properties, used in testing or debug
+   * @param key the property key
+   * @param required whether or not a value is required for the key
+   * @param exceptionOnError when true, throw an exception if property is not the proper value type 
    * @return true if ok, false if not
    */
   public static boolean propertyValidateValueInt(String resourceName, Properties properties, 
@@ -7749,13 +7783,13 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * make sure a property is a class of a certain type
-   * @param resourceName
-   * @param properties 
-   * @param overrideMap
-   * @param key
-   * @param classType
-   * @param required 
-   * @param exceptionOnError
+   * @param resourceName the property resource name
+   * @param properties the set of properties 
+   * @param overrideMap for testing, to override some properties values
+   * @param key the lookup key
+   * @param classType the desired class type
+   * @param required whether or not a value is required
+   * @param exceptionOnError throw an exception when there is an error
    * @return true if ok
    */
   public static boolean propertyValidateValueClass(String resourceName, Properties properties, 
@@ -8119,7 +8153,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * <p>Left pad a String with spaces (' ').</p>
    *
-   * <p>The String is padded to the size of <code>size<code>.</p>
+   * <p>The String is padded to the size of <code>size</code>.</p>
    *
    * <pre>
    * StringUtils.leftPad(null, *)   = null
@@ -8230,7 +8264,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * convert an exception to a runtime exception
-   * @param e
+   * @param e the exception to convert
    */
   public static void convertToRuntimeException(Exception e) {
     if (e instanceof RuntimeException) {
@@ -8397,11 +8431,11 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * get the value from the argMap, throw exception if not there and required
-   * @param argMap
-   * @param argMapNotUsed 
-   * @param key
-   * @param required
-   * @param defaultValue 
+   * @param argMap the map of arguments
+   * @param argMapNotUsed map that tracks unused arguments
+   * @param key argument key
+   * @param required wheter or not the key is required to be present
+   * @param defaultValue the value to use when the value looked up from key is blank
    * @return the value or null or exception
    */
   public static Integer argMapInteger(Map<String, String> argMap, Map<String, String> argMapNotUsed, 
@@ -8421,8 +8455,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * null safe convert from util date to sql date
-   * @param date
+   * null safe convert from java.util.Date to java.sql.Date
+   * @param date the java Date to be converted
    * @return the sql date
    */
   public static java.sql.Date toSqlDate(Date date) {
@@ -8497,14 +8531,12 @@ public class ConfigPropertiesCascadeCommonUtils  {
   }
 
   /**
-   * Note, this is 
-   * web service format string
+   * Note, this is web service format string
    */
   private static final String WS_DATE_FORMAT = "yyyy/MM/dd HH:mm:ss.SSS";
 
   /**
-   * Note, this is 
-   * web service format string
+   * Note, this is web service format string
    */
   private static final String WS_DATE_FORMAT2 = "yyyy/MM/dd_HH:mm:ss.SSS";
 
@@ -8512,7 +8544,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * convert a date to a string using the standard web service pattern
    * yyyy/MM/dd HH:mm:ss.SSS Note that HH is 0-23
    * 
-   * @param date
+   * @param date the date to convert
    * @return the string, or null if the date is null
    */
   public static String dateToString(Date date) {
@@ -8527,7 +8559,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * convert a string to a date using the standard web service pattern Note
    * that HH is 0-23
    * 
-   * @param dateString
+   * @param dateString the string to parse into a date
    * @return the string, or null if the date was null
    */
   public static Date stringToDate(String dateString) {
@@ -8587,7 +8619,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * dd-mon-yyyy hh:mm:ss
    * yyyy/mm/dd hh:mm:ss.SSS
    * dd-mon-yyyy hh:mm:ss.SSS
-   * @param input
+   * @param input the string to parse into a date
    * @return the date
    */
   public static Date stringToDate2(String input) {
@@ -8702,8 +8734,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * convert a month string to an int (1 indexed).
    * e.g. if input is feb or Feb or february or February return 2
-   * @param mon
-   * @return the month
+   * @param mon English month string such as "jan, feb, march, april, may, jun, june, ..."
+   * @return the month number 1 - 12 for "january" - "december"
    */
   public static int monthInt(String mon) {
     
@@ -8765,7 +8797,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * override map for properties in thread local to be used in a web server or the like, based on property file name
-   * @param propertiesFileName 
+   * @param propertiesFileName properties file name
    * @return the override map
    */
   public static Map<String, String> propertiesThreadLocalOverrideMap(String propertiesFileName) {
@@ -8787,7 +8819,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
    * This will execute a command, and split spaces for args (might not be what
    * you want if you are using quotes)
    * 
-   * @param command
+   * @param command The command string to execute
    */
   public static void execCommand(String command) {
     String[] args = splitTrim(command, " ");
@@ -8797,7 +8829,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * Gobble up a stream from a runtime
    * @author mchyzer
-   * @param <V> 
+   * @param <V> the gobbler type
    */
   private static class StreamGobbler<V> implements Callable<V> {
     
@@ -8966,9 +8998,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
     
     /**
      * Create a container to hold the results of an execution.
-     * @param _errorText
-     * @param _outputText
-     * @param _exitCode
+     * @param _errorText the error text
+     * @param _outputText the output text
+     * @param _exitCode the exit code
      */
     public CommandResult(String _errorText, String _outputText, int _exitCode){
       this.errorText = _errorText;
@@ -9029,8 +9061,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * serialize an object to a file (create parent dir if necessary)
-   * @param object
-   * @param file
+   * @param object the serializable object
+   * @param file the destination file
    */
   public static void serializeObjectToFile(Serializable object, File file) {
 
@@ -9044,7 +9076,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
       out = new ObjectOutputStream(fos);
       out.writeObject(object);
     } catch(IOException ex) {
-      //we had a problem, dont leave the file partway created...
+      //we had a problem, don't leave the file partway created...
       closeQuietly(out);
       out = null;
       deleteFile(file);
@@ -9058,7 +9090,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * unserialize an object from a file if it exists
-   * @param file
+   * @param file the file containing the serialized object
    * @param nullIfException true if null should be returned instead of exception
    * @param deleteFileOnException true if file should be deleted on exception
    * @return the object or null
@@ -9119,7 +9151,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * Delete a file, throw exception if cannot
-   * @param file
+   * @param file the file or directory to delete
    */
   public static void deleteFile(File file) {
     //delete and create
@@ -9135,8 +9167,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * copy a file to a new file
-   * @param fromFile
-   * @param toFile
+   * @param fromFile source file
+   * @param toFile target file
    */
   public static void copy(File fromFile, File toFile) {
     if (toFile.exists()) {
@@ -9157,8 +9189,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * rename a file to another file and throw runtime exception if not ok
-   * @param fromFile
-   * @param toFile
+   * @param fromFile source file
+   * @param toFile target file
    */
   public static void renameTo(File fromFile, File toFile) {
 
@@ -9172,7 +9204,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
   /**
    * clear out all files recursively in a directory, including the directory
    * itself
-   * @param dirName
+   * @param dirName the directory name to delete
    * 
    * @throws RuntimeException
    *           when something goes wrong
@@ -9219,7 +9251,7 @@ public class ConfigPropertiesCascadeCommonUtils  {
 
   /**
    * absolute path null safe
-   * @param file
+   * @param file the absolute path of the given file, or null
    * @return absolute path null safe
    */
   public static String absolutePath(File file) {
@@ -9234,7 +9266,8 @@ public class ConfigPropertiesCascadeCommonUtils  {
   
   /**
    * file or classpath location
-   * @param typeAndLocation
+   * @param typeAndLocation the string describing the resource. Begins with "file:" or "classpath:".
+   * @param logHint used as prefix for RuntimeException messages
    * @return the inputstream
    */
   public static InputStream fileOrClasspathInputstream(String typeAndLocation, String logHint) {

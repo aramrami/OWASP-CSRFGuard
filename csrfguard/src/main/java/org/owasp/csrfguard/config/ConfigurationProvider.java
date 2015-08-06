@@ -38,7 +38,7 @@ import org.owasp.csrfguard.log.ILogger;
 
 public interface ConfigurationProvider {
 
-	/** if this configuration provider can be cached for a minute, i.e. it is all setup */
+	/** @return true when this configuration provider can be cached for a minute, i.e. it is all setup */
 	boolean isCacheable();
 	
 	boolean isPrintConfig();
@@ -52,7 +52,7 @@ public interface ConfigurationProvider {
 	 * Note: this changed around 2014/04, the default behavior used to be to 
 	 * not check if there is no session.  If you want the legacy behavior (if your app
 	 * is not susceptible to CSRF if the user has no session), set this to false
-	 * @return if true
+	 * @return true when validation is performed even when no session exists
 	 */
 	public boolean isValidateWhenNoSessionExists();
 	
@@ -107,8 +107,8 @@ public interface ConfigurationProvider {
  	/**
 	 * if the token should be injected in GET forms (which will be on the URL)
 	 * if the HTTP method GET is unprotected, then this should likely be false
- 	 * @return if inject
- 	 */
+	 * @return true if the token should be injected in GET forms via Javascript
+	 */
 	boolean isJavascriptInjectGetForms();
  	
 	/**

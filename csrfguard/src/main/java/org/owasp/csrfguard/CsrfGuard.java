@@ -340,9 +340,12 @@ public final class CsrfGuard {
 	}
 
 	/**
-	 * @param request
-	 * @param response
-	 * @param csrfe
+	 * Invoked when there was a CsrfGuardException such as a token mismatch error.
+	 * Calls the configured actions.
+	 * @param request The HttpServletRequest
+	 * @param response The HttpServletResponse
+	 * @param csrfe The exception that triggered the actions call. Passed to the action.
+	 * @see IAction#execute(HttpServletRequest, HttpServletResponse, CsrfGuardException)
 	 */
 	private void callActionsOnError(HttpServletRequest request,
 			HttpServletResponse response, CsrfGuardException csrfe) {
@@ -650,9 +653,9 @@ public final class CsrfGuard {
 	}
 
 	/**
-	 * if the HTTP method is protected, i.e. should be checked for token
-	 * @param method
-	 * @return if protected
+	 * Whether or not the HTTP method is protected, i.e. should be checked for token.
+	 * @param method The method to check for protection status
+	 * @return true when the given method name is in the protected methods set and not in the unprotected methods set
 	 */
 	public boolean isProtectedMethod(String method) {
 		boolean isProtected = true;
@@ -749,8 +752,8 @@ public final class CsrfGuard {
 
 	/**
 	 * see if a test path starts with ^ and ends with $ thus making it a regex
-	 * @param testPath
-	 * @return true if regex
+	 * @param testPath The path string to test
+	 * @return true if regex (starts with "^" and ends with "$")
 	 */
 	private static boolean isTestPathRegex(String testPath) {
 		return testPath != null && testPath.startsWith("^") && testPath.endsWith("$");

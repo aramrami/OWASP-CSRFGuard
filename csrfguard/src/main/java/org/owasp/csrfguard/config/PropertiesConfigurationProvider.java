@@ -289,9 +289,10 @@ public final class PropertiesConfigurationProvider implements ConfigurationProvi
 
 	/**
 	 * property string and substitutions
-	 * @param properties
-	 * @param propertyName
-	 * @return the value substituted
+	 * @param properties The properties from which to fetch a value
+	 * @param propertyName The name of the desired property
+	 * @return the value, with common substitutions performed
+	 * @see #commonSubstitutions(String)
 	 */
 	public static String propertyString(Properties properties, String propertyName) {
 		String value = properties.getProperty(propertyName);
@@ -301,9 +302,11 @@ public final class PropertiesConfigurationProvider implements ConfigurationProvi
 
 	/**
 	 * property string and substitutions
-	 * @param properties
-	 * @param propertyName
-	 * @return the value substituted
+	 * @param properties The properties from which to fetch a value
+	 * @param propertyName The name of the desired property
+	 * @param defaultValue The value to use when the propertyName does not exist
+	 * @return the value, with common substitutions performed
+	 * @see #commonSubstitutions(String)
 	 */
 	public static String propertyString(Properties properties, String propertyName, String defaultValue) {
 		String value = properties.getProperty(propertyName, defaultValue);
@@ -521,9 +524,10 @@ public final class PropertiesConfigurationProvider implements ConfigurationProvi
 
 
 	/**
+	 * Replaces percent-bounded expressions such as "%servletContext%."
 	 * common subsitutions in config values
-	 * @param input
-	 * @return the new string
+	 * @param input A string with expressions that should be replaced
+	 * @return new string with "common" expressions replaced by configuration values
 	 */
 	public static String commonSubstitutions(String input) {
 		if (input == null || !input.contains("%")) {
