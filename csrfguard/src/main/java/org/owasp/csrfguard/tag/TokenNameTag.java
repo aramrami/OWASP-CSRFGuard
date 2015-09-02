@@ -1,20 +1,20 @@
 /**
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011
  * All rights reserved.
- * 
+ * <p/>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of OWASP nor the names of its contributors may be used
- *       to endorse or promote products derived from this software without specific
- *       prior written permission.
- *
+ * <p/>
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of OWASP nor the names of its contributors may be used
+ * to endorse or promote products derived from this software without specific
+ * prior written permission.
+ * <p/>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,26 +28,26 @@
  */
 package org.owasp.csrfguard.tag;
 
-import java.io.*;
-import javax.servlet.jsp.tagext.*;
+import org.owasp.csrfguard.CsrfGuard;
 
-import org.owasp.csrfguard.*;
+import javax.servlet.jsp.tagext.TagSupport;
+import java.io.IOException;
 
-public final class TokenNameTag extends TagSupport {
+public class TokenNameTag extends TagSupport {
 
-	private final static long serialVersionUID = 0x54345451;
+    private final static long serialVersionUID = 0x54345451;
 
-	@Override
-	public int doStartTag() {
-		String tokenName = CsrfGuard.getInstance().getTokenName();
+    @Override
+    public int doStartTag() {
+        String tokenName = CsrfGuard.getInstance().getTokenName();
 
-		try {
-			pageContext.getOut().write(tokenName);
-		} catch (IOException e) {
-			pageContext.getServletContext().log(e.getLocalizedMessage(), e);
-		}
+        try {
+            pageContext.getOut().write(tokenName);
+        } catch (IOException e) {
+            pageContext.getServletContext().log(e.getLocalizedMessage(), e);
+        }
 
-		return SKIP_BODY;
-	}
-	
+        return SKIP_BODY;
+    }
+
 }
