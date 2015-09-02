@@ -1,4 +1,4 @@
-## OWASP CSRFGuard 3.1.0
+## OWASP CSRFGuard
 
 [http://www.owasp.org/index.php/Category:OWASP_CSRFGuard_Project](http://www.owasp.org/index.php/Category:OWASP_CSRFGuard_Project)
 
