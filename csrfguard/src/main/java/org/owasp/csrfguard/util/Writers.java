@@ -30,7 +30,7 @@ package org.owasp.csrfguard.util;
 
 import java.io.*;
 
-public final class Writers {
+public class Writers {
 
 	private Writers() {
 		/** enforce use of static methods **/

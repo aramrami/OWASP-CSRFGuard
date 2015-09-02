@@ -28,7 +28,7 @@
  */
 package org.owasp.csrfguard.util;
 
-public final class BrowserEncoder {
+public class BrowserEncoder {
 
 	private BrowserEncoder() {
 		/** enforce use of static methods **/

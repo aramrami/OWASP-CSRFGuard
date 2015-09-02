@@ -28,15 +28,15 @@
  */
 package org.owasp.csrfguard.action;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardException;
 import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 
-public final class Log extends AbstractAction {
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class Log extends AbstractAction {
 
 	private static final long serialVersionUID = 8238761463376338707L;
 
