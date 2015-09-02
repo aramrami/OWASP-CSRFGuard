@@ -16,18 +16,6 @@ The CSRFGuard project is run by Azzeddine RAMRAMI. He can be contacted at azzedd
 
 OWASP CSRFGuard 3.1.0 is offered under the [BSD license](http://www.opensource.org/licenses/bsd-license.php)
 
-## Using with Maven
-OWASP CSRFGuard 3.1.0 will be available on Maven Central.  Add the following dependency to your Maven POM file to use the library:
-
-
-```
-<dependency>
-    <groupId>org.owasp</groupId>
-    <artifactId>csrfguard</artifactId>
-    <version>3.1.0</version>
-</dependency>
-```
-
 ## Building the code
 
 1. Make sure that you have [Apache Maven](http://maven.apache.org/) 3.0.4 or higher installed;
