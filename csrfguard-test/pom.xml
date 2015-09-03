@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.owasp</groupId>
 	<artifactId>csrfguard-test</artifactId>
-	<version>3.1.1</version>
+	<version>3.1.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 	<name>OWASP CSRFGuard Test Application</name>
 	<description>OWASP CSRFGuard is a library that implements a variant of the synchronizer token pattern to mitigate the risk of Cross-Site Request Forgery (CSRF) attacks.</description>

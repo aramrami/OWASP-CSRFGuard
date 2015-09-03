@@ -32,7 +32,7 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.NoSuchAlgorithmException;
 
-public class RandomGenerator {
+public final class RandomGenerator {
 
 	private final static char[] CHARSET = new char[] { 'A', 'B', 'C', 'D', 'E',
 			'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
