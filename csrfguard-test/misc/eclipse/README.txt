@@ -1,0 +1,1 @@
+These files put in the csrfguard-test dir work for eclipse kepler and m2e maven plugin

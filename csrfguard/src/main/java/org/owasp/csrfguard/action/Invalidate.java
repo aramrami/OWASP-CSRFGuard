@@ -28,14 +28,11 @@
  */
 package org.owasp.csrfguard.action;
 
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.CsrfGuardException;
+import javax.servlet.http.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import org.owasp.csrfguard.*;
 
-public class Invalidate extends AbstractAction {
+public final class Invalidate extends AbstractAction {
 
 	private static final long serialVersionUID = -3060679616261531773L;
 

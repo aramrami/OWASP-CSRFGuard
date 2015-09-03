@@ -59,7 +59,7 @@ import org.owasp.csrfguard.util.RandomGenerator;
 import org.owasp.csrfguard.util.Streams;
 import org.owasp.csrfguard.util.Writers;
 
-public class CsrfGuard {
+public final class CsrfGuard {
 
 	public final static String PAGE_TOKENS_KEY = "Owasp_CsrfGuard_Pages_Tokens_Key";
 

@@ -28,17 +28,17 @@
  */
 package org.owasp.csrfguard.tag;
 
-import org.owasp.csrfguard.CsrfGuard;
+import java.io.*;
+import java.util.*;
+
+import javax.servlet.http.*;
+import javax.servlet.jsp.*;
+import javax.servlet.jsp.tagext.*;
+
+import org.owasp.csrfguard.*;
 import org.owasp.csrfguard.util.BrowserEncoder;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.DynamicAttributes;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-public class ATag extends AbstractUriTag implements DynamicAttributes {
+public final class ATag extends AbstractUriTag implements DynamicAttributes {
 
 	private final static long serialVersionUID = 0x00202937;
 	

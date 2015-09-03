@@ -30,7 +30,7 @@ package org.owasp.csrfguard.util;
 
 import java.io.*;
 
-public class Streams {
+public final class Streams {
 
 	private Streams() {
 		/** enforce use of static methods **/
