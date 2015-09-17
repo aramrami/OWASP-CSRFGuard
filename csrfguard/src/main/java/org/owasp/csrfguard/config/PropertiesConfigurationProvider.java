@@ -28,7 +28,6 @@
  */
 package org.owasp.csrfguard.config;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -44,7 +43,6 @@ import javax.servlet.ServletConfig;
 
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 import org.owasp.csrfguard.action.IAction;
-import org.owasp.csrfguard.config.overlay.ConfigurationOverlayProvider;
 import org.owasp.csrfguard.log.ILogger;
 import org.owasp.csrfguard.servlet.JavaScriptServlet;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
@@ -53,7 +51,7 @@ import org.owasp.csrfguard.util.CsrfGuardUtils;
  * ConfifgurationProvider based on a java.util.Properties object.
  *
  */
-public final class PropertiesConfigurationProvider implements ConfigurationProvider {
+public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private final static String ACTION_PREFIX = "org.owasp.csrfguard.action.";
 
@@ -101,6 +99,8 @@ public final class PropertiesConfigurationProvider implements ConfigurationProvi
 	
 	private Properties propertiesCache;
 	
+	private String domainOrigin;
+	
 	public PropertiesConfigurationProvider(Properties properties) {
 		try {
 			this.propertiesCache = properties;
@@ -117,7 +117,7 @@ public final class PropertiesConfigurationProvider implements ConfigurationProvi
 			tokenPerPage = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.TokenPerPage", "false"));
 
 			this.validationWhenNoSessionExists = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.ValidateWhenNoSessionExists", "true"));
-			
+			this.domainOrigin = propertyString(properties, "org.owasp.csrfguard.domainOrigin", null);
 			tokenPerPagePrecreate = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.TokenPerPagePrecreate", "false"));
 			prng = SecureRandom.getInstance(propertyString(properties, "org.owasp.csrfguard.PRNG", "SHA1PRNG"), propertyString(properties, "org.owasp.csrfguard.PRNG.Provider", "SUN"));
 			newTokenLandingPage = propertyString(properties, "org.owasp.csrfguard.NewTokenLandingPage");
@@ -571,4 +571,11 @@ public final class PropertiesConfigurationProvider implements ConfigurationProvi
 		return this.javascriptInjectFormAttributes;
 	}
 
+	/**
+	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
+	 */
+	@Override
+	public String getDomainOrigin() {
+		return domainOrigin;
+	}
 }

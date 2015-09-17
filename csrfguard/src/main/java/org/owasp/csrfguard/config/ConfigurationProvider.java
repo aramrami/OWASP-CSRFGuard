@@ -99,6 +99,8 @@ public interface ConfigurationProvider {
 	String getJavascriptSourceFile();
 
 	boolean isJavascriptDomainStrict();
+	
+	String getDomainOrigin();
 
 	String getJavascriptCacheControl();
 
