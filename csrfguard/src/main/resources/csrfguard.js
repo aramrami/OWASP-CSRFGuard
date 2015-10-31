@@ -288,18 +288,21 @@
 			}
 		}
 	  
+		var value = tokenValue;
 		var action = form.getAttribute("action");
 		
 		if(action != null && isValidUrl(action)) {
 			var uri = parseUri(action);
-			var hidden = document.createElement("input");
-			
-			hidden.setAttribute("type", "hidden");
-			hidden.setAttribute("name", tokenName);
-			hidden.setAttribute("value", (pageTokens[uri] != null ? pageTokens[uri] : tokenValue));
-			
-			form.appendChild(hidden);
+			value = pageTokens[uri] != null ? pageTokens[uri] : tokenValue;
 		}
+		
+		var hidden = document.createElement("input");
+		
+		hidden.setAttribute("type", "hidden");
+		hidden.setAttribute("name", tokenName);
+		hidden.setAttribute("value", value);
+		
+		form.appendChild(hidden);
 	}
 
 	/** inject tokens as query string parameters into url **/
