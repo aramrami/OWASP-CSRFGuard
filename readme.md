@@ -58,4 +58,12 @@ Instead of hard coding the CSRF token, we send a POST request to fetch the token
 
 Thanks to Ahamed Nafeez <ahamednafeez@gmail.com> for this fix.
 
+## CSRFGuard in Maven Central
+
+You can download a binary version from Maven Central here:
+
+https://oss.sonatype.org/#nexus-search;gav~~csrfguard~~~
+
+Thanks to Trent Schmidt and Joel Orlina (JIRA)  for there help.
+
 
