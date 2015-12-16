@@ -857,8 +857,6 @@ public abstract class ConfigPropertiesCascadeBase {
 			if (configObject == null) {
 
 				if (true) {
-				}
-				if (true) {
 					debugMap.put("mainConfigClasspath", this.getMainConfigClasspath());
 				}
 
