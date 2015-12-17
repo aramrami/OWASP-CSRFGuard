@@ -70,7 +70,6 @@
 	                if(item[0].detachEvent){
 	                    item[0].detachEvent(item[1], item[2]);
 	                };
-	                item[0][item[1]] = null;
 	            };
 	        }
 	    };
