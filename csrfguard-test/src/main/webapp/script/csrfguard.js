@@ -277,7 +277,16 @@
 	}
 
 	/** inject tokens as hidden fields into forms **/
-	function injectTokenForm(form, tokenName, tokenValue, pageTokens) {
+	function injectTokenForm(form, tokenName, tokenValue, pageTokens,injectGetForms) {
+	  
+		if (!injectGetForms) {
+			var method = form.getAttribute("method");
+	  
+			if ((typeof method != 'undefined') && method != null && method.toLowerCase() == "get") {
+				return;
+			}
+		}
+	  
 		var action = form.getAttribute("action");
 		
 		if(action != null && isValidUrl(action)) {
@@ -327,17 +336,25 @@
 		var all = document.all ? document.all : document.getElementsByTagName('*');
 		var len = all.length;
 
+		//these are read from the csrf guard config file(s)
+		var injectForms = %INJECT_FORMS%;
+		var injectGetForms = %INJECT_GET_FORMS%;
+		var injectFormAttributes = %INJECT_FORM_ATTRIBUTES%;
+		var injectAttributes = %INJECT_ATTRIBUTES%;
+		
 		for(var i=0; i<len; i++) {
 			var element = all[i];
 			
 			/** inject into form **/
 			if(element.tagName.toLowerCase() == "form") {
-				if(%INJECT_FORMS% == true) {
-					injectTokenForm(element, tokenName, tokenValue, pageTokens);
+				if(injectForms) {
+					injectTokenForm(element, tokenName, tokenValue, pageTokens,injectGetForms);
+				}
+				if (injectFormAttributes) {
 					injectTokenAttribute(element, "action", tokenName, tokenValue, pageTokens);
 				}
 				/** inject into attribute **/
-			} else if(%INJECT_ATTRIBUTES% == true) {
+			} else if(injectAttributes) {
 				injectTokenAttribute(element, "src", tokenName, tokenValue, pageTokens);
 				injectTokenAttribute(element, "href", tokenName, tokenValue, pageTokens);
 			}
@@ -385,6 +402,8 @@
 	 * Only inject the tokens if the JavaScript was referenced from HTML that
 	 * was served by us. Otherwise, the code was referenced from malicious HTML
 	 * which may be trying to steal tokens using JavaScript hijacking techniques.
+	 * The token is now removed and fetched using another POST request to solve,
+	 * the token hijacking problem.
 	 */
 	if(isValidDomain(document.domain, "%DOMAIN_ORIGIN%")) {
 		/** optionally include Ajax support **/
@@ -394,11 +413,22 @@
 			} else {
 				hijackStandard();
 			}
-			
+		
+		var xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject("Microsoft.XMLHTTP");
+		var csrfToken = {};
+		xhr.open("POST", "%SERVLET_PATH%", false);
+		xhr.setRequestHeader("FETCH-CSRF-TOKEN", "1");
+		xhr.send(null);
+		
+		var token_pair = xhr.responseText;
+		token_pair = token_pair.split(":");
+		var token_name = token_pair[0];
+		var token_value = token_pair[1];
+
 			XMLHttpRequest.prototype.onsend = function(data) {
 				if(isValidUrl(this.url)) {
-					this.setRequestHeader("X-Requested-With", "%X_REQUESTED_WITH%")
-					this.setRequestHeader("%TOKEN_NAME%", "%TOKEN_VALUE%");
+					this.setRequestHeader("X-Requested-With", "XMLHttpRequest")
+					this.setRequestHeader(token_name, token_value);
 				}
 			};
 		}
@@ -406,7 +436,7 @@
 		/** update nodes in DOM after load **/
 		addEvent(window,'unload',EventCache.flush);
 		addEvent(window,'load', function() {
-			injectTokens("%TOKEN_NAME%", "%TOKEN_VALUE%");
+			injectTokens(token_name, token_value);
 		});
 	} else {
 		alert("OWASP CSRFGuard JavaScript was included from within an unauthorized domain!");
