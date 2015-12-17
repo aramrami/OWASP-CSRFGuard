@@ -436,7 +436,7 @@
 		
 		/** update nodes in DOM after load **/
 		addEvent(window,'unload',EventCache.flush);
-		addEvent(window,'load', function() {
+		addEvent(window,'DOMContentLoaded', function() {
 			injectTokens(token_name, token_value);
 		});
 	} else {
