@@ -58,7 +58,7 @@ public class Rotate extends AbstractAction {
 	}
 
 	private void updateSessionToken(HttpSession session, CsrfGuard csrfGuard) throws CsrfGuardException {
-		String token = null;
+		String token;
 
 		try {
 			token = RandomGenerator.generateRandomId(csrfGuard.getPrng(),
@@ -80,7 +80,7 @@ public class Rotate extends AbstractAction {
 		}
 
 		for (String page : pages) {
-			String token = null;
+			String token;
 
 			try {
 				token = RandomGenerator.generateRandomId(csrfGuard.getPrng(), csrfGuard.getTokenLength());

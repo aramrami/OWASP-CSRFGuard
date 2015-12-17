@@ -417,18 +417,13 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @return new string with some dollar-delimited tokens replaced
 	 */
 	protected static String substituteCommonVars(String string) {
-		if (string == null) {
-			return string;
-		}
-		//short circuit
-		if (string.indexOf('$') < 0) {
-			return string;
-		}
-		//might have $space$
-		string = ConfigPropertiesCascadeUtils.replace(string, "$space$", " ");
+		if (string != null && string.indexOf('$') < 0 ) {
+			//might have $space$
+			string = ConfigPropertiesCascadeUtils.replace(string, "$space$", " ");
 
-		//note, at some point we could be OS specific
-		string = ConfigPropertiesCascadeUtils.replace(string, "$newline$", "\n"); 
+			//note, at some point we could be OS specific
+			string = ConfigPropertiesCascadeUtils.replace(string, "$newline$", "\n");
+		}
 		return string;
 	}
 
@@ -856,8 +851,6 @@ public abstract class ConfigPropertiesCascadeBase {
 
 			if (configObject == null) {
 
-				if (true) {
-				}
 				if (true) {
 					debugMap.put("mainConfigClasspath", this.getMainConfigClasspath());
 				}
