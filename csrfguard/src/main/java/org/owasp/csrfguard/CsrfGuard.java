@@ -50,6 +50,7 @@ import org.owasp.csrfguard.config.ConfigurationProvider;
 import org.owasp.csrfguard.config.ConfigurationProviderFactory;
 import org.owasp.csrfguard.config.NullConfigurationProvider;
 import org.owasp.csrfguard.config.PropertiesConfigurationProvider;
+import org.owasp.csrfguard.config.PropertiesConfigurationProviderFactory;
 import org.owasp.csrfguard.config.overlay.ExpirableCache;
 import org.owasp.csrfguard.log.ILogger;
 import org.owasp.csrfguard.log.LogLevel;
@@ -103,7 +104,7 @@ public final class CsrfGuard {
 		ConfigurationProvider configurationProvider = null;
 		//lets see what provider we are using
 		String configurationProviderFactoryClassName = this.properties.getProperty(
-				"org.owasp.csrfguard.configuration.provider.factory", PropertiesConfigurationProvider.class.getName());
+				"org.owasp.csrfguard.configuration.provider.factory", PropertiesConfigurationProviderFactory.class.getName());
 
 		Class<ConfigurationProviderFactory> configurationProviderFactoryClass = CsrfGuardUtils.forName(configurationProviderFactoryClassName);
 		
