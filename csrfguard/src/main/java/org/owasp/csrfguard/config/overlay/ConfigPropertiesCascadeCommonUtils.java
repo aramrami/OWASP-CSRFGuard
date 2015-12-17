@@ -1901,7 +1901,6 @@ public class ConfigPropertiesCascadeCommonUtils  {
         //everything (numbers, dates, etc) should work with equals method...
         if (!firstValue.equals(secondValue)) {
           differentFields.add(fieldName);
-          continue;
         }
         
       } catch (RuntimeException re) {
