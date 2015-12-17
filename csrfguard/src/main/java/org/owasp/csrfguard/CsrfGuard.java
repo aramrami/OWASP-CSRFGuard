@@ -689,6 +689,10 @@ public final class CsrfGuard {
 		return config().isPrintConfig();
 	}
 	
+	public String getDomainOrigin() {
+		return config().getDomainOrigin();
+	}
+	
 	/**
 	 * FIXME: taken from Tomcat - ApplicationFilterFactory
 	 * 

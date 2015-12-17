@@ -253,4 +253,11 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
 		return false;
 	}
 
+	/**
+	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
+	 */
+	@Override
+	public String getDomainOrigin() {
+		return null;
+	}
 }

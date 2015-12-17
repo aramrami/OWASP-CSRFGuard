@@ -240,7 +240,7 @@ public final class JavaScriptServlet extends HttpServlet {
 		code = code.replace(INJECT_INTO_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoAttributes()));
 		code = code.replace(INJECT_INTO_XHR_IDENTIFIER, String.valueOf(csrfGuard.isAjaxEnabled()));
 		code = code.replace(TOKENS_PER_PAGE_IDENTIFIER, String.valueOf(csrfGuard.isTokenPerPageEnabled()));
-		code = code.replace(DOMAIN_ORIGIN_IDENTIFIER, CsrfGuardUtils.defaultString(parseDomain(request.getRequestURL())));
+		code = code.replace(DOMAIN_ORIGIN_IDENTIFIER, csrfGuard.getDomainOrigin() == null ? CsrfGuardUtils.defaultString(parseDomain(request.getRequestURL())) : csrfGuard.getDomainOrigin());
 		code = code.replace(DOMAIN_STRICT_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptDomainStrict()));
 		code = code.replace(CONTEXT_PATH_IDENTIFIER, CsrfGuardUtils.defaultString(request.getContextPath()));
 		code = code.replace(SERVLET_PATH_IDENTIFIER, CsrfGuardUtils.defaultString(request.getContextPath() + request.getServletPath()));
