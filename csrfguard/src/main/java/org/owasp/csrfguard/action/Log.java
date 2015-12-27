@@ -36,6 +36,9 @@ import org.owasp.csrfguard.CsrfGuardException;
 import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 
+import org.owasp.encoder.Encode;
+
+
 public final class Log extends AbstractAction {
 
 	private static final long serialVersionUID = 8238761463376338707L;
@@ -48,20 +51,22 @@ public final class Log extends AbstractAction {
 		logMessage = logMessage.replace("%exception%", String.valueOf(csrfe));
 		logMessage = logMessage.replace("%exception_message%", csrfe.getLocalizedMessage());
 
+
+
 		/** Remote Network Information **/
-		logMessage = logMessage.replace("%remote_ip%", CsrfGuardUtils.defaultString(request.getRemoteAddr()));
-		logMessage = logMessage.replace("%remote_host%", CsrfGuardUtils.defaultString(request.getRemoteHost()));
+		logMessage = logMessage.replace("%remote_ip%", Encode.forCDATA (CsrfGuardUtils.defaultString(  request.getRemoteAddr())));
+		logMessage = logMessage.replace("%remote_host%", Encode.forCDATA (CsrfGuardUtils.defaultString(request.getRemoteHost())));
 		logMessage = logMessage.replace("%remote_port%", String.valueOf(request.getRemotePort()));
 
 		/** Local Network Information **/
-		logMessage = logMessage.replace("%local_ip%", CsrfGuardUtils.defaultString(request.getLocalAddr()));
-		logMessage = logMessage.replace("%local_host%", CsrfGuardUtils.defaultString(request.getLocalName()));
+		logMessage = logMessage.replace("%local_ip%", Encode.forCDATA (CsrfGuardUtils.defaultString(request.getLocalAddr())));
+		logMessage = logMessage.replace("%local_host%", Encode.forCDATA (CsrfGuardUtils.defaultString(request.getLocalName())));
 		logMessage = logMessage.replace("%local_port%", String.valueOf(request.getLocalPort()));
 
 		/** Requested Resource Information **/
-		logMessage = logMessage.replace("%request_method%", CsrfGuardUtils.defaultString(request.getMethod()));
-		logMessage = logMessage.replace("%request_uri%", CsrfGuardUtils.defaultString(request.getRequestURI()));
-		logMessage = logMessage.replace("%request_url%", request.getRequestURL().toString());
+		logMessage = logMessage.replace("%request_method%", Encode.forCDATA (CsrfGuardUtils.defaultString(request.getMethod())));
+		logMessage = logMessage.replace("%request_uri%", Encode.forUriComponent (CsrfGuardUtils.defaultString(request.getRequestURI())));
+		logMessage = logMessage.replace("%request_url%", Encode.forCDATA (request.getRequestURL().toString()));
 
 		// JavaEE Principal Information
 		String user = request.getRemoteUser();
@@ -74,7 +79,7 @@ public final class Log extends AbstractAction {
 			}
 		}
 		if (user != null && !"".equals(user.trim())) {
-			logMessage = logMessage.replace("%user%", user);
+			logMessage = logMessage.replace("%user%", Encode.forCDATA(user));
 		} else {
 			logMessage = logMessage.replace("%user%", "<anonymous>");
 		}
