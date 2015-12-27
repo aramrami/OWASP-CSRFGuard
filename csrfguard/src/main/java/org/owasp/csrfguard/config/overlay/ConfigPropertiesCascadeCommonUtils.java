@@ -8944,13 +8944,9 @@ public class ConfigPropertiesCascadeCommonUtils  {
         //finish running these threads
         try {
           futureOutput.get();
-        } finally {
-          //ignore if cant get
         }
         try {
           futureError.get();
-        } finally {
-          //ignore if cant get
         }
       }
     } catch (Exception e) {
