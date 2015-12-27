@@ -50,6 +50,8 @@ import org.owasp.csrfguard.util.CsrfGuardUtils;
 import org.owasp.csrfguard.util.Streams;
 import org.owasp.csrfguard.util.Strings;
 import org.owasp.csrfguard.util.Writers;
+import org.owasp.encoder.Encode;
+import org.owasp.encoder.Encoder;
 
 public final class JavaScriptServlet extends HttpServlet {
 
@@ -101,7 +103,7 @@ public final class JavaScriptServlet extends HttpServlet {
 		boolean hasError = false;
 		Pattern javascriptRefererPattern = CsrfGuard.getInstance().getJavascriptRefererPattern();
 		if(refererHeader != null && !javascriptRefererPattern.matcher(refererHeader).matches()) {
-			CsrfGuard.getInstance().getLogger().log(LogLevel.Error, "Referer domain " + refererHeader + " does not match regex: " + javascriptRefererPattern.pattern());
+			CsrfGuard.getInstance().getLogger().log(LogLevel.Error, "Referer domain " + Encode.forUriComponent(refererHeader) + " does not match regex: " + javascriptRefererPattern.pattern());
 			response.sendError(404);
 			hasError = true;
 		}
@@ -112,7 +114,7 @@ public final class JavaScriptServlet extends HttpServlet {
 			String requestProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(url);
 			String refererProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(refererHeader);
 			if (!refererProtocolAndDomain.equals(requestProtocolAndDomain)) {
-				CsrfGuard.getInstance().getLogger().log(LogLevel.Error, "Referer domain " + refererHeader + " does not match request domain: " + url);
+				CsrfGuard.getInstance().getLogger().log(LogLevel.Error, "Referer domain " + Encode.forUriComponent(refererHeader) + " does not match request domain: " + Encode.forUriComponent(url));
 				hasError = true;
 				response.sendError(404);
 			}
