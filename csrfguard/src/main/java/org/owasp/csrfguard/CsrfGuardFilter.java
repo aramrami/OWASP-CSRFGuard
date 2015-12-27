@@ -41,10 +41,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.owasp.csrfguard.http.InterceptRedirectResponse;
+import org.owasp.encoder.Encode;
+
 
 public final class CsrfGuardFilter implements Filter {
 
 	private FilterConfig filterConfig = null;
+
+
+
 
 	@Override
 	public void destroy() {
@@ -74,7 +79,7 @@ public final class CsrfGuardFilter implements Filter {
 			}
 
 			CsrfGuard csrfGuard = CsrfGuard.getInstance();
-			csrfGuard.getLogger().log(String.format("CsrfGuard analyzing request %s", httpRequest.getRequestURI()));
+			csrfGuard.getLogger().log(String.format("CsrfGuard analyzing request %s", Encode.forUriComponent(httpRequest.getRequestURI())));
 
 			InterceptRedirectResponse httpResponse = new InterceptRedirectResponse((HttpServletResponse) response, httpRequest, csrfGuard);
 
