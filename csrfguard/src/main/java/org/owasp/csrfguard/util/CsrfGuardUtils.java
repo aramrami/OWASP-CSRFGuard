@@ -1111,13 +1111,17 @@ public class CsrfGuardUtils {
 	    StringWriter sw = new StringWriter();
 	    PrintWriter pw = new PrintWriter(sw, true);
 	    Throwable[] ts = getThrowables(throwable);
-	    for (int i = 0; i < ts.length; i++) {
-	        ts[i].printStackTrace(pw);
-	        if (isNestedThrowable(ts[i])) {
-	            break;
-	        }
-	    }
-	    return sw.getBuffer().toString();
+	    try {
+			for (int i = 0; i < ts.length; i++) {
+				ts[i].printStackTrace(pw);
+				if (isNestedThrowable(ts[i])) {
+					break;
+				}
+			}
+		} finally {
+			pw.close();
+		}
+		return sw.getBuffer().toString();
 	}
 
 	/**
