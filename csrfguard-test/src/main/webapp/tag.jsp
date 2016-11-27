@@ -23,7 +23,7 @@
 <form id="formTest1" name="formTest1" action="protect.html">
 	<input type="text" name="text" value="text"/>
 	<input type="submit" name="submit" value="submit"/>
-	<input type="hidden" name="<csrf:token-name/>" value="<csrf:token-value uri="protect.html"/>"/>
+	<input type="hidden" name="<csrf:tokenname/>" value="<csrf:tokenvalue uri="protect.html"/>"/>
 </form>
 <csrf:form id="formTest2" name="formTest2" action="protect.html">
 	<input type="text" name="text" value="text"/>
