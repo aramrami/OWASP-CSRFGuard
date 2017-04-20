@@ -306,6 +306,11 @@ public final class CsrfGuard {
 		HttpSession session = request.getSession(true);
 		String tokenFromSession = (String) session.getAttribute(getSessionKey());
 
+		if (!valid){
+		    /** print log message - page and method are protected **/
+		    getLogger().log(String.format("CsrfGuard analyzing request %s", request.getRequestURI()));
+		}
+		
 		/** sending request to protected resource - verify token **/
 		if (tokenFromSession != null && !valid) {
 			try {
