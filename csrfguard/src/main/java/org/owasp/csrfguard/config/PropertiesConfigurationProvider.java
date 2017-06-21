@@ -111,7 +111,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 			unprotectedMethods = new HashSet<String>();
 			/** load simple properties **/
 			logger = (ILogger) Class.forName(propertyString(properties, "org.owasp.csrfguard.Logger", "org.owasp.csrfguard.log.ConsoleLogger")).newInstance();
-			tokenName = propertyString(properties, "org.owasp.csrfguard.TokenName", "OWASP_CSRFGUARD");
+			tokenName = propertyString(properties, "org.owasp.csrfguard.TokenName", "OWASP-CSRFGUARD");
 			tokenLength = Integer.parseInt(propertyString(properties, "org.owasp.csrfguard.TokenLength", "32"));
 			rotate = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.Rotate", "false"));
 			tokenPerPage = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.TokenPerPage", "false"));
