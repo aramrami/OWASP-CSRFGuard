@@ -33,6 +33,11 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 			/** update tokens **/
 			csrfGuard.updateTokens(request);
 			
+			// Separate URL fragment from path, e.g. /myPath#myFragment becomes 
+			//[0]: /myPath [1]: myFragment
+			String[] splitOnFragement = location.split("#", 2);
+			location = splitOnFragement[0];
+
 			StringBuilder sb = new StringBuilder();
 
 			if (!sanitizedLocation.startsWith("/")) {
@@ -54,6 +59,11 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 			sb.append('=');
 			sb.append(csrfGuard.getTokenValue(request, locationUri));
 			
+			// Add back fragment, if one exists
+			if(splitOnFragement.length > 1) {
+				sb.append('#').append(splitOnFragement[1]);
+			}
+
 			response.sendRedirect(sb.toString());
 		} else {
 			response.sendRedirect(sanitizedLocation);
