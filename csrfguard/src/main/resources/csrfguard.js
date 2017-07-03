@@ -352,6 +352,9 @@
 			if(element.tagName.toLowerCase() == "form") {
 				if(injectForms) {
 					injectTokenForm(element, tokenName, tokenValue, pageTokens,injectGetForms);
+
+					/** adjust array length after addition of new element **/
+					len = all.length;
 				}
 				if (injectFormAttributes) {
 					injectTokenAttribute(element, "action", tokenName, tokenValue, pageTokens);
