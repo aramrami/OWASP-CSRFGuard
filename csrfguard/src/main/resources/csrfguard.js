@@ -308,7 +308,7 @@
 	function injectTokenAttribute(element, attr, tokenName, tokenValue, pageTokens) {
 		var location = element.getAttribute(attr);
 		
-		if(location != null && isValidUrl(location) !isUnprotectedExtension(location)) {
+		if(location != null && isValidUrl(location) && !isUnprotectedExtension(location)) {
 			var uri = parseUri(location);
 			var value = (pageTokens[uri] != null ? pageTokens[uri] : tokenValue);
 			
