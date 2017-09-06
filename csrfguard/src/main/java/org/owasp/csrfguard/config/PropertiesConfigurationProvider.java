@@ -265,7 +265,10 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 				this.javascriptRefererMatchDomain = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "referer-match-domain",  
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererMatchDomain"), "true"));
-
+				
+				/* unprotectedExtensions - default to none unless specified */
+				this.javascriptUnprotectedExtensions = CsrfGuardUtils.getInitParameter(servletConfig, "unprotected-extensions",  
+						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.UnprotectedExtensions"), "");
 
 				this.javascriptSourceFile = CsrfGuardUtils.getInitParameter(servletConfig, "source-file",  
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.sourceFile"), null);
@@ -577,5 +580,18 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	@Override
 	public String getDomainOrigin() {
 		return domainOrigin;
+	}
+	/**
+	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
+	 */
+	private String javascriptUnprotectedExtensions;
+	
+	/**
+	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
+	 */
+	@Override
+	public String getJavascriptUnprotectedExtensions() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptUnprotectedExtensions;
 	}
 }

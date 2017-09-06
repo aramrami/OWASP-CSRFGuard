@@ -81,6 +81,8 @@ public final class JavaScriptServlet extends HttpServlet {
 	
 	private static final String TOKENS_PER_PAGE_IDENTIFIER = "%TOKENS_PER_PAGE%";
 	
+	private static final String UNPROTECTED_EXTENSIONS_IDENTIFIER = "%UNPROTECTED_EXTENSIONS%";
+	
 	private static ServletConfig servletConfig = null;
 
 	public static ServletConfig getStaticServletConfig() {
@@ -240,6 +242,7 @@ public final class JavaScriptServlet extends HttpServlet {
 		code = code.replace(INJECT_INTO_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoAttributes()));
 		code = code.replace(INJECT_INTO_XHR_IDENTIFIER, String.valueOf(csrfGuard.isAjaxEnabled()));
 		code = code.replace(TOKENS_PER_PAGE_IDENTIFIER, String.valueOf(csrfGuard.isTokenPerPageEnabled()));
+		code = code.replace(UNPROTECTED_EXTENSIONS_IDENTIFIER, String.valueOf(csrfGuard.getJavascriptUnprotectedExtensions()));
 		code = code.replace(DOMAIN_ORIGIN_IDENTIFIER, csrfGuard.getDomainOrigin() == null ? CsrfGuardUtils.defaultString(parseDomain(request.getRequestURL())) : csrfGuard.getDomainOrigin());
 		code = code.replace(DOMAIN_STRICT_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptDomainStrict()));
 		code = code.replace(CONTEXT_PATH_IDENTIFIER, CsrfGuardUtils.defaultString(request.getContextPath()));

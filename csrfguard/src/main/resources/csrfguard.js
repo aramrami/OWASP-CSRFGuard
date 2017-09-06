@@ -308,7 +308,7 @@
 	function injectTokenAttribute(element, attr, tokenName, tokenValue, pageTokens) {
 		var location = element.getAttribute(attr);
 		
-		if(location != null && isValidUrl(location)) {
+		if(location != null && isValidUrl(location) !isUnprotectedExtension(location)) {
 			var uri = parseUri(location);
 			var value = (pageTokens[uri] != null ? pageTokens[uri] : tokenValue);
 			
@@ -325,7 +325,43 @@
 			}
 		}
 	}
-
+	/**
+	 * Added to support isUnprotectedExtension(src)
+	 * @param filename
+	 * @return extension or EMPTY
+	 */
+	function getFileExtension(filename){
+		var rc = '';
+		/* take the part before the ';' if it exists (often for UrlRewriting - ex: ;JSESSIONID=x) */
+		if(filename.indexOf(';')!==-1){
+			filename = filename.split(';')[0];
+		}
+		if(filename.indexOf('.')!==-1){
+			rc = filename.substring(filename.lastIndexOf('.')+1, filename.length) || filename;
+		}
+		return rc;
+	}
+	/**
+	 * get the file extension and match it against a list of known static file extensions
+	 * @param src
+	 * @return
+	 */
+	function isUnprotectedExtension(src){
+		var rc = false;
+		var exts = "%UNPROTECTED_EXTENSIONS%";/* example(for properties): "js,css,gif,png,ico,jpg" */
+		if(exts!==""){
+			var filename = parseUri(src);
+			var ext = getFileExtension(filename).toLowerCase();
+			var e = exts.split(',');
+			for(var i=0;i < e.length;i++){
+				if(e[i]===ext){
+					rc = true;
+					break;
+				}
+			}
+		}
+		return rc;
+	}
 	/** inject csrf prevention tokens throughout dom **/
 	function injectTokens(tokenName, tokenValue) {
 		/** obtain reference to page tokens if enabled **/
