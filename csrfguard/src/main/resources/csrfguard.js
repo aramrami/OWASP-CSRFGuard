@@ -75,14 +75,21 @@
 	    };
 	}();
 	
-	/** string utility functions **/
-	String.prototype.startsWith = function(prefix) {
-		return this.indexOf(prefix) === 0;
-	};
+     /** string utility functions (Polyfills from Mozilla website) **/
+     if (!String.prototype.startsWith) {
+         String.prototype.startsWith = function(searchString, position) {
+             return this.substr(position || 0, searchString.length) === searchString;
+         };
+     }
 
-	String.prototype.endsWith = function(suffix) {
-		return this.match(suffix+"$") == suffix;
-	};
+     if (!String.prototype.endsWith)
+         String.prototype.endsWith = function(searchStr, Position) {
+             if (!(Position < this.length))
+                 Position = this.length;
+             else
+                 Position |= 0; // round position
+         return this.substr(Position - searchStr.length, searchStr.length) === searchStr;
+     };
 
 	/** hook using standards based prototype **/
 	function hijackStandard() {
