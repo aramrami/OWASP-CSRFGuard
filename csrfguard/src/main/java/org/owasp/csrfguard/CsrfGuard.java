@@ -480,19 +480,7 @@ public final class CsrfGuard {
 		response.setContentLength(code.length());
 
 		/** write auto posting form **/
-		OutputStream output = null;
-		PrintWriter writer = null;
-
-		try {
-			output = response.getOutputStream();
-			writer = new PrintWriter(output);
-
-			writer.write(code);
-			writer.flush();
-		} finally {
-			Writers.close(writer);
-			Streams.close(output);
-		}
+		response.getWriter().write(code);
 	}
 
 	@Override
