@@ -22,7 +22,7 @@
 		<filter-name>CSRFGuard</filter-name>
 		<filter-class>org.owasp.csrfguard.CsrfGuardFilter</filter-class>
 	</filter>
-	
+
 	<filter-mapping>
 		<filter-name>CSRFGuard</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -31,6 +31,10 @@
 	<servlet>
 		<servlet-name>JavaScriptServlet</servlet-name>
 		<servlet-class>org.owasp.csrfguard.servlet.JavaScriptServlet</servlet-class>
+		<init-param>
+			<param-name>inject-into-attributes</param-name>
+			<param-value>true</param-value>
+		</init-param>
 	</servlet>
 
 	<servlet-mapping>
