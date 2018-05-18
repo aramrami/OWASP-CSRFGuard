@@ -267,7 +267,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererMatchDomain"), "true"));
 
 
-				this.javascriptSourceFile = CsrfGuardUtils.getInitParameter(servletConfig, "source-file",  
+				this.javascriptSourceFile = CsrfGuardUtils.getInitParameter(servletConfig, "source-file",
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.sourceFile"), null);
 				this.javascriptXrequestedWith = CsrfGuardUtils.getInitParameter(servletConfig, "x-requested-with",  
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.xRequestedWith"), "OWASP CSRFGuard Project");
@@ -275,6 +275,12 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent("META-INF/csrfguard.js", true);
 	            } else if (this.javascriptSourceFile.startsWith("META-INF/")) {
 	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(this.javascriptSourceFile, true);
+	            } else if (this.javascriptSourceFile.startsWith("classpath:")) {
+	                final String location = this.javascriptSourceFile.substring("classpath:".length()).trim();
+	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(location, true);
+	            } else if (this.javascriptSourceFile.startsWith("file:")) {
+	                final String location = this.javascriptSourceFile.substring("file:".length()).trim();
+	                this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(location);
 	            } else if (servletConfig.getServletContext().getRealPath(this.javascriptSourceFile) != null) {
 	            	this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(
 	            			servletConfig.getServletContext().getRealPath(this.javascriptSourceFile));
