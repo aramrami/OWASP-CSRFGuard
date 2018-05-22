@@ -81,7 +81,7 @@
 	}
 
 	function endsWith(s, suffix) {
-		return s.match(suffix+"$") == suffix;
+		return s.substring(s.length - suffix.length) === suffix;
 	}
 
 	/** hook using standards based prototype **/
