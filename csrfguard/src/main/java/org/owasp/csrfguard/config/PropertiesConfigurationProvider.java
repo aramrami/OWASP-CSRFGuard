@@ -263,6 +263,9 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				this.javascriptRefererPattern = Pattern.compile(CsrfGuardUtils.getInitParameter(servletConfig, "referer-pattern",  
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererPattern"), ".*"));
 
+				this.javascriptRefererMatchProtocol = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "referer-match-protocol",
+						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererMatchProtocol"), "true"));
+
 				this.javascriptRefererMatchDomain = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "referer-match-domain",  
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererMatchDomain"), "true"));
 
@@ -458,11 +461,23 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private boolean javascriptInjectIntoForms;
 
+	private boolean javascriptRefererMatchProtocol;
+
 	/**
 	 * if the referer must match domain
 	 */
 	private boolean javascriptRefererMatchDomain;
-	
+
+	/**
+	 * if the referer protocol must match protocol on the domain
+	 * @return the isJavascriptRefererMatchProtocol
+	 */
+	@Override
+	public boolean isJavascriptRefererMatchProtocol() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptRefererMatchProtocol;
+	}
+
 	/**
 	 * if the referer must match domain
 	 * @return the javascriptRefererMatchDomain

@@ -43,7 +43,7 @@ import org.owasp.csrfguard.log.ILogger;
  * Used before initialization has occurred.
  */
 public final class NullConfigurationProvider implements ConfigurationProvider {
-	
+
 	private static final ILogger logger = new ConsoleLogger();
 	
 	public NullConfigurationProvider() {
@@ -213,6 +213,14 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
 	 */
 	public Set<String> getUnprotectedMethods() {
 		return Collections.emptySet();
+	}
+
+	/**
+	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptRefererMatchProtocol()
+	 */
+	@Override
+	public boolean isJavascriptRefererMatchProtocol() {
+		return false;
 	}
 
 	/**

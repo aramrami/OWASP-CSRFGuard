@@ -107,10 +107,11 @@ public final class JavaScriptServlet extends HttpServlet {
 		}
 			
 		if (refererHeader != null && CsrfGuard.getInstance().isJavascriptRefererMatchDomain()) {
+			boolean isJavascriptRefererMatchProtocol = CsrfGuard.getInstance().isJavascriptRefererMatchProtocol();
 			//this is something like http://something.com/path or https://something.com/path
 			String url = request.getRequestURL().toString();
-			String requestProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(url);
-			String refererProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(refererHeader);
+			String requestProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(url, isJavascriptRefererMatchProtocol);
+			String refererProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(refererHeader, isJavascriptRefererMatchProtocol);
 			if (!refererProtocolAndDomain.equals(requestProtocolAndDomain)) {
 				CsrfGuard.getInstance().getLogger().log(LogLevel.Error, "Referer domain " + refererHeader + " does not match request domain: " + url);
 				hasError = true;
