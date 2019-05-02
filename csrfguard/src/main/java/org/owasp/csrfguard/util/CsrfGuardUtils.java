@@ -74,7 +74,7 @@ public class CsrfGuardUtils {
 			return httpProtocolAndDomain(url);
 		}
 
-		return httpProtocolAndDomain(url.replaceFirst("^(http[s])",""));
+		return httpProtocolAndDomain(url.replaceFirst("^(http[s]?)://",""));
 	}
 
 	/**
