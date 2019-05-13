@@ -545,8 +545,18 @@ public final class CsrfGuard {
 		return sb.toString();
 	}
 
-	private boolean isAjaxRequest(HttpServletRequest request) {
-		return request.getHeader("X-Requested-With") != null;
+	private boolean isAjaxRequest(final HttpServletRequest request) {
+		final String header = request.getHeader("X-Requested-With");
+		if (header == null) {
+			return false;
+		}
+		final String[] headers = header.split(",");
+		for (final String requestedWithHeader: headers) {
+			if ("XMLHttpRequest".equals(requestedWithHeader.trim())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void verifyAjaxToken(HttpServletRequest request) throws CsrfGuardException {
