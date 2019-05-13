@@ -1,12 +1,12 @@
-# IMPORTANT NOTICE #
+# IMPORTANT NOTICE
 
 Weare working on new version of CSRFGuard including a lot of merge request with goood proposals and also a new code to fix issue on XS1 attacks that bypass CSRFGuard.
 
-## Target date: end of Q3 2019 ##
+## Target date: end of Q3 2019
 
-## We ned your help. If you want to give few hour of your time to help us please contact me. ##
+## We ned your help. If you want to give few hour of your time to help us please contact me.
 
-## OWASP CSRFGuard 3.1.0
+# OWASP CSRFGuard 3.1.0 
 
 [http://www.owasp.org/index.php/Category:OWASP_CSRFGuard_Project](http://www.owasp.org/index.php/Category:OWASP_CSRFGuard_Project)
 
