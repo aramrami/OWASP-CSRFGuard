@@ -243,6 +243,10 @@ public final class CsrfGuard {
 		return config().isJavascriptDomainStrict();
 	}
 
+	public boolean isJavascriptRefererMatchProtocol() {
+		return config().isJavascriptRefererMatchProtocol();
+	}
+
 	public boolean isJavascriptRefererMatchDomain() {
 		return config().isJavascriptRefererMatchDomain();
 	}
@@ -515,6 +519,7 @@ public final class CsrfGuard {
 		sb.append(String.format("* Javascript inject attributes: %s\r\n", isJavascriptInjectIntoAttributes()));
 		sb.append(String.format("* Javascript inject forms: %s\r\n", isJavascriptInjectIntoForms()));
 		sb.append(String.format("* Javascript referer pattern: %s\r\n", getJavascriptRefererPattern()));
+		sb.append(String.format("* Javascript referer match protocol: %s\r\n", isJavascriptRefererMatchProtocol()));
 		sb.append(String.format("* Javascript referer match domain: %s\r\n", isJavascriptRefererMatchDomain()));
 		sb.append(String.format("* Javascript source file: %s\r\n", getJavascriptSourceFile()));
 		sb.append(String.format("* Javascript X requested with: %s\r\n", getJavascriptXrequestedWith()));

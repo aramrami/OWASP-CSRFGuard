@@ -123,8 +123,14 @@ public interface ConfigurationProvider {
 	boolean isJavascriptInjectIntoForms();
 
 	/**
-	 * if the referer to te javascript must match domain
-	 * @return true if the javascrript must match domain
+	 * if the referer to the javascript must match match the protocol of the domain
+	 * @return true if the javascript must match the protocol of the domain
+	 */
+	boolean isJavascriptRefererMatchProtocol();
+
+	/**
+	 * if the referer to the javascript must match domain
+	 * @return true if the javascript must match domain
 	 */
 	boolean isJavascriptRefererMatchDomain();
 

@@ -61,6 +61,22 @@ import javax.xml.stream.XMLStreamWriter;
  */
 public class CsrfGuardUtils {
 
+	private CsrfGuardUtils() {}
+
+	/**
+	 * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
+	 * @param url a string representing a URL
+	 * @param includeProtocol
+	 * @return the path with or without the protocol
+	 */
+	public static String httpProtocolAndDomain(String url, boolean includeProtocol) {
+		if (includeProtocol) {
+			return httpProtocolAndDomain(url);
+		}
+
+		return httpProtocolAndDomain(url.replaceFirst("^(http[s]?)://",""));
+	}
+
 	/**
 	 * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
 	 * @param url a string representing a URL
