@@ -49,16 +49,12 @@ import org.owasp.csrfguard.action.IAction;
 import org.owasp.csrfguard.config.ConfigurationProvider;
 import org.owasp.csrfguard.config.ConfigurationProviderFactory;
 import org.owasp.csrfguard.config.NullConfigurationProvider;
-import org.owasp.csrfguard.config.PropertiesConfigurationProvider;
 import org.owasp.csrfguard.config.PropertiesConfigurationProviderFactory;
 import org.owasp.csrfguard.config.overlay.ExpirableCache;
 import org.owasp.csrfguard.log.ILogger;
 import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.servlet.JavaScriptServlet;
-import org.owasp.csrfguard.util.CsrfGuardUtils;
-import org.owasp.csrfguard.util.RandomGenerator;
-import org.owasp.csrfguard.util.Streams;
-import org.owasp.csrfguard.util.Writers;
+import org.owasp.csrfguard.util.*;
 
 public final class CsrfGuard {
 
@@ -95,6 +91,17 @@ public final class CsrfGuard {
 		
 		
 		return configurationProvider;
+	}
+
+	void generatePageTokensForSession(final HttpSession session) {
+		final Map<String, String> pageTokens = SessionUtils.extractPageTokensFromSession(session);
+		final Set<String> protectedPages = getProtectedPages();
+
+		for (String protectedResource : protectedPages) {
+			pageTokens.put(protectedResource, TokenUtils.getRandomToken());
+		}
+
+		SessionUtils.updatePageTokensOnSession(session, pageTokens);
 	}
 	
 	/**
@@ -285,8 +292,8 @@ public final class CsrfGuard {
 
 		if (session != null) {
 			if (isTokenPerPageEnabled()) {
-				@SuppressWarnings("unchecked")
-				Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
+
+				Map<String, String> pageTokens = SessionUtils.extractPageTokensFromSession(session);
 
 				if (pageTokens != null) {
 					if (isTokenPerPagePrecreate()) {
@@ -393,8 +400,8 @@ public final class CsrfGuard {
 			
 			/** create page specific token **/
 			if (isTokenPerPageEnabled()) {
-				@SuppressWarnings("unchecked")
-				Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
+
+				Map<String, String> pageTokens = SessionUtils.extractPageTokensFromSession(session);
 
 				/** first time initialization **/
 				if (pageTokens == null) {
@@ -572,9 +579,13 @@ public final class CsrfGuard {
 	}
 
 	private void verifyPageToken(HttpServletRequest request) throws CsrfGuardException {
+
 		HttpSession session = request.getSession(true);
-		@SuppressWarnings("unchecked")
-		Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
+		Map<String, String> pageTokens = SessionUtils.extractPageTokensFromSession(session);
+
+		if (!getProtectedPages().contains(request.getRequestURI())) {
+			return;
+		}
 
 		String tokenFromPages = (pageTokens != null ? pageTokens.get(request.getRequestURI()) : null);
 		String tokenFromSession = (String) session.getAttribute(getSessionKey());
@@ -586,10 +597,12 @@ public final class CsrfGuard {
 		} else if (tokenFromPages != null) {
 			if (!tokenFromPages.equals(tokenFromRequest)) {
 				/** FAIL: request does not match page token **/
+				SessionUtils.invalidateTokenForResource(session, tokenFromPages, tokenFromRequest);
 				throw new CsrfGuardException("request token does not match page token");
 			}
 		} else if (!tokenFromSession.equals(tokenFromRequest)) {
 			/** FAIL: the request token does not match the session token **/
+			SessionUtils.invalidateSessionToken(session);
 			throw new CsrfGuardException("request token does not match session token");
 		}
 	}
@@ -604,6 +617,7 @@ public final class CsrfGuard {
 			throw new CsrfGuardException("required token is missing from the request");
 		} else if (!tokenFromSession.equals(tokenFromRequest)) {
 			/** FAIL: the request token does not match the session token **/
+			SessionUtils.invalidateSessionToken(session);
 			throw new CsrfGuardException("request token does not match session token");
 		}
 	}
@@ -624,8 +638,8 @@ public final class CsrfGuard {
 
 		/** rotate page token **/
 		if (isTokenPerPageEnabled()) {
-			@SuppressWarnings("unchecked")
-			Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
+
+			Map<String, String> pageTokens = SessionUtils.extractPageTokensFromSession(session);
 
 			try {
 				pageTokens.put(request.getRequestURI(), RandomGenerator.generateRandomId(getPrng(), getTokenLength()));

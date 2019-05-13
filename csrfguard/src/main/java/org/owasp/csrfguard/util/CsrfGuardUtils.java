@@ -1422,4 +1422,14 @@ public class CsrfGuardUtils {
 	    return str == null ? "" : str;
 	  }
 
+    @SuppressWarnings("unchecked")
+    public static <T, E> T getMapKeyByValue(Map<T, E> map, E value) {
+        for (Map.Entry<T, E> entry : map.entrySet()) {
+            if (entry.getValue().equals(value)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
 }
