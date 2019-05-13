@@ -412,6 +412,8 @@
 	 * the token hijacking problem.
 	 */
 	if(isValidDomain(document.domain, "%DOMAIN_ORIGIN%")) {
+		var token_name = '%TOKEN_NAME%';
+		var token_value = '%TOKEN_VALUE%';
 		/** optionally include Ajax support **/
 		if(%INJECT_XHR% == true) {
 			if(navigator.appName == "Microsoft Internet Explorer") {
@@ -428,8 +430,8 @@
 		
 		var token_pair = xhr.responseText;
 		token_pair = token_pair.split(":");
-		var token_name = token_pair[0];
-		var token_value = token_pair[1];
+		token_name = token_pair[0];
+		token_value = token_pair[1];
 
 			XMLHttpRequest.prototype.onsend = function(data) {
 				if(isValidUrl(this.url)) {
