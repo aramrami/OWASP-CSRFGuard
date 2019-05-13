@@ -1,6 +1,6 @@
 # IMPORTANT NOTICE
 
-Weare working on new version of CSRFGuard including a lot of merge request with goood proposals and also a new code to fix issue on XS1 attacks that bypass CSRFGuard.
+We are working on new version of CSRFGuard including a lot of merge request with goood proposals and also a new code to fix known issues on XSS attacks that bypass CSRFGuard.
 
 ## Target date: end of Q3 2019
 
