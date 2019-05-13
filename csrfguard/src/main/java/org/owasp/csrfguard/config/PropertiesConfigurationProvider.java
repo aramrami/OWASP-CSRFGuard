@@ -111,7 +111,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 			unprotectedMethods = new HashSet<String>();
 			/** load simple properties **/
 			logger = (ILogger) Class.forName(propertyString(properties, "org.owasp.csrfguard.Logger", "org.owasp.csrfguard.log.ConsoleLogger")).newInstance();
-			tokenName = propertyString(properties, "org.owasp.csrfguard.TokenName", "OWASP_CSRFGUARD");
+			tokenName = propertyString(properties, "org.owasp.csrfguard.TokenName", "OWASP-CSRFGUARD");
 			tokenLength = Integer.parseInt(propertyString(properties, "org.owasp.csrfguard.TokenLength", "32"));
 			rotate = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.Rotate", "false"));
 			tokenPerPage = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.TokenPerPage", "false"));
@@ -263,11 +263,14 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				this.javascriptRefererPattern = Pattern.compile(CsrfGuardUtils.getInitParameter(servletConfig, "referer-pattern",  
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererPattern"), ".*"));
 
+				this.javascriptRefererMatchProtocol = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "referer-match-protocol",
+						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererMatchProtocol"), "true"));
+
 				this.javascriptRefererMatchDomain = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "referer-match-domain",  
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererMatchDomain"), "true"));
 
 
-				this.javascriptSourceFile = CsrfGuardUtils.getInitParameter(servletConfig, "source-file",  
+				this.javascriptSourceFile = CsrfGuardUtils.getInitParameter(servletConfig, "source-file",
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.sourceFile"), null);
 				this.javascriptXrequestedWith = CsrfGuardUtils.getInitParameter(servletConfig, "x-requested-with",  
 						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.xRequestedWith"), "OWASP CSRFGuard Project");
@@ -275,6 +278,12 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent("META-INF/csrfguard.js", true);
 	            } else if (this.javascriptSourceFile.startsWith("META-INF/")) {
 	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(this.javascriptSourceFile, true);
+	            } else if (this.javascriptSourceFile.startsWith("classpath:")) {
+	                final String location = this.javascriptSourceFile.substring("classpath:".length()).trim();
+	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(location, true);
+	            } else if (this.javascriptSourceFile.startsWith("file:")) {
+	                final String location = this.javascriptSourceFile.substring("file:".length()).trim();
+	                this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(location);
 	            } else if (servletConfig.getServletContext().getRealPath(this.javascriptSourceFile) != null) {
 	            	this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(
 	            			servletConfig.getServletContext().getRealPath(this.javascriptSourceFile));
@@ -458,11 +467,23 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private boolean javascriptInjectIntoForms;
 
+	private boolean javascriptRefererMatchProtocol;
+
 	/**
 	 * if the referer must match domain
 	 */
 	private boolean javascriptRefererMatchDomain;
-	
+
+	/**
+	 * if the referer protocol must match protocol on the domain
+	 * @return the isJavascriptRefererMatchProtocol
+	 */
+	@Override
+	public boolean isJavascriptRefererMatchProtocol() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptRefererMatchProtocol;
+	}
+
 	/**
 	 * if the referer must match domain
 	 * @return the javascriptRefererMatchDomain

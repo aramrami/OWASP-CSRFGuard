@@ -61,6 +61,22 @@ import javax.xml.stream.XMLStreamWriter;
  */
 public class CsrfGuardUtils {
 
+	private CsrfGuardUtils() {}
+
+	/**
+	 * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
+	 * @param url a string representing a URL
+	 * @param includeProtocol
+	 * @return the path with or without the protocol
+	 */
+	public static String httpProtocolAndDomain(String url, boolean includeProtocol) {
+		if (includeProtocol) {
+			return httpProtocolAndDomain(url);
+		}
+
+		return httpProtocolAndDomain(url.replaceFirst("^(http[s]?)://",""));
+	}
+
 	/**
 	 * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
 	 * @param url a string representing a URL
@@ -1405,5 +1421,15 @@ public class CsrfGuardUtils {
 	  public static String defaultString(String str) {
 	    return str == null ? "" : str;
 	  }
+
+    @SuppressWarnings("unchecked")
+    public static <T, E> T getMapKeyByValue(Map<T, E> map, E value) {
+        for (Map.Entry<T, E> entry : map.entrySet()) {
+            if (entry.getValue().equals(value)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
 
 }

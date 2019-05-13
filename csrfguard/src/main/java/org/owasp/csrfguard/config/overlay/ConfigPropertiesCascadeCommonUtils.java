@@ -9183,7 +9183,17 @@ public class ConfigPropertiesCascadeCommonUtils  {
       throw new RuntimeException("Problem copying file: " + fromFile.getAbsolutePath() 
           + " to file: " + toFile.getAbsolutePath());
     }
-    
+    // Adding finally block to ensure streams are closed
+    finally {
+      try{
+        fromFileStream.close();
+        toFileStream.close();
+      }
+      catch (IOException e) {
+        throw new RuntimeException("Problem closing FileStream while copying file: " + fromFile.getAbsolutePath()
+            + " to file: " + toFile.getAbsolutePath());
+      }
+    }
   }
 
   /**

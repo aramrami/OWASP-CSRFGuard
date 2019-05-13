@@ -1,20 +1,20 @@
 /**
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011
  * All rights reserved.
- * 
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of OWASP nor the names of its contributors may be used
- *       to endorse or promote products derived from this software without specific
- *       prior written permission.
- *
+ * <p>
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of OWASP nor the names of its contributors may be used
+ * to endorse or promote products derived from this software without specific
+ * prior written permission.
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,6 +29,7 @@
 package org.owasp.csrfguard;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -41,68 +42,67 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.owasp.csrfguard.http.InterceptRedirectResponse;
+import org.owasp.csrfguard.util.SessionUtils;
 
 public final class CsrfGuardFilter implements Filter {
 
-	private FilterConfig filterConfig = null;
+    private FilterConfig filterConfig = null;
 
-	@Override
-	public void destroy() {
-		filterConfig = null;
-	}
+    @Override
+    public void destroy() {
+        filterConfig = null;
+    }
 
-	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 
-		//maybe the short circuit to disable is set
-		if (!CsrfGuard.getInstance().isEnabled()) {
-			filterChain.doFilter(request, response);
-			return;
-		}
-		
-		/** only work with HttpServletRequest objects **/
-		if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
-			
-			HttpServletRequest httpRequest = (HttpServletRequest) request;
-			HttpSession session = httpRequest.getSession(false);
-			
-			//if there is no session and we arent validating when no session exists
-			if (session == null && !CsrfGuard.getInstance().isValidateWhenNoSessionExists()) {
-				// If there is no session, no harm can be done
-				filterChain.doFilter(httpRequest, (HttpServletResponse) response);
-				return;
-			}
+        //maybe the short circuit to disable is set
+        if (!CsrfGuard.getInstance().isEnabled()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-			CsrfGuard csrfGuard = CsrfGuard.getInstance();
-			csrfGuard.getLogger().log(String.format("CsrfGuard analyzing request %s", httpRequest.getRequestURI()));
+        /** only work with HttpServletRequest objects **/
+        if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
 
-			InterceptRedirectResponse httpResponse = new InterceptRedirectResponse((HttpServletResponse) response, httpRequest, csrfGuard);
+            HttpServletRequest httpRequest = (HttpServletRequest) request;
+            HttpSession session = httpRequest.getSession(false);
+
+            //if there is no session and we arent validating when no session exists
+            if (session == null && !CsrfGuard.getInstance().isValidateWhenNoSessionExists()) {
+                // If there is no session, no harm can be done
+                filterChain.doFilter(httpRequest, (HttpServletResponse) response);
+                return;
+            }
+
+            CsrfGuard csrfGuard = CsrfGuard.getInstance();
+            InterceptRedirectResponse httpResponse = new InterceptRedirectResponse((HttpServletResponse) response, httpRequest, csrfGuard);
 
 //			 if(MultipartHttpServletRequest.isMultipartRequest(httpRequest)) {
 //				 httpRequest = new MultipartHttpServletRequest(httpRequest);
 //			 }
 
-			if ((session != null && session.isNew()) && csrfGuard.isUseNewTokenLandingPage()) {
-				csrfGuard.writeLandingPage(httpRequest, httpResponse);
-			} else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
-				filterChain.doFilter(httpRequest, httpResponse);
-			} else {
-				/** invalid request - nothing to do - actions already executed **/
-			}
+            if ((session != null && session.isNew()) && csrfGuard.isUseNewTokenLandingPage()) {
+                csrfGuard.writeLandingPage(httpRequest, httpResponse);
+            } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
+                filterChain.doFilter(httpRequest, httpResponse);
+            } else {
+                /** invalid request - nothing to do - actions already executed **/
+            }
 
-			/** update tokens **/
-			csrfGuard.updateTokens(httpRequest);
+            /** update tokens **/
+            csrfGuard.updateTokens(httpRequest);
 
-		} else {
-			filterConfig.getServletContext().log(String.format("[WARNING] CsrfGuard does not know how to work with requests of class %s ", request.getClass().getName()));
+        } else {
+            filterConfig.getServletContext().log(String.format("[WARNING] CsrfGuard does not know how to work with requests of class %s ", request.getClass().getName()));
 
-			filterChain.doFilter(request, response);
-		}
-	}
+            filterChain.doFilter(request, response);
+        }
+    }
 
-	@Override
-	public void init(@SuppressWarnings("hiding") FilterConfig filterConfig) throws ServletException {
-		this.filterConfig = filterConfig;
-	}
+    @Override
+    public void init(@SuppressWarnings("hiding") FilterConfig filterConfig) throws ServletException {
+        this.filterConfig = filterConfig;
+    }
 
 }
