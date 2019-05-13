@@ -81,7 +81,11 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
 
 	@Override
 	public SecureRandom getPrng() {
-		return null;
+		try {
+			return SecureRandom.getInstance("SHA1PRNG", "SUN");
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
