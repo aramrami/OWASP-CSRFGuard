@@ -173,19 +173,7 @@ public final class JavaScriptServlet extends HttpServlet {
 		response.setContentType("text/plain");
 
 		/** write dynamic javascript **/
-		OutputStream output = null;
-		PrintWriter writer = null;
-
-		try {
-			output = response.getOutputStream();
-			writer = new PrintWriter(output);
-
-			writer.write(token_pair);
-			writer.flush();
-		} finally {
-			Writers.close(writer);
-			Streams.close(output);
-		}
+		response.getWriter().write(token_pair);
 	}
 
 
@@ -200,19 +188,7 @@ public final class JavaScriptServlet extends HttpServlet {
 		response.setContentLength(pageTokensString.length());
 
 		/** write dynamic javascript **/
-		OutputStream output = null;
-		PrintWriter writer = null;
-
-		try {
-			output = response.getOutputStream();
-			writer = new PrintWriter(output);
-
-			writer.write(pageTokensString);
-			writer.flush();
-		} finally {
-			Writers.close(writer);
-			Streams.close(output);
-		}
+		response.getWriter().write(pageTokensString);
 	}
 
 	private void writeJavaScript(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -248,19 +224,7 @@ public final class JavaScriptServlet extends HttpServlet {
 		code = code.replace(X_REQUESTED_WITH_IDENTIFIER, CsrfGuardUtils.defaultString(csrfGuard.getJavascriptXrequestedWith()));
 
 		/** write dynamic javascript **/
-		OutputStream output = null;
-		PrintWriter writer = null;
-
-		try {
-			output = response.getOutputStream();
-			writer = new PrintWriter(output);
-
-			writer.write(code);
-			writer.flush();
-		} finally {
-			Writers.close(writer);
-			Streams.close(output);
-		}
+		response.getWriter().write(code);
 	}
 
 	private String parsePageTokens(Map<String, String> pageTokens) {
