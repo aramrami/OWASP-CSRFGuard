@@ -76,13 +76,13 @@
 	}();
 	
 	/** string utility functions **/
-	String.prototype.startsWith = function(prefix) {
-		return this.indexOf(prefix) === 0;
-	};
+	function startsWith(s, prefix) {
+		return s.indexOf(prefix) === 0;
+	}
 
-	String.prototype.endsWith = function(suffix) {
-		return this.match(suffix+"$") == suffix;
-	};
+	function endsWith(s, suffix) {
+		return s.substring(s.length - suffix.length) === suffix;
+	}
 
 	/** hook using standards based prototype **/
 	function hijackStandard() {
@@ -192,9 +192,9 @@
 			result = true;
 		} else if(%DOMAIN_STRICT% == false) {
 			if(target.charAt(0) == '.') {
-				result = current.endsWith(target);
+				result = endsWith(current, target);
 			} else {
-				result = current.endsWith('.' + target);
+				result = endsWith(current, '.' + target);
 			}
 		}
 		
@@ -228,7 +228,7 @@
 		} else if(src.charAt(0) == '#') {
 			result = false;
 			/** ensure it is a local resource without a protocol **/
-		} else if(!src.startsWith("//") && (src.charAt(0) == '/' || src.indexOf(':') == -1)) {
+		} else if(!startsWith(src, "//") && (src.charAt(0) == '/' || src.indexOf(':') == -1)) {
 			result = true;
 		}
 		
