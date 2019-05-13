@@ -268,4 +268,11 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
 	public String getDomainOrigin() {
 		return null;
 	}
+	/**
+	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptUnprotectedExtensions()
+	 */
+	@Override
+	public String getJavascriptUnprotectedExtensions() {
+		return null;
+	}
 }

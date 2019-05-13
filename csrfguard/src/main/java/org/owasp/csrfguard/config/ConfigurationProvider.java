@@ -139,5 +139,11 @@ public interface ConfigurationProvider {
 	String getJavascriptXrequestedWith();
 
 	String getJavascriptTemplateCode();
+	
+	/**
+	 * example:"js,css,gif,png,ico,jpg"
+	 * @return
+	 */
+	String getJavascriptUnprotectedExtensions();
 
 }

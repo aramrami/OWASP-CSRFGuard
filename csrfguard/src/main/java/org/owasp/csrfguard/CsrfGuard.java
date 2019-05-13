@@ -282,6 +282,10 @@ public final class CsrfGuard {
 		return config().getJavascriptTemplateCode();
 	}
 	
+	public String getJavascriptUnprotectedExtensions() {
+		return config().getJavascriptUnprotectedExtensions();
+	}
+	
 	public String getTokenValue(HttpServletRequest request) {
 		return getTokenValue(request, request.getRequestURI());
 	}
@@ -516,6 +520,7 @@ public final class CsrfGuard {
 		sb.append(String.format("* Javascript referer pattern: %s\r\n", getJavascriptRefererPattern()));
 		sb.append(String.format("* Javascript referer match protocol: %s\r\n", isJavascriptRefererMatchProtocol()));
 		sb.append(String.format("* Javascript referer match domain: %s\r\n", isJavascriptRefererMatchDomain()));
+		sb.append(String.format("* Javascript unprotected extensions: %s\r\n", getJavascriptUnprotectedExtensions()));
 		sb.append(String.format("* Javascript source file: %s\r\n", getJavascriptSourceFile()));
 		sb.append(String.format("* Javascript X requested with: %s\r\n", getJavascriptXrequestedWith()));
 		sb.append(String.format("* Protected methods: %s\r\n", CsrfGuardUtils.toStringForLog(getProtectedMethods())));
