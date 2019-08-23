@@ -586,10 +586,6 @@ public final class CsrfGuard {
 		HttpSession session = request.getSession(true);
 		Map<String, String> pageTokens = SessionUtils.extractPageTokensFromSession(session);
 
-		if (!getProtectedPages().contains(request.getRequestURI())) {
-			return;
-		}
-
 		String tokenFromPages = (pageTokens != null ? pageTokens.get(request.getRequestURI()) : null);
 		String tokenFromSession = (String) session.getAttribute(getSessionKey());
 		String tokenFromRequest = request.getParameter(getTokenName());
