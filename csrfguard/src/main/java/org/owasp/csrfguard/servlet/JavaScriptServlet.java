@@ -28,28 +28,25 @@
  */
 package org.owasp.csrfguard.servlet;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
+import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.CsrfGuardServletContextListener;
+import org.owasp.csrfguard.log.LogLevel;
+import org.owasp.csrfguard.util.CsrfGuardUtils;
+import org.owasp.csrfguard.util.Strings;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.CsrfGuardServletContextListener;
-import org.owasp.csrfguard.log.LogLevel;
-import org.owasp.csrfguard.util.CsrfGuardUtils;
-import org.owasp.csrfguard.util.Streams;
-import org.owasp.csrfguard.util.Strings;
-import org.owasp.csrfguard.util.Writers;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 public final class JavaScriptServlet extends HttpServlet {
 
@@ -252,22 +249,12 @@ public final class JavaScriptServlet extends HttpServlet {
 	
 
 	private String parseDomain(StringBuffer url) {
-		String token = "://";
-		int index = url.indexOf(token);
-		String part = url.substring(index + token.length());
-		StringBuilder domain = new StringBuilder();
-
-		for (int i = 0; i < part.length(); i++) {
-			char character = part.charAt(i);
-
-			if (character == '/' || character == ':') {
-				break;
-			}
-
-			domain.append(character);
+		try {
+			return new URL(url.toString()).getHost();
+		} catch (MalformedURLException e) {
+			//Should not occur. javax.servlet.http.HttpServletRequest.getRequestURL should only returns valid URLs.
+			return "INVALID_URL: " + url.toString();
 		}
-
-		return domain.toString();
 	}
 	
 }
