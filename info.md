@@ -9,7 +9,7 @@
 
 ### Downloads
 
-* [Download OWASP Zap!](https://github.com/aramrami/OWASP-CSRFGuard)
+* [Download OWASP CSFGuard!](https://github.com/aramrami/OWASP-CSRFGuard)
 
 ### Code Repository
 
