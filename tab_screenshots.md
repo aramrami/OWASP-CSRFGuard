@@ -1,12 +1,10 @@
 
 ---
-
 title: Features
 layout: null
 order: 3
 tab: true
 tags: csrguard
-
 ---
 
 # CSRFGuard In Action
