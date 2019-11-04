@@ -1,11 +1,11 @@
 ### Project Classification
 
-![Flagship Project](assets/images/mature_projects.png)
+![Flagship Project](images/mature_projects.png)
 
-![Builders](assets/images/owasp_builders_small.png)
-![Breakers](assets/images/owasp_breakers_small.png)
+![Builders](images/owasp_builders_small.png)
+![Breakers](images/owasp_breakers_small.png)
 
-![Tool Project](assets/images/owasp_tool_project.png)
+![Tool Project](images/owasp_tool_project.png)
 
 ### Downloads
 
@@ -18,7 +18,7 @@
 
 ### Change Log
 
-* [CSRFGuard](https://github.com/aramrami/OWASP-CSRFGuard/commits/develop)
+* [CSRFGuard](https://github.com/aramrami/OWASP-CSRFGuard/commits)
 
 ### Licensing
 
