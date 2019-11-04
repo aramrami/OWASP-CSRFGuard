@@ -1,5 +1,16 @@
 # How Does CSRF Work?
 
+## What is CSRF (Cross-Site Request Forgery) Attacks
+
+![How Does CSRF Work](images/what_is_csrf_attacks_1.png)
+![How Does CSRF Work](images/what_is_csrf_attacks_2.png)
+![How Does CSRF Work](images/what_is_csrf_attacks_3.png)
+![How Does CSRF Work](images/what_is_csrf_attacks_4.png)
+![How Does CSRF Work](images/what_is_csrf_attacks_5.png)
+![How Does CSRF Work](images/what_is_csrf_attacks_6.png)
+![How Does CSRF Work](images/what_is_csrf_attacks_7.png)
+
+
 ## Tags
 <img src=“https://bank.com/fn?param=1”>
 <iframe src=“https://bank.com/fn?param=1”>
@@ -16,3 +27,4 @@ Subject to same origin policy
 
 ## Credentials Included
 
+![Credentials Included](images/credentials_included.png)
