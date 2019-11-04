@@ -7,6 +7,9 @@ tab: true
 tags: csrfguard
 
 ---
+# OWASP CSRFGuard 3.1.0
+
+![OWASP CSRFGuard 3.1.0](assets/images/csrfguard_3.1.0.png)
 
 # Some CSRGuard features
 
