@@ -1,4 +1,4 @@
 
 # CSRFGuard In Action
 
-![CSRFGuard in action](images/mature_projects.png)
+![CSRFGuard in action](images/csrfguard_in_action.png)
