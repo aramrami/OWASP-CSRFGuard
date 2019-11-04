@@ -10,4 +10,4 @@ tags: csrfguard
 
 # CSRFGuard In Action
 
-![CSRFGuard in action](images/csrfguard_in_action.png)
+![CSRFGuard in action](assets/images/csrfguard_in_action.png)
