@@ -12,6 +12,8 @@ We are working on new version of CSRFGuard including a lot of merge request with
 
 ## Target date for the new relase 4.0 : end of Q2 2020
 
+We need your help. If you want to give few hours of your time to help us please contact me.
+
 ## Important Security Fix
 
 An important security fix has been applied to the CSRFGuard version 3.0.
