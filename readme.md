@@ -2,7 +2,7 @@
 
 We are working on new version of CSRFGuard including a lot of merge request with goood proposals and also a new code to fix known issues on XSS attacks that bypass CSRFGuard.
 
-## Target date for the new relase 4.0 : end of Q3 2019
+## Target date for the new relase 4.0 : end of Q2 2020
 
 ## We ned your help. If you want to give few hour of your time to help us please contact me.
 
