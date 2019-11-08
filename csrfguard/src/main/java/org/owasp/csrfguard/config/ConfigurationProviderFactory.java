@@ -11,11 +11,12 @@ import java.util.Properties;
  */
 public interface ConfigurationProviderFactory {
 
-	/**
-	 * called when retrieving the configuration
-	 * @param properties describing the configuration
-	 * @return the configuration
-	 */
-	public ConfigurationProvider retrieveConfiguration(Properties properties);
+    /**
+     * Called when retrieving the configuration
+     *
+     * @param properties describing the configuration
+     * @return the configuration
+     */
+    ConfigurationProvider retrieveConfiguration(Properties properties);
 
 }

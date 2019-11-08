@@ -15,9 +15,8 @@ import org.owasp.csrfguard.util.Streams;
 
 public class CsrfGuardServletContextListener implements ServletContextListener {
 
-	private final static String CONFIG_PARAM = "Owasp.CsrfGuard.Config";
-
-	private final static String CONFIG_PRINT_PARAM = "Owasp.CsrfGuard.Config.Print";
+	private static final String CONFIG_PARAM = "Owasp.CsrfGuard.Config";
+	private static final String CONFIG_PRINT_PARAM = "Owasp.CsrfGuard.Config.Print";
 
 	/**
 	 * servlet context (will be the empty string if it is / )

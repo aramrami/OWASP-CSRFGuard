@@ -1,8 +1,8 @@
 /**
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -26,27 +26,24 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.owasp.csrfguard.action;
+package org.owasp.csrfguard.util;
 
-import java.io.Serializable;
-import java.util.*;
+/**
+ * MessageConstants - Maintains all the message constant literals.
+ *
+ * @author - srijas
+ * @since - 11/7/2019.
+ */
+public class MessageConstants {
 
-import javax.servlet.http.*;
+    private MessageConstants() {
+        //Utility Class
+    }
 
-import org.owasp.csrfguard.*;
-
-public interface IAction extends Serializable {
-
-	void setName(String name);
-
-	String getName();
-
-	void setParameter(String name, String value);
-
-	String getParameter(String name);
-
-	Map<String, String> getParameterMap();
-
-	void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException;
-	
+    public static final String MISSING_TOKEN_MSG = "Required Token is missing from the Request";
+    public static final String MISMATCH_PAGE_TOKEN_MSG = "Request Token does not match Page Token";
+    public static final String MISMATCH_SESSION_TOKEN_MSG = "Request Token does not match Session Token";
+    public static final String RANDOM_TOKEN_FAILURE_MSG = "Unable to generate the Random Token";
+    public static final String SESSION_TOKEN_MSG = "CSRFGuard expects the token to exist in " +
+            "session at this point";
 }

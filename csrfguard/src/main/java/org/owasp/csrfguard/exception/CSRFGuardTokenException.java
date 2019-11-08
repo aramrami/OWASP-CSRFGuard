@@ -1,8 +1,8 @@
 /**
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -26,27 +26,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.owasp.csrfguard.action;
+package org.owasp.csrfguard.exception;
 
-import java.io.Serializable;
-import java.util.*;
+/**
+ * CSRFGuardTokenException - Runtime Exception handling all token related errors.
+ *
+ * @author - srijas
+ * @since - 11/7/2019.
+ */
+public class CSRFGuardTokenException extends RuntimeException {
 
-import javax.servlet.http.*;
+    public CSRFGuardTokenException(String message) {
+        super(message);
+    }
 
-import org.owasp.csrfguard.*;
+    public CSRFGuardTokenException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-public interface IAction extends Serializable {
-
-	void setName(String name);
-
-	String getName();
-
-	void setParameter(String name, String value);
-
-	String getParameter(String name);
-
-	Map<String, String> getParameterMap();
-
-	void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException;
-	
+    public CSRFGuardTokenException(Throwable cause) {
+        super(cause);
+    }
 }
