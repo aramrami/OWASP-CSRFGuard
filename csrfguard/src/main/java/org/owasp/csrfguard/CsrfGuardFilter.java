@@ -28,21 +28,13 @@
  */
 package org.owasp.csrfguard;
 
-import java.io.IOException;
-import java.util.Objects;
+import org.owasp.csrfguard.http.InterceptRedirectResponse;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.owasp.csrfguard.http.InterceptRedirectResponse;
-import org.owasp.csrfguard.util.SessionUtils;
+import java.io.IOException;
 
 public final class CsrfGuardFilter implements Filter {
 

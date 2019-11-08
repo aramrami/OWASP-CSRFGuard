@@ -1,20 +1,20 @@
 /**
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011
  * All rights reserved.
- * 
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of OWASP nor the names of its contributors may be used
- *       to endorse or promote products derived from this software without specific
- *       prior written permission.
- *
+ * <p>
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of OWASP nor the names of its contributors may be used
+ * to endorse or promote products derived from this software without specific
+ * prior written permission.
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,112 +38,112 @@ import org.owasp.csrfguard.log.ILogger;
 
 public interface ConfigurationProvider {
 
-	/** @return true when this configuration provider can be cached for a minute, i.e. it is all setup */
-	boolean isCacheable();
-	
-	boolean isPrintConfig();
-	
-	ILogger getLogger();
+    /** @return true when this configuration provider can be cached for a minute, i.e. it is all setup */
+    boolean isCacheable();
 
-	String getTokenName();
+    boolean isPrintConfig();
 
-	/**
-	 * If csrf guard filter should check even if there is no session for the user
-	 * Note: this changed around 2014/04, the default behavior used to be to 
-	 * not check if there is no session.  If you want the legacy behavior (if your app
-	 * is not susceptible to CSRF if the user has no session), set this to false
-	 * @return true when validation is performed even when no session exists
-	 */
-	public boolean isValidateWhenNoSessionExists();
-	
-	int getTokenLength();
+    ILogger getLogger();
 
-	boolean isRotateEnabled();
+    String getTokenName();
 
-	boolean isTokenPerPageEnabled();
+    /**
+     * If csrf guard filter should check even if there is no session for the user
+     * Note: this changed around 2014/04, the default behavior used to be to
+     * not check if there is no session.  If you want the legacy behavior (if your app
+     * is not susceptible to CSRF if the user has no session), set this to false
+     * @return true when validation is performed even when no session exists
+     */
+    boolean isValidateWhenNoSessionExists();
 
-	boolean isTokenPerPagePrecreateEnabled();
+    int getTokenLength();
 
-	SecureRandom getPrng();
+    boolean isRotateEnabled();
 
-	String getNewTokenLandingPage();
+    boolean isTokenPerPageEnabled();
 
-	boolean isUseNewTokenLandingPage();
+    boolean isTokenPerPagePrecreateEnabled();
 
-	boolean isAjaxEnabled();
+    SecureRandom getPrng();
 
-	boolean isProtectEnabled();
+    String getNewTokenLandingPage();
 
-	String getSessionKey();
+    boolean isUseNewTokenLandingPage();
 
-	Set<String> getProtectedPages();
+    boolean isAjaxEnabled();
 
-	Set<String> getUnprotectedPages();
+    boolean isProtectEnabled();
 
-	Set<String> getProtectedMethods();
+    String getSessionKey();
 
-	/**
-	 * if there are methods here, then all other HTTP methods are protected and these (e.g. GET) are unprotected
-	 * @return the unprotected methods
-	 */
-	Set<String> getUnprotectedMethods();
+    Set<String> getProtectedPages();
 
-	/**
-	 * if the filter is enabled
-	 * @return is csrf guard filter is enabled
-	 */
-	boolean isEnabled();
-	
-	List<IAction> getActions();
-	
-	String getJavascriptSourceFile();
+    Set<String> getUnprotectedPages();
 
-	boolean isJavascriptDomainStrict();
-	
-	String getDomainOrigin();
+    Set<String> getProtectedMethods();
 
-	String getJavascriptCacheControl();
+    /**
+     * if there are methods here, then all other HTTP methods are protected and these (e.g. GET) are unprotected
+     * @return the unprotected methods
+     */
+    Set<String> getUnprotectedMethods();
 
-	Pattern getJavascriptRefererPattern();
-	 
- 	/**
-	 * if the token should be injected in GET forms (which will be on the URL)
-	 * if the HTTP method GET is unprotected, then this should likely be false
-	 * @return true if the token should be injected in GET forms via Javascript
-	 */
-	boolean isJavascriptInjectGetForms();
- 	
-	/**
-	 * if the token should be injected in the action in forms
-	 * note, if injectIntoForms is true, then this might not need to be true
-	 * @return if inject
-	 */
-	boolean isJavascriptInjectFormAttributes();
-	
-	boolean isJavascriptInjectIntoForms();
+    /**
+     * if the filter is enabled
+     * @return is csrf guard filter is enabled
+     */
+    boolean isEnabled();
 
-	/**
-	 * if the referer to the javascript must match match the protocol of the domain
-	 * @return true if the javascript must match the protocol of the domain
-	 */
-	boolean isJavascriptRefererMatchProtocol();
+    List<IAction> getActions();
 
-	/**
-	 * if the referer to the javascript must match domain
-	 * @return true if the javascript must match domain
-	 */
-	boolean isJavascriptRefererMatchDomain();
+    String getJavascriptSourceFile();
 
-	boolean isJavascriptInjectIntoAttributes();
+    boolean isJavascriptDomainStrict();
 
-	String getJavascriptXrequestedWith();
+    String getDomainOrigin();
 
-	String getJavascriptTemplateCode();
-	
-	/**
-	 * example:"js,css,gif,png,ico,jpg"
-	 * @return
-	 */
-	String getJavascriptUnprotectedExtensions();
+    String getJavascriptCacheControl();
+
+    Pattern getJavascriptRefererPattern();
+
+    /**
+     * if the token should be injected in GET forms (which will be on the URL)
+     * if the HTTP method GET is unprotected, then this should likely be false
+     * @return true if the token should be injected in GET forms via Javascript
+     */
+    boolean isJavascriptInjectGetForms();
+
+    /**
+     * if the token should be injected in the action in forms
+     * note, if injectIntoForms is true, then this might not need to be true
+     * @return if inject
+     */
+    boolean isJavascriptInjectFormAttributes();
+
+    boolean isJavascriptInjectIntoForms();
+
+    /**
+     * if the referer to the javascript must match match the protocol of the domain
+     * @return true if the javascript must match the protocol of the domain
+     */
+    boolean isJavascriptRefererMatchProtocol();
+
+    /**
+     * if the referer to the javascript must match domain
+     * @return true if the javascript must match domain
+     */
+    boolean isJavascriptRefererMatchDomain();
+
+    boolean isJavascriptInjectIntoAttributes();
+
+    String getJavascriptXrequestedWith();
+
+    String getJavascriptTemplateCode();
+
+    /**
+     * example:"js,css,gif,png,ico,jpg"
+     * @return
+     */
+    String getJavascriptUnprotectedExtensions();
 
 }
