@@ -5,7 +5,7 @@ title: CSFRGuard
 site_side: true
 tags: csrfguard
 project: true
-level: 4
+
 type: tool
 
 ---
