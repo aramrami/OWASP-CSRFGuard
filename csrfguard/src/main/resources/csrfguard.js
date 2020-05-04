@@ -204,7 +204,8 @@
 	/** determine if uri/url points to valid domain **/
 	function isValidUrl(src) {
 		var result = false;
-		
+		var urlStartsWithProtocol = /^[a-zA-Z][a-zA-Z0-9.+-]*:/;
+
 		/** parse out domain to make sure it points to our own **/
 		if(src.substring(0, 7) == "http://" || src.substring(0, 8) == "https://") {
 			var token = "://";
@@ -228,7 +229,7 @@
 		} else if(src.charAt(0) == '#') {
 			result = false;
 			/** ensure it is a local resource without a protocol **/
-		} else if(!startsWith(src, "//") && (src.charAt(0) == '/' || src.indexOf(':') == -1)) {
+		} else if(!startsWith(src, "//") && (src.charAt(0) == '/' || src.search(urlStartsWithProtocol) === -1)) {
 			result = true;
 		}
 		
