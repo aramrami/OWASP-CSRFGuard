@@ -26,7 +26,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/** Issue 92: boolean check to avoid running the function multiple times.
+ * Happens if the file is included multiple times which results in
+ * Maximum call stack size exceeded**/
+var owaspCSRFGuardScriptHasLoaded = owaspCSRFGuardScriptHasLoaded || {};
+if(owaspCSRFGuardScriptHasLoaded !== true) {
 (function() {
+	owaspCSRFGuardScriptHasLoaded = true;
 	/**
 	 * Code to ensure our event always gets triggered when the DOM is updated.
 	 * @param obj
@@ -487,3 +493,4 @@
 		alert("OWASP CSRFGuard JavaScript was included from within an unauthorized domain!");
 	}
 })();
+}
