@@ -1,36 +1,48 @@
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
+## Directory-based project format:
+.idea/
+!.idea/copyright
+!.idea/dataSources.xml
 
-# Folder config file
-Desktop.ini
+## File-based project format:
+*.ipr
+*.iws
+*.iml
 
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
+# Output directories
+target/
+/build/
+/dist/
+bin/
+*.class
 
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
+# Eclipse metadata
+.metadata
+.project
+.recommenders
+.settings
+.classpath
+.loadpath
 
-# =========================
-# Operating System Files
-# =========================
+# NetBeans specific
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
 
-# OSX
-# =========================
+# SonarGraph metadata
+*.sonargraph
 
+# Overlays
+*overlays/
+
+# MacOS files
 .DS_Store
-.AppleDouble
-.LSOverride
-
-# Icon must ends with two \r.
-Icon
-
-# Thumbnails
+.DS_Store?
 ._*
-
-# Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+ehthumbs.db
+Thumbs.db
