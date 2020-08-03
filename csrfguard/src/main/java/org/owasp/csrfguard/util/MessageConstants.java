@@ -1,4 +1,4 @@
-/**
+/*
  * The OWASP CSRFGuard Project, BSD License
  * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011
  * All rights reserved.
