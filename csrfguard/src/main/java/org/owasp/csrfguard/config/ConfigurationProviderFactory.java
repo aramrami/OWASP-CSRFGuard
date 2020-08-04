@@ -27,7 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
+/*
  * @author mchyzer
  * $Id$
  */
@@ -47,5 +47,4 @@ public interface ConfigurationProviderFactory {
      * @return the configuration
      */
     ConfigurationProvider retrieveConfiguration(Properties properties);
-
 }

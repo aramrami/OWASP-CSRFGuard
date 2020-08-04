@@ -29,30 +29,30 @@
 
 package org.owasp.csrfguard.config;
 
+import org.owasp.csrfguard.action.IAction;
+import org.owasp.csrfguard.config.properties.ConfigParameters;
+import org.owasp.csrfguard.log.ConsoleLogger;
+import org.owasp.csrfguard.log.ILogger;
+
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.owasp.csrfguard.action.IAction;
-import org.owasp.csrfguard.log.ConsoleLogger;
-import org.owasp.csrfguard.log.ILogger;
-
 /**
- * ConfigurationProvider which returns all null or empty values (except for the logger).
+ * {@link ConfigurationProvider} which returns all null or empty values (except for the logger).
  * Used before initialization has occurred.
  */
 public final class NullConfigurationProvider implements ConfigurationProvider {
 
-	private static final ILogger logger = new ConsoleLogger();
+	private static final ILogger LOGGER = new ConsoleLogger();
 	
-	public NullConfigurationProvider() {
-	}
+	public NullConfigurationProvider() {}
 
 	@Override
 	public ILogger getLogger() {
-		return logger;
+		return LOGGER;
 	}
 
 	@Override
@@ -83,8 +83,8 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
 	@Override
 	public SecureRandom getPrng() {
 		try {
-			return SecureRandom.getInstance("SHA1PRNG", "SUN");
-		} catch (Exception e) {
+			return SecureRandom.getInstance(ConfigParameters.DEFAULT_PRNG.getValue(), ConfigParameters.DEFAULT_PRNG.getKey());
+		} catch (final Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -134,148 +134,96 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
 		return Collections.emptyList();
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isPrintConfig()
-	 */
 	@Override
 	public boolean isPrintConfig() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptSourceFile()
-	 */
 	@Override
 	public String getJavascriptSourceFile() {
 		return null;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptDomainStrict()
-	 */
 	@Override
 	public boolean isJavascriptDomainStrict() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptCacheControl()
-	 */
 	@Override
 	public String getJavascriptCacheControl() {
 		return null;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptRefererPattern()
-	 */
 	@Override
 	public Pattern getJavascriptRefererPattern() {
 		return null;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectIntoForms()
-	 */
 	@Override
 	public boolean isJavascriptInjectIntoForms() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectIntoAttributes()
-	 */
 	@Override
 	public boolean isJavascriptInjectIntoAttributes() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptXrequestedWith()
-	 */
 	@Override
 	public String getJavascriptXrequestedWith() {
 		return null;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptTemplateCode()
-	 */
 	@Override
 	public String getJavascriptTemplateCode() {
 		return null;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isCacheable()
-	 */
+	@Override
 	public boolean isCacheable() {
 		return true;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getUnprotectedMethods()
-	 */
+	@Override
 	public Set<String> getUnprotectedMethods() {
 		return Collections.emptySet();
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptRefererMatchProtocol()
-	 */
 	@Override
 	public boolean isJavascriptRefererMatchProtocol() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptRefererMatchDomain()
-	 */
 	@Override
 	public boolean isJavascriptRefererMatchDomain() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isEnabled()
-	 */
 	@Override
 	public boolean isEnabled() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isValidateWhenNoSessionExists()
-	 */
 	@Override
 	public boolean isValidateWhenNoSessionExists() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectGetForms()
-	 */
+	@Override
 	public boolean isJavascriptInjectGetForms() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectFormAttributes()
-	 */
+	@Override
 	public boolean isJavascriptInjectFormAttributes() {
 		return false;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
-	 */
 	@Override
 	public String getDomainOrigin() {
 		return null;
 	}
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptUnprotectedExtensions()
-	 */
+
 	@Override
 	public String getJavascriptUnprotectedExtensions() {
 		return null;

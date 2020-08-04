@@ -37,15 +37,15 @@ package org.owasp.csrfguard.exception;
  */
 public class CSRFGuardTokenException extends RuntimeException {
 
-    public CSRFGuardTokenException(String message) {
+    public CSRFGuardTokenException(final String message) {
         super(message);
     }
 
-    public CSRFGuardTokenException(String message, Throwable cause) {
+    public CSRFGuardTokenException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public CSRFGuardTokenException(Throwable cause) {
+    public CSRFGuardTokenException(final Throwable cause) {
         super(cause);
     }
 }

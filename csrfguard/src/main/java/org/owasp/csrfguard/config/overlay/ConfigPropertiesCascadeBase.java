@@ -29,30 +29,24 @@
 
 package org.owasp.csrfguard.config.overlay;
 
+import org.owasp.csrfguard.log.ILogger;
+import org.owasp.csrfguard.log.LogLevel;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
-
-import org.owasp.csrfguard.log.ILogger;
-import org.owasp.csrfguard.log.LogLevel;
-import org.owasp.csrfguard.util.CsrfGuardUtils;
-
 
 /**
  * Base class for a cascaded config.  Extend this class to have a config
  * based on a certain file. 
- * 
+ *
+ * This code is copied from the <a href="https://github.com/Internet2/grouper">Grouper</a> project
+ *
+ * see https://github.com/Internet2/grouper/blob/master/grouper-misc/grouperActivemq/dist/bin/edu/internet2/middleware/grouperActivemq/config/ConfigPropertiesCascadeBase.java
  * @author mchyzer
  *
  */
@@ -98,7 +92,6 @@ public abstract class ConfigPropertiesCascadeBase {
 		return (T)configPropertiesCascadeBase.retrieveFromConfigFileOrCache();
 	}
 
-
 	/**
 	 * if it's ok to put the config file in the same directory as a jar,
 	 * then return a class in the jar here
@@ -120,8 +113,7 @@ public abstract class ConfigPropertiesCascadeBase {
 	public abstract void clearCachedCalculatedValues();
 
 	/** override map for properties in thread local to be used in a web server or the like */
-	private static ThreadLocal<Map<Class<? extends ConfigPropertiesCascadeBase>, Map<String, String>>> propertiesThreadLocalOverrideMap 
-	= null;
+	private static ThreadLocal<Map<Class<? extends ConfigPropertiesCascadeBase>, Map<String, String>>> propertiesThreadLocalOverrideMap = null;
 
 	/**
 	 * override map for properties in thread local to be used in a web server or the like, based on property class
@@ -149,16 +141,14 @@ public abstract class ConfigPropertiesCascadeBase {
 	/** override map for properties, for testing, put properties in here, based on config class
 	 * this is static since the properties class can get reloaded, but these shouldn't
 	 */
-	private static Map<Class<? extends ConfigPropertiesCascadeBase>, Map<String, String>> propertiesOverrideMap 
-	= null;
+	private static Map<Class<? extends ConfigPropertiesCascadeBase>, Map<String, String>> propertiesOverrideMap = null;
 
 	/**
 	 * @return the set of property names
 	 * @see java.util.Hashtable#keySet()
 	 */
 	@SuppressWarnings("unchecked")
-	public Set<String> propertyNames() {    
-
+	public Set<String> propertyNames() {
 		Set<String> result = new LinkedHashSet<String>();
 		result.addAll((Set<String>)(Object)this.propertiesHelper(false).keySet());
 		return result;
@@ -275,9 +265,8 @@ public abstract class ConfigPropertiesCascadeBase {
 	 */
 	static class PropertyValueResult {
 
-
 		/**
-		 * 
+		 *
 		 * @param theValue1 property value
 		 * @param hasKey1 whether or not the key exists
 		 */
@@ -293,7 +282,6 @@ public abstract class ConfigPropertiesCascadeBase {
 
 		/** if there is a key in the properties file */
 		private boolean hasKey;
-
 
 		/**
 		 * value from lookup
@@ -614,12 +602,12 @@ public abstract class ConfigPropertiesCascadeBase {
 			} catch (Exception e) {
 				throw new RuntimeException("Problem reading config: '" + this.originalConfig + "'", e);
 			} finally {
-				CsrfGuardUtils.closeQuietly(inputStream);
+				ConfigPropertiesCascadeCommonUtils.closeQuietly(inputStream);
 			}
 		}
 
 		/**
-		 * 
+		 *
 		 * @param configFileFullConfig The config file location reference such as file:/some/path/config.properties
 		 */
 		public ConfigFile(String configFileFullConfig) {
@@ -676,9 +664,6 @@ public abstract class ConfigPropertiesCascadeBase {
 		public String getConfigFileTypeConfig() {
 			return this.configFileTypeConfig;
 		}
-
-
-
 	}
 
 	/**
@@ -718,21 +703,19 @@ public abstract class ConfigPropertiesCascadeBase {
 				if (ConfigPropertiesCascadeUtils.isBlank(secondsToCheckConfigString)) {
 					secondsToCheckConfigString = mainExampleConfigFile.getProperty(this.getSecondsToCheckConfigKey());
 				}
-
 			}
-
 		}
 
 		//if hasnt found yet, there is a problem
 		if (ConfigPropertiesCascadeUtils.isBlank(overrideFullConfig)) {
-			throw new RuntimeException("Cant find the hierarchy config key: " + this.getHierarchyConfigKey() 
+			throw new RuntimeException("Cant find the hierarchy config key: " + this.getHierarchyConfigKey()
 					+ " in config files: " + this.getMainConfigClasspath()
 					+ " or " + this.getMainExampleConfigClasspath());
 		}
 
 		//if hasnt found yet, there is a problem
 		if (ConfigPropertiesCascadeUtils.isBlank(secondsToCheckConfigString)) {
-			throw new RuntimeException("Cant find the seconds to check config key: " + this.getSecondsToCheckConfigKey() 
+			throw new RuntimeException("Cant find the seconds to check config key: " + this.getSecondsToCheckConfigKey()
 					+ " in config files: " + this.getMainConfigClasspath()
 					+ " or " + this.getMainExampleConfigClasspath());
 		}
@@ -744,7 +727,7 @@ public abstract class ConfigPropertiesCascadeBase {
 			result.timeToCheckConfigSeconds = ConfigPropertiesCascadeUtils.intValue(secondsToCheckConfigString);
 		} catch (Exception e) {
 			throw new RuntimeException("Invalid integer seconds to check config config value: " + secondsToCheckConfigString
-					+ ", key: " + this.getSecondsToCheckConfigKey() 
+					+ ", key: " + this.getSecondsToCheckConfigKey()
 					+ " in config files: " + this.getMainConfigClasspath()
 					+ " or " + this.getMainExampleConfigClasspath());
 
@@ -949,8 +932,6 @@ public abstract class ConfigPropertiesCascadeBase {
 		return false;
 	}
 
-
-
 	/**
 	 * get the main config classpath, e.g. csrf guard properties
 	 * @return the classpath of the main config file
@@ -985,9 +966,7 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @return true or false
 	 */
 	public boolean containsKey(String key) {
-
 		return propertyValueString(key, null, false).isHasKey();
-
 	}
 
 	/**
@@ -998,7 +977,6 @@ public abstract class ConfigPropertiesCascadeBase {
 	public Boolean propertyValueBoolean(String key) {
 		return propertyValueBoolean(key, null, false);
 	}
-
 
 	/**
 	 * get a boolean pop and validate from the config file
@@ -1039,7 +1017,7 @@ public abstract class ConfigPropertiesCascadeBase {
 		if ("n".equalsIgnoreCase(value)) {
 			return false;
 		}
-		throw new RuntimeException("Invalid boolean value: '" + value + "' for property: " + key 
+		throw new RuntimeException("Invalid boolean value: '" + value + "' for property: " + key
 				+ " in properties file: " + this.getMainConfigClasspath() + ", expecting true or false");
 
 	}
@@ -1064,7 +1042,7 @@ public abstract class ConfigPropertiesCascadeBase {
 		} catch (Exception e) {
 
 		}
-		throw new RuntimeException("Invalid integer value: '" + value + "' for property: " 
+		throw new RuntimeException("Invalid integer value: '" + value + "' for property: "
 				+ key + " in config file: " + this.getMainConfigClasspath() + " in properties file");
 
 	}
@@ -1075,9 +1053,7 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @return the boolean property value 
 	 */
 	public boolean propertyValueBooleanRequired(String key) {
-
 		return propertyValueBoolean(key, false, true);
-
 	}
 
 	/**
@@ -1086,9 +1062,7 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @return the integer property value 
 	 */
 	public int propertyValueIntRequired(String key) {
-
 		return propertyValueInt(key, -1, true);
-
 	}
 
 	/**
@@ -1098,9 +1072,7 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @return the property value
 	 */
 	public int propertyValueInt(String key, int defaultValue ) {
-
 		return propertyValueInt(key, defaultValue, false);
-
 	}
 
 	/**
@@ -1109,9 +1081,7 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @return the int or null if there
 	 */
 	public Integer propertyValueInt(String key ) {
-
 		return propertyValueInt(key, null, false);
-
 	}
 
 	/**
@@ -1120,22 +1090,15 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @param exceptionIfNotExist When true, throw an exception if an URL for the resource name cannot be constructued
 	 * @return the properties or null if not exist
 	 */
-	protected static Properties propertiesFromResourceName(String resourceName, 
-			boolean exceptionIfNotExist) {
-
+	protected static Properties propertiesFromResourceName(String resourceName, boolean exceptionIfNotExist) {
 		Properties properties = new Properties();
-
 		URL url = null;
 
 		try {
-
 			url = ConfigPropertiesCascadeUtils.computeUrl(resourceName, true);
-
 		} catch (Exception e) {
-
 			//I guess this ok
 			logInfo("Problem loading config file: " + resourceName, e); 
-
 		}
 
 		if (url == null && exceptionIfNotExist) {
@@ -1186,7 +1149,6 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @return true if ok, false if not
 	 */
 	public boolean assertPropertyValueBoolean(String key, boolean required) {
-
 		if (required && !assertPropertyValueRequired(key)) {
 			return false;
 		}
@@ -1200,8 +1162,8 @@ public abstract class ConfigPropertiesCascadeBase {
 			ConfigPropertiesCascadeUtils.booleanValue(value);
 			return true;
 		} catch (Exception e) {
-
 		}
+
 		String error = "Expecting true or false property " + key + " in resource: " + this.getMainConfigClasspath() + ", but is '" + value + "'";
 		System.err.println("csrf guard error: " + error);
 		ILogger iLogger = iLogger();
@@ -1218,8 +1180,7 @@ public abstract class ConfigPropertiesCascadeBase {
 	 * @param required Whether or not key must be present and have non-blank value
 	 * @return true if ok
 	 */
-	public boolean assertPropertyValueClass(
-			String key, Class<?> classType, boolean required) {
+	public boolean assertPropertyValueClass(String key, Class<?> classType, boolean required) {
 
 		if (required && !assertPropertyValueRequired(key)) {
 			return false;
@@ -1268,9 +1229,6 @@ public abstract class ConfigPropertiesCascadeBase {
 				result.put(key, propertyValueString(key));
 			}
 		}
-
 		return result;
 	}
-
-
 }

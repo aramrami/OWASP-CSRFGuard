@@ -27,28 +27,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.owasp.csrfguard.action;
+package org.owasp.csrfguard.config.properties;
 
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.CsrfGuardException;
+public class SimpleBooleanConfigParameter {
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+    private final String propertyName;
+    private final boolean propertyValue;
 
-public final class Forward extends AbstractAction {
+    public SimpleBooleanConfigParameter(final String propertyName, final boolean propertyValue) {
+        this.propertyName = propertyName;
+        this.propertyValue = propertyValue;
+    }
 
-	private static final long serialVersionUID = -3727752206497452347L;
+    public String getName() {
+        return this.propertyName;
+    }
 
-	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
-		final String errorPage = getParameter("Page");
-
-		try {
-			request.getRequestDispatcher(errorPage).forward(request, response);
-		} catch (final IOException | ServletException e) {
-			throw new CsrfGuardException(e);
-		}
-	}
+    public boolean getDefaultValue() {
+        return this.propertyValue;
+    }
 }

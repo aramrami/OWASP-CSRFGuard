@@ -30,12 +30,10 @@
 package org.owasp.csrfguard.log;
 
 public enum LogLevel {
-	
 	Trace,
 	Debug,
 	Info,
 	Warning,
 	Error,
 	Fatal
-	
 }

@@ -31,14 +31,34 @@ package org.owasp.csrfguard.log;
 
 import java.io.Serializable;
 
+/**
+ * TODO document
+ */
 public interface ILogger extends Serializable {
 
-	public void log(String msg);
+	/**
+	 * TODO document
+	 * @param msg
+	 */
+	void log(String msg);
 
-	public void log(LogLevel level, String msg);
+	/**
+	 * TODO document
+	 * @param level
+	 * @param msg
+	 */
+	void log(LogLevel level, String msg);
 
-	public void log(Exception exception);
+	/**
+	 * TODO document
+	 * @param exception
+	 */
+	void log(Exception exception);
 
-	public void log(LogLevel level, Exception exception);
-	
+	/**
+	 * TODO document
+	 * @param exception
+	 * @param level
+	 */
+	void log(LogLevel level, Exception exception);
 }

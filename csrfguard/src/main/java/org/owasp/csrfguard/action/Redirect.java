@@ -29,13 +29,12 @@
 
 package org.owasp.csrfguard.action;
 
-import java.io.IOException;
+import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.CsrfGuardException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.CsrfGuardException;
+import java.io.IOException;
 
 public final class Redirect extends AbstractAction {
 
@@ -43,13 +42,12 @@ public final class Redirect extends AbstractAction {
 
 	@Override
 	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
-		String errorPage = getParameter("Page");
+		final String errorPage = getParameter("Page");
 
 		try {
 			response.sendRedirect(errorPage);
-		} catch (IOException ioe) {
+		} catch (final IOException ioe) {
 			throw new CsrfGuardException(ioe);
 		}
 	}
-	
 }

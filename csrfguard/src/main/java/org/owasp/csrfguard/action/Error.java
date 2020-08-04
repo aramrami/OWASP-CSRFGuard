@@ -29,13 +29,12 @@
 
 package org.owasp.csrfguard.action;
 
-import java.io.IOException;
+import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.CsrfGuardException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.CsrfGuardException;
+import java.io.IOException;
 
 public final class Error extends AbstractAction {
 
@@ -43,14 +42,13 @@ public final class Error extends AbstractAction {
 
 	@Override
 	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
-		int code = Integer.parseInt(getParameter("Code"));
-		String message = getParameter("Message");
-
 		try {
+			final int code = Integer.parseInt(getParameter("Code"));
+			final String message = getParameter("Message");
+
 			response.sendError(code, message);
-		} catch (IOException ioe) {
-			throw new CsrfGuardException(ioe);
+		} catch (final NumberFormatException | IOException e) {
+			throw new CsrfGuardException(e);
 		}
 	}
-
 }

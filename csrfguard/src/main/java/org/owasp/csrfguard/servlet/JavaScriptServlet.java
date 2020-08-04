@@ -29,11 +29,12 @@
 
 package org.owasp.csrfguard.servlet;
 
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
-import org.owasp.csrfguard.util.Strings;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServlet;
@@ -44,10 +45,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public final class JavaScriptServlet extends HttpServlet {
 
@@ -83,48 +84,53 @@ public final class JavaScriptServlet extends HttpServlet {
 	
 	private static ServletConfig servletConfig = null;
 
+	/**
+	 *  whitelist the javascript servlet from csrf errors
+	 */
+	private static final Set<String> javascriptUris = new HashSet<>();
+
 	public static ServletConfig getStaticServletConfig() {
 		return servletConfig;
 	}
-	
+
 	@Override
-	public void init(ServletConfig theServletConfig) {
-	  servletConfig = theServletConfig;
-	  //print again since it might change based on servlet config of javascript servlet
-	  CsrfGuardServletContextListener.printConfigIfConfigured(servletConfig.getServletContext(), 
-			  "Printing properties after Javascript servlet, note, the javascript properties have now been initialized: ");
+	public void init(final ServletConfig theServletConfig) {
+		servletConfig = theServletConfig;
+		// print again since it might change based on servlet config of javascript servlet
+		CsrfGuardServletContextListener.printConfigIfConfigured(servletConfig.getServletContext(),
+																"Printing properties after JavaScript servlet, note, the javascript properties have now been initialized: ");
 	}
 
 	@Override
-	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		String refererHeader = request.getHeader("referer");
+	public void doGet(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+		final String refererHeader = request.getHeader("referer");
 		boolean hasError = false;
-		Pattern javascriptRefererPattern = CsrfGuard.getInstance().getJavascriptRefererPattern();
-		if(refererHeader != null && !javascriptRefererPattern.matcher(refererHeader).matches()) {
-			CsrfGuard.getInstance().getLogger().log(LogLevel.Error, "Referer domain " + refererHeader + " does not match regex: " + javascriptRefererPattern.pattern());
+		final Pattern javascriptRefererPattern = CsrfGuard.getInstance().getJavascriptRefererPattern();
+		if (refererHeader != null && !javascriptRefererPattern.matcher(refererHeader).matches()) {
+			CsrfGuard.getInstance().getLogger().log(LogLevel.Error, String.format("Referer domain %s does not match regex: %s", refererHeader, javascriptRefererPattern.pattern()));
 			response.sendError(404);
 			hasError = true;
 		}
 			
 		if (refererHeader != null && CsrfGuard.getInstance().isJavascriptRefererMatchDomain()) {
-			boolean isJavascriptRefererMatchProtocol = CsrfGuard.getInstance().isJavascriptRefererMatchProtocol();
-			//this is something like http://something.com/path or https://something.com/path
-			String url = request.getRequestURL().toString();
-			String requestProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(url, isJavascriptRefererMatchProtocol);
-			String refererProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(refererHeader, isJavascriptRefererMatchProtocol);
+			final boolean isJavascriptRefererMatchProtocol = CsrfGuard.getInstance().isJavascriptRefererMatchProtocol();
+			// this is something like http://something.com/path or https://something.com/path
+			final String url = request.getRequestURL().toString();
+			final String requestProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(url, isJavascriptRefererMatchProtocol);
+			final String refererProtocolAndDomain = CsrfGuardUtils.httpProtocolAndDomain(refererHeader, isJavascriptRefererMatchProtocol);
 			if (!refererProtocolAndDomain.equals(requestProtocolAndDomain)) {
-				CsrfGuard.getInstance().getLogger().log(LogLevel.Error, "Referer domain " + refererHeader + " does not match request domain: " + url);
+				CsrfGuard.getInstance().getLogger().log(LogLevel.Error, String.format("Referer domain %s does not match request domain: %s", refererHeader, url));
 				hasError = true;
 				response.sendError(404);
 			}
-			
 		}
+
 		if (!hasError) {
 			
-			//save this path so javascript is whitelisted
-			String javascriptPath = request.getContextPath() + request.getServletPath();
+			// save this path so javascript is whitelisted
+			final String javascriptPath = request.getContextPath() + request.getServletPath();
 			
-			//dont know why there would be more than one... hmmm
+			// don't know why there would be more than one... hmmm
 			if (javascriptUris.size() < 100) {
 				javascriptUris.add(javascriptPath);
 			}
@@ -141,14 +147,10 @@ public final class JavaScriptServlet extends HttpServlet {
 		return javascriptUris;
 	}
 
-	/** whitelist the javascript servlet from csrf errors */
-	private static Set<String> javascriptUris = new HashSet<String>();
-	
-
 	@Override
-	public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		CsrfGuard csrfGuard = CsrfGuard.getInstance();
-		String isFetchCsrfToken = request.getHeader("FETCH-CSRF-TOKEN");
+	public void doPost(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
+		final String isFetchCsrfToken = request.getHeader("FETCH-CSRF-TOKEN");
 		
 		if (csrfGuard != null && isFetchCsrfToken != null){
 			fetchCsrfToken(request, response);
@@ -161,41 +163,39 @@ public final class JavaScriptServlet extends HttpServlet {
 		}
 	}
 
-	private void fetchCsrfToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		HttpSession session = request.getSession(true);
-		@SuppressWarnings("unchecked")
-		CsrfGuard csrfGuard = CsrfGuard.getInstance();
-		String token_name = csrfGuard.getTokenName();
-		String token_value = (String) session.getAttribute(csrfGuard.getSessionKey());
-		String token_pair = token_name + ":" + token_value;
+	private void fetchCsrfToken(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+		final HttpSession session = request.getSession(true);
+		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
+		final String token_name = csrfGuard.getTokenName();
+		final String token_value = (String) session.getAttribute(csrfGuard.getSessionKey());
+		final String token_pair = token_name + ":" + token_value;
 
-		/** setup headers **/
+		/* setup headers */
 		response.setContentType("text/plain");
 
-		/** write dynamic javascript **/
+		/* write dynamic javascript */
 		response.getWriter().write(token_pair);
 	}
 
-
-	private void writePageTokens(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		HttpSession session = request.getSession(true);
+	private void writePageTokens(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+		final HttpSession session = request.getSession(true);
 		@SuppressWarnings("unchecked")
-		Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
-		String pageTokensString = (pageTokens != null ? parsePageTokens(pageTokens) : Strings.EMPTY);
+		final Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
+		final String pageTokensString = (pageTokens != null ? parsePageTokens(pageTokens) : StringUtils.EMPTY);
 
-		/** setup headers **/
+		/* setup headers */
 		response.setContentType("text/plain");
 		response.setContentLength(pageTokensString.length());
 
-		/** write dynamic javascript **/
+		/* write dynamic javascript */
 		response.getWriter().write(pageTokensString);
 	}
 
-	private void writeJavaScript(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		HttpSession session = request.getSession(true);
-		CsrfGuard csrfGuard = CsrfGuard.getInstance();
+	private void writeJavaScript(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+		final HttpSession session = request.getSession(true);
+		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
 
-		/** cannot cache if rotate or token-per-page is enabled **/
+		/* cannot cache if rotate or token-per-page is enabled */
 		if (csrfGuard.isRotateEnabled() || csrfGuard.isTokenPerPageEnabled()) {
 			response.setHeader("Cache-Control", "no-cache, no-store");
 			response.setHeader("Pragma", "no-cache");
@@ -206,56 +206,38 @@ public final class JavaScriptServlet extends HttpServlet {
 
 		response.setContentType("text/javascript");
 
-		/** build dynamic javascript **/
+		/* build dynamic javascript */
 		String code = CsrfGuard.getInstance().getJavascriptTemplateCode();
 
-		code = code.replace(TOKEN_NAME_IDENTIFIER, CsrfGuardUtils.defaultString(csrfGuard.getTokenName()));
-		code = code.replace(TOKEN_VALUE_IDENTIFIER, CsrfGuardUtils.defaultString((String) session.getAttribute(csrfGuard.getSessionKey())));
-		code = code.replace(INJECT_INTO_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoForms()));
-		code = code.replace(INJECT_GET_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectGetForms()));
-		code = code.replace(INJECT_FORM_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectFormAttributes()));
-		code = code.replace(INJECT_INTO_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoAttributes()));
-		code = code.replace(INJECT_INTO_XHR_IDENTIFIER, String.valueOf(csrfGuard.isAjaxEnabled()));
-		code = code.replace(TOKENS_PER_PAGE_IDENTIFIER, String.valueOf(csrfGuard.isTokenPerPageEnabled()));
-		code = code.replace(UNPROTECTED_EXTENSIONS_IDENTIFIER, String.valueOf(csrfGuard.getJavascriptUnprotectedExtensions()));
-		code = code.replace(DOMAIN_ORIGIN_IDENTIFIER, csrfGuard.getDomainOrigin() == null ? CsrfGuardUtils.defaultString(parseDomain(request.getRequestURL())) : csrfGuard.getDomainOrigin());
-		code = code.replace(DOMAIN_STRICT_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptDomainStrict()));
-		code = code.replace(CONTEXT_PATH_IDENTIFIER, CsrfGuardUtils.defaultString(request.getContextPath()));
-		code = code.replace(SERVLET_PATH_IDENTIFIER, CsrfGuardUtils.defaultString(request.getContextPath() + request.getServletPath()));
-		code = code.replace(X_REQUESTED_WITH_IDENTIFIER, CsrfGuardUtils.defaultString(csrfGuard.getJavascriptXrequestedWith()));
+		code = code.replace(TOKEN_NAME_IDENTIFIER, StringUtils.defaultString(csrfGuard.getTokenName()))
+				   .replace(TOKEN_VALUE_IDENTIFIER, StringUtils.defaultString((String) session.getAttribute(csrfGuard.getSessionKey())))
+				   .replace(INJECT_INTO_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoForms()))
+				   .replace(INJECT_GET_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectGetForms()))
+				   .replace(INJECT_FORM_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectFormAttributes()))
+				   .replace(INJECT_INTO_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoAttributes()))
+				   .replace(INJECT_INTO_XHR_IDENTIFIER, String.valueOf(csrfGuard.isAjaxEnabled()))
+				   .replace(TOKENS_PER_PAGE_IDENTIFIER, String.valueOf(csrfGuard.isTokenPerPageEnabled()))
+				   .replace(UNPROTECTED_EXTENSIONS_IDENTIFIER, String.valueOf(csrfGuard.getJavascriptUnprotectedExtensions()))
+				   .replace(DOMAIN_ORIGIN_IDENTIFIER, ObjectUtils.defaultIfNull(csrfGuard.getDomainOrigin(), StringUtils.defaultString(parseDomain(request.getRequestURL()))))
+				   .replace(DOMAIN_STRICT_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptDomainStrict()))
+				   .replace(CONTEXT_PATH_IDENTIFIER, StringUtils.defaultString(request.getContextPath()))
+				   .replace(SERVLET_PATH_IDENTIFIER, StringUtils.defaultString(request.getContextPath() + request.getServletPath()))
+				   .replace(X_REQUESTED_WITH_IDENTIFIER, StringUtils.defaultString(csrfGuard.getJavascriptXrequestedWith()));
 
-		/** write dynamic javascript **/
+		/* write dynamic javascript */
 		response.getWriter().write(code);
 	}
 
-	private String parsePageTokens(Map<String, String> pageTokens) {
-		StringBuilder sb = new StringBuilder();
-		Iterator<String> keys = pageTokens.keySet().iterator();
-
-		while (keys.hasNext()) {
-			String key = keys.next();
-			String value = pageTokens.get(key);
-
-			sb.append(key);
-			sb.append(':');
-			sb.append(value);
-
-			if (keys.hasNext()) {
-				sb.append(',');
-			}
-		}
-
-		return sb.toString();
+	private String parsePageTokens(final Map<String, String> pageTokens) {
+		return pageTokens.entrySet().stream().map(e -> e.getKey() + ':' + e.getValue()).collect(Collectors.joining(","));
 	}
-	
 
-	private String parseDomain(StringBuffer url) {
+	private String parseDomain(final StringBuffer url) {
 		try {
 			return new URL(url.toString()).getHost();
-		} catch (MalformedURLException e) {
-			//Should not occur. javax.servlet.http.HttpServletRequest.getRequestURL should only returns valid URLs.
+		} catch (final MalformedURLException e) {
+			// Should not occur. javax.servlet.http.HttpServletRequest.getRequestURL should only returns valid URLs.
 			return "INVALID_URL: " + url.toString();
 		}
 	}
-	
 }

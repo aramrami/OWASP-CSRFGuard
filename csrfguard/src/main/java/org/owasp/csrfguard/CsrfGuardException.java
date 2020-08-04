@@ -33,16 +33,15 @@ public class CsrfGuardException extends Exception {
 
 	private static final long serialVersionUID = -4468336915273168914L;
 
-	public CsrfGuardException(String msg) {
+	public CsrfGuardException(final String msg) {
 		super(msg);
 	}
 
-	public CsrfGuardException(Exception e) {
+	public CsrfGuardException(final Exception e) {
 		super(e);
 	}
 
-	public CsrfGuardException(String msg, Exception e) {
+	public CsrfGuardException(final String msg, final Exception e) {
 		super(msg, e);
 	}
-
 }

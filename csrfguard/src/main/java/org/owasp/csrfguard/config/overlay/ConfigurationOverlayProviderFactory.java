@@ -33,32 +33,29 @@
  */
 package org.owasp.csrfguard.config.overlay;
 
-import java.util.Properties;
-
 import org.owasp.csrfguard.config.ConfigurationProvider;
 import org.owasp.csrfguard.config.ConfigurationProviderFactory;
 import org.owasp.csrfguard.config.PropertiesConfigurationProvider;
 
+import java.util.Properties;
+
 /**
- *
+ * TODO document
  */
-public class ConfigurationOverlayProviderFactory implements
-		ConfigurationProviderFactory {
+public class ConfigurationOverlayProviderFactory implements ConfigurationProviderFactory {
 
 	/**
-	 * 
+	 * TODO document
 	 */
-	public ConfigurationOverlayProviderFactory() {
-	}
+	public ConfigurationOverlayProviderFactory() {}
 
 	/**
 	 * @see org.owasp.csrfguard.config.ConfigurationProviderFactory#retrieveConfiguration(java.util.Properties)
 	 */
-	public ConfigurationProvider retrieveConfiguration(Properties originalProperties) {
-		ConfigurationOverlayProvider configurationOverlayProvider = ConfigurationOverlayProvider.retrieveConfig();
-		Properties properties = configurationOverlayProvider.properties();
+	public ConfigurationProvider retrieveConfiguration(final Properties originalProperties) {
+		final ConfigurationOverlayProvider configurationOverlayProvider = ConfigurationOverlayProvider.retrieveConfig();
+		final Properties properties = configurationOverlayProvider.properties();
 		
 		return new PropertiesConfigurationProvider(properties);
     }
-	
 }

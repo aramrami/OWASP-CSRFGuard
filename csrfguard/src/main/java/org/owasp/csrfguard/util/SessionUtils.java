@@ -40,8 +40,7 @@ import java.util.Map;
  */
 public final class SessionUtils {
 
-    private SessionUtils() {
-    }
+    private SessionUtils() {}
 
     private static final String TOKENS_GENERATED = "org.owasp.csrfguard.TokensGenerated";
 
@@ -51,33 +50,26 @@ public final class SessionUtils {
     }
 
     public static void setTokensGenerated(final HttpSession session) {
-
         if (session != null) {
             session.setAttribute(TOKENS_GENERATED, true);
         }
-
     }
 
-    @SuppressWarnings("unchecked")
     public static Map<String, String> extractPageTokensFromSession(final HttpSession session) {
-
         final Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
 
         if (pageTokens != null) {
             return pageTokens;
         }
 
-        return new HashMap<String, String>(CsrfGuard.getInstance().getProtectedPages().size());
+        return new HashMap<>(CsrfGuard.getInstance().getProtectedPages().size());
     }
 
-    public static void updatePageTokensOnSession(final HttpSession session,
-                                                 final Map<String, String> pageTokens) {
-
+    public static void updatePageTokensOnSession(final HttpSession session, final Map<String, String> pageTokens) {
         if (session != null && pageTokens != null) {
             session.setAttribute(CsrfGuard.PAGE_TOKENS_KEY, pageTokens);
             setTokensGenerated(session);
         }
-
     }
 
     /**
@@ -121,5 +113,4 @@ public final class SessionUtils {
     public static String getSessionToken(final HttpSession session) {
         return (String) session.getAttribute(CsrfGuard.getInstance().getSessionKey());
     }
-
 }

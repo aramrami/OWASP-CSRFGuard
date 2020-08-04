@@ -27,34 +27,31 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * @author mchyzer
- * $Id$
- */
 package org.owasp.csrfguard.config.overlay;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
+import org.owasp.csrfguard.config.properties.ConfigParameters;
 import org.owasp.csrfguard.config.ConfigurationProvider;
 import org.owasp.csrfguard.config.ConfigurationProviderFactory;
 import org.owasp.csrfguard.config.PropertiesConfigurationProviderFactory;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
- * The default configuration provider is: org.owasp.csrfguard.config.overlay.ConfigurationAutodetectProviderFactory
- * which will look for an overlay file, it is there, and the factory inside that file is set it will use it, otherwise will be PropertiesConfigurationProviderFactory
- * it needs to implement org.owasp.csrfguard.config.ConfigurationProviderFactory
+ * The default configuration provider is: {@link org.owasp.csrfguard.config.overlay.ConfigurationAutodetectProviderFactory}
+ * which will look for an overlay file, it is there, and the factory inside that file is set it will use it, otherwise will be {@link PropertiesConfigurationProviderFactory}
+ * it needs to implement {@link org.owasp.csrfguard.config.ConfigurationProviderFactory}
+ *
+ * @author mchyzer
  */
-public class ConfigurationAutodetectProviderFactory implements
-		ConfigurationProviderFactory {
+public class ConfigurationAutodetectProviderFactory implements ConfigurationProviderFactory {
 
 	/**
-	 * 
+	 * TODO document
 	 */
-	public ConfigurationAutodetectProviderFactory() {
-	}
+	public ConfigurationAutodetectProviderFactory() {}
 
 	/**
 	 * configuration provider cached
@@ -83,9 +80,9 @@ public class ConfigurationAutodetectProviderFactory implements
 						} catch (IOException ioe) {
 							throw new RuntimeException("Error reading config file: " + ConfigurationOverlayProvider.OWASP_CSRF_GUARD_OVERLAY_PROPERTIES, ioe);
 						}
-						CsrfGuardUtils.closeQuietly(inputStream);
+						ConfigPropertiesCascadeCommonUtils.closeQuietly(inputStream);
 						
-						String factoryClassName = theProperties.getProperty("org.owasp.csrfguard.configuration.provider.factory");
+						String factoryClassName = theProperties.getProperty(ConfigParameters.CONFIG_PROVIDER_FACTORY_PROPERTY_NAME);
 						if (factoryClassName != null && !"".equals(factoryClassName)) {
 							if (ConfigurationAutodetectProviderFactory.class.getName().equals(factoryClassName)) {
 								throw new RuntimeException("Cannot specify auto detect factory in override file (recursion), pick the actual factory: " + factoryClassName);
@@ -108,5 +105,4 @@ public class ConfigurationAutodetectProviderFactory implements
 		
 		return configurationProvider;
 	}
-
 }

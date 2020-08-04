@@ -29,20 +29,19 @@
 
 package org.owasp.csrfguard.tag;
 
-import javax.servlet.jsp.tagext.*;
+import javax.servlet.jsp.tagext.TagSupport;
 
 public abstract class AbstractTag extends TagSupport {
 
 	private final static long serialVersionUID = 0xadede854;
 
-	public String buildUri(String page) {
+	public String buildUri(final String page) {
 		String uri = page;
 
 		if (!page.startsWith("/")) {
-			uri = pageContext.getServletContext().getContextPath() + "/" + page;
+			uri = this.pageContext.getServletContext().getContextPath() + "/" + page;
 		}
 
 		return uri;
 	}
-	
 }

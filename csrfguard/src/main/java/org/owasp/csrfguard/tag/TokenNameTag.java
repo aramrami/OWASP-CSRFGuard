@@ -29,10 +29,10 @@
 
 package org.owasp.csrfguard.tag;
 
-import java.io.*;
-import javax.servlet.jsp.tagext.*;
+import org.owasp.csrfguard.CsrfGuard;
 
-import org.owasp.csrfguard.*;
+import javax.servlet.jsp.tagext.TagSupport;
+import java.io.IOException;
 
 public final class TokenNameTag extends TagSupport {
 
@@ -40,15 +40,14 @@ public final class TokenNameTag extends TagSupport {
 
 	@Override
 	public int doStartTag() {
-		String tokenName = CsrfGuard.getInstance().getTokenName();
+		final String tokenName = CsrfGuard.getInstance().getTokenName();
 
 		try {
-			pageContext.getOut().write(tokenName);
-		} catch (IOException e) {
-			pageContext.getServletContext().log(e.getLocalizedMessage(), e);
+			this.pageContext.getOut().write(tokenName);
+		} catch (final IOException e) {
+			this.pageContext.getServletContext().log(e.getLocalizedMessage(), e);
 		}
 
 		return SKIP_BODY;
 	}
-	
 }

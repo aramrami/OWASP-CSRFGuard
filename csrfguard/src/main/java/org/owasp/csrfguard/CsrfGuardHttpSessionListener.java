@@ -38,21 +38,22 @@ import javax.servlet.http.HttpSessionListener;
 public class CsrfGuardHttpSessionListener implements HttpSessionListener {
 
     @Override
-    public void sessionCreated(HttpSessionEvent event) {
-        HttpSession session = event.getSession();
-        CsrfGuard csrfGuard = CsrfGuard.getInstance();
+    public void sessionCreated(final HttpSessionEvent event) {
+        final HttpSession session = event.getSession();
+        final CsrfGuard csrfGuard = CsrfGuard.getInstance();
         csrfGuard.updateToken(session);
+
         // Check if should generate tokens for protected resources on current session
-        if (csrfGuard.isTokenPerPageEnabled() && csrfGuard.isTokenPerPagePrecreate()
-                && !SessionUtils.tokensGenerated(session)) {
+        if (csrfGuard.isTokenPerPageEnabled()
+            && csrfGuard.isTokenPerPagePrecreate()
+            && !SessionUtils.tokensGenerated(session)) {
+
             csrfGuard.generatePageTokensForSession(session);
         }
-
     }
 
     @Override
-    public void sessionDestroyed(HttpSessionEvent event) {
-        /** nothing to do **/
+    public void sessionDestroyed(final HttpSessionEvent event) {
+        /* nothing to do */
     }
-
 }

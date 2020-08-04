@@ -29,6 +29,8 @@
 
 package org.owasp.csrfguard.log;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,14 +41,14 @@ public class JavaLogger implements ILogger {
 	private final static Logger LOGGER = Logger.getLogger("Owasp.CsrfGuard");
 
 	@Override
-	public void log(String msg) {
+	public void log(final String msg) {
 		LOGGER.info(msg.replaceAll("(\\r|\\n)", ""));
 	}
 
 	@Override
-	public void log(LogLevel level, String msg) {
+	public void log(final LogLevel level, final String msg) {
 		// Remove CR and LF characters to prevent CRLF injection
-		String sanitizedMsg = msg.replaceAll("(\\r|\\n)", "");
+		final String sanitizedMsg = msg.replaceAll("(\\r|\\n)", "");
 		
 		switch(level) {
 			case Trace:
@@ -73,12 +75,12 @@ public class JavaLogger implements ILogger {
 	}
 
 	@Override
-	public void log(Exception exception) {
+	public void log(final Exception exception) {
 		LOGGER.log(Level.WARNING, exception.getLocalizedMessage(), exception);
 	}
 
 	@Override
-	public void log(LogLevel level, Exception exception) {
+	public void log(final LogLevel level, final Exception exception) {
 			switch(level) {
 			case Trace:
 				LOGGER.log(Level.FINEST, exception.getLocalizedMessage(), exception);
@@ -90,8 +92,6 @@ public class JavaLogger implements ILogger {
 				LOGGER.log(Level.INFO, exception.getLocalizedMessage(), exception);
 				break;
 			case Warning:
-				LOGGER.log(Level.WARNING, exception.getLocalizedMessage(), exception);
-				break;
 			case Error:
 				LOGGER.log(Level.WARNING, exception.getLocalizedMessage(), exception);
 				break;

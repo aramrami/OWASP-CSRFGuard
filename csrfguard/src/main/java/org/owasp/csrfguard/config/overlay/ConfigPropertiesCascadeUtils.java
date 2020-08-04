@@ -29,8 +29,6 @@
 
 package org.owasp.csrfguard.config.overlay;
 
-
-
 import java.util.Map;
 
 /**
@@ -45,11 +43,8 @@ public class ConfigPropertiesCascadeUtils extends ConfigPropertiesCascadeCommonU
    * @return the string    The modified strings, with replacements
    */
   public static String substituteExpressionLanguage(String stringToParse, Map<String, Object> variableMap) {
-    
     return substituteExpressionLanguage(stringToParse, variableMap, true, true, true, false);
-    
   }
-  
 
   /**
    * substitute an EL for objects
@@ -68,6 +63,4 @@ public class ConfigPropertiesCascadeUtils extends ConfigPropertiesCascadeCommonU
     //we don't have jexl so don't do this logic
     return stringToParse;
   }
-
-
 }

@@ -29,11 +29,11 @@
 
 package org.owasp.csrfguard.action;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public final class Empty extends AbstractAction {
 
@@ -43,5 +43,4 @@ public final class Empty extends AbstractAction {
 	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
 		// nothing to do
 	}
-	
 }

@@ -26,29 +26,39 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.config.properties.javascript;
 
-package org.owasp.csrfguard.action;
+import org.apache.commons.lang3.StringUtils;
 
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.CsrfGuardException;
+import javax.servlet.ServletConfig;
+import java.util.Properties;
+import java.util.function.Function;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+public abstract class JsConfigParameter<T> {
 
-public final class Forward extends AbstractAction {
+    public abstract T getProperty(final ServletConfig servletConfig, final Properties propertyCache);
 
-	private static final long serialVersionUID = -3727752206497452347L;
+    public static String getInitParameter(final ServletConfig servletConfig, final String name, final String configFileDefaultParamValue, final String defaultValue) {
+        return getInitParameter(servletConfig, name, configFileDefaultParamValue, defaultValue, Function.identity());
+    }
 
-	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
-		final String errorPage = getParameter("Page");
+    public static boolean getInitParameter(final ServletConfig servletConfig, final String name, final String configFileDefaultParamValue, final boolean defaultValue) {
+        return getInitParameter(servletConfig, name, configFileDefaultParamValue, defaultValue, Boolean::parseBoolean);
+    }
 
-		try {
-			request.getRequestDispatcher(errorPage).forward(request, response);
-		} catch (final IOException | ServletException e) {
-			throw new CsrfGuardException(e);
-		}
-	}
+    public static <T> T getInitParameter(final ServletConfig servletConfig, final String name, final String configFileDefaultParamValue, final T defaultValue, final Function<String, T> function) {
+        final T result;
+
+        final String initParameter = servletConfig.getInitParameter(name);
+
+        if (StringUtils.isNotBlank(initParameter)) {
+            result = function.apply(initParameter);
+        } else if (StringUtils.isNotBlank(configFileDefaultParamValue)) {
+            result = function.apply(configFileDefaultParamValue);
+        } else {
+            result = defaultValue;
+        }
+
+        return result;
+    }
 }

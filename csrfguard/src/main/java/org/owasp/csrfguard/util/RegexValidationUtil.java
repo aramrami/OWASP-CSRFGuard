@@ -35,10 +35,10 @@ package org.owasp.csrfguard.util;
  * @author - srijas
  * @since - 11/7/2019.
  */
-public class RegexValidationUtil {
+public final class RegexValidationUtil {
 
     private RegexValidationUtil() {
-        //Utility Class
+        // Utility Class
     }
 
     /**
@@ -46,7 +46,7 @@ public class RegexValidationUtil {
      * @param testPath The path string to test
      * @return true if regex (starts with "^" and ends with "$")
      */
-    public static boolean isTestPathRegex(String testPath) {
+    public static boolean isTestPathRegex(final String testPath) {
         return testPath != null && testPath.startsWith("^") && testPath.endsWith("$");
     }
 }

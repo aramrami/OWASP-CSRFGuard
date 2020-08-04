@@ -27,28 +27,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.owasp.csrfguard.action;
+package org.owasp.csrfguard.config.properties.javascript;
 
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.CsrfGuardException;
+import org.owasp.csrfguard.config.properties.PropertyUtils;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import javax.servlet.ServletConfig;
+import java.util.Properties;
 
-public final class Forward extends AbstractAction {
+public class BooleanJsConfigParameter extends JsConfigParameter<Boolean> {
 
-	private static final long serialVersionUID = -3727752206497452347L;
+    private final String propertyName;
+    private final String propertyKey;
+    private final boolean defaultValue;
 
-	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
-		final String errorPage = getParameter("Page");
+    public BooleanJsConfigParameter(final String propertyName, final String propertyKey, final boolean defaultValue) {
+        this.propertyName = propertyName;
+        this.propertyKey = propertyKey;
+        this.defaultValue = defaultValue;
+    }
 
-		try {
-			request.getRequestDispatcher(errorPage).forward(request, response);
-		} catch (final IOException | ServletException e) {
-			throw new CsrfGuardException(e);
-		}
-	}
+    @Override
+    public Boolean getProperty(final ServletConfig servletConfig, final Properties propertyCache) {
+        final String configParamValue = PropertyUtils.getProperty(propertyCache, this.propertyKey);
+        return getInitParameter(servletConfig, this.propertyName, configParamValue, this.defaultValue);
+    }
 }

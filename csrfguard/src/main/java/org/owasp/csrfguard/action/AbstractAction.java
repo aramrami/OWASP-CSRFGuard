@@ -29,7 +29,8 @@
 
 package org.owasp.csrfguard.action;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class AbstractAction implements IAction {
 
@@ -37,26 +38,26 @@ public abstract class AbstractAction implements IAction {
 
 	private String name = null;
 	
-	private Map<String, String> parameters = new HashMap<String, String>();
+	private final Map<String, String> parameters = new HashMap<>();
 
 	@Override
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
 	@Override
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	@Override
-	public void setParameter(String name, String value) {
-		parameters.put(name, value);
+	public void setParameter(final String name, final String value) {
+		this.parameters.put(name, value);
 	}
 
 	@Override
-	public String getParameter(String parameterName) {
-		String value = parameters.get(parameterName);
+	public String getParameter(final String parameterName) {
+		final String value = this.parameters.get(parameterName);
 
 		if (value == null) {
 			throw new RuntimeException(String.format("unable to locate expected parameter %s", parameterName));
@@ -67,7 +68,6 @@ public abstract class AbstractAction implements IAction {
 
 	@Override
 	public Map<String, String> getParameterMap() {
-		return parameters;
+		return this.parameters;
 	}
-	
 }

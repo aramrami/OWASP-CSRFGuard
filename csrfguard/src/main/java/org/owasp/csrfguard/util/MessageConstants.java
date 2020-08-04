@@ -34,16 +34,15 @@ package org.owasp.csrfguard.util;
  * @author - srijas
  * @since - 11/7/2019.
  */
-public class MessageConstants {
+public final class MessageConstants {
 
     private MessageConstants() {
-        //Utility Class
+        // Utility Class
     }
 
     public static final String MISSING_TOKEN_MSG = "Required Token is missing from the Request";
     public static final String MISMATCH_PAGE_TOKEN_MSG = "Request Token does not match Page Token";
     public static final String MISMATCH_SESSION_TOKEN_MSG = "Request Token does not match Session Token";
     public static final String RANDOM_TOKEN_FAILURE_MSG = "Unable to generate the Random Token";
-    public static final String SESSION_TOKEN_MSG = "CSRFGuard expects the token to exist in " +
-            "session at this point";
+    public static final String SESSION_TOKEN_MSG = "CSRFGuard expects the token to exist in session at this point";
 }

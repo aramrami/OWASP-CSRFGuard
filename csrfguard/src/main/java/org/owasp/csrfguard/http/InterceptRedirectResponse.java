@@ -29,23 +29,22 @@
 
 package org.owasp.csrfguard.http;
 
-import java.io.IOException;
+import org.owasp.csrfguard.CsrfGuard;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-
-import org.owasp.csrfguard.CsrfGuard;
+import java.io.IOException;
 
 public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 
-	private HttpServletResponse response = null;
+	private final HttpServletResponse response;
 
-	private CsrfGuard csrfGuard;
+	private final CsrfGuard csrfGuard;
 
-	private HttpServletRequest request;
+	private final HttpServletRequest request;
 
-	public InterceptRedirectResponse(HttpServletResponse response, HttpServletRequest request, CsrfGuard csrfGuard) {
+	public InterceptRedirectResponse(final HttpServletResponse response, final HttpServletRequest request, final CsrfGuard csrfGuard) {
 		super(response);
 		this.response = response;
 		this.request = request;
@@ -53,24 +52,22 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 	}
 
 	@Override
-	public void sendRedirect(String location) throws IOException {
+	public void sendRedirect(final String location) throws IOException {
 		// Remove CR and LF characters to prevent CRLF injection
-		String sanitizedLocation = location.replaceAll("(\\r|\\n|%0D|%0A|%0a|%0d)", "");
+		final String sanitizedLocation = location.replaceAll("(\\r|\\n|%0D|%0A|%0a|%0d)", "");
 		
-		/** ensure token included in redirects **/
-		if (!sanitizedLocation.contains("://") && csrfGuard.isProtectedPageAndMethod(sanitizedLocation, "GET")) {
-			/** update tokens **/
-			csrfGuard.updateTokens(request);
+		/* ensure token included in redirects */
+		if (!sanitizedLocation.contains("://") && this.csrfGuard.isProtectedPageAndMethod(sanitizedLocation, "GET")) {
+			/* update tokens */
+			this.csrfGuard.updateTokens(this.request);
 			
-			// Separate URL fragment from path, e.g. /myPath#myFragment becomes 
-			//[0]: /myPath [1]: myFragment
-			String[] splitOnFragement = location.split("#", 2);
-			location = splitOnFragement[0];
+			// Separate URL fragment from path, e.g. /myPath#myFragment becomes [0]: /myPath [1]: myFragment
+			final String[] splitOnFragment = location.split("#", 2);
 
-			StringBuilder sb = new StringBuilder();
+			final StringBuilder sb = new StringBuilder();
 
 			if (!sanitizedLocation.startsWith("/")) {
-				sb.append(request.getContextPath() + "/" + sanitizedLocation);
+				sb.append(this.request.getContextPath()).append('/').append(sanitizedLocation);
 			} else {
 				sb.append(sanitizedLocation);
 			}
@@ -82,20 +79,20 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 			}
 
 			// remove any query parameters from the sanitizedLocation
-			String locationUri = sanitizedLocation.split("\\?", 2)[0];
+			final String locationUri = sanitizedLocation.split("\\?", 2)[0];
 
-			sb.append(csrfGuard.getTokenName());
+			sb.append(this.csrfGuard.getTokenName());
 			sb.append('=');
-			sb.append(csrfGuard.getTokenValue(request, locationUri));
+			sb.append(this.csrfGuard.getTokenValue(this.request, locationUri));
 			
 			// Add back fragment, if one exists
-			if(splitOnFragement.length > 1) {
-				sb.append('#').append(splitOnFragement[1]);
+			if (splitOnFragment.length > 1) {
+				sb.append('#').append(splitOnFragment[1]);
 			}
 
-			response.sendRedirect(sb.toString());
+			this.response.sendRedirect(sb.toString());
 		} else {
-			response.sendRedirect(sanitizedLocation);
+			this.response.sendRedirect(sanitizedLocation);
 		}
 	}
 }

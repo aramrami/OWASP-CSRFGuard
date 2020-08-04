@@ -29,38 +29,37 @@
 
 package org.owasp.csrfguard.log;
 
-import java.util.*;
+import java.util.Date;
 
 public class ConsoleLogger implements ILogger {
 
 	private static final long serialVersionUID = 3139970112597740777L;
 
 	@Override
-	public void log(String msg) {
+	public void log(final String msg) {
 		log(LogLevel.Info, msg);
 	}
 
 	@Override
-	public void log(LogLevel level, String msg) {
-		if(LogLevel.Error.equals(level)) {
-			System.err.println(String.format("[%s] [%s] %s", new Date(), String.valueOf(level), msg));
+	public void log(final LogLevel level, final String msg) {
+		if (LogLevel.Error.equals(level)) {
+			System.err.println(String.format("[%s] [%s] %s", new Date(), level, msg));
 		} else {
-			System.out.println(String.format("[%s] [%s] %s", new Date(), String.valueOf(level), msg));
+			System.out.println(String.format("[%s] [%s] %s", new Date(), level, msg));
 		}
 	}
 
 	@Override
-	public void log(Exception exception) {
+	public void log(final Exception exception) {
 		log(LogLevel.Error, exception);
 	}
 
 	@Override
-	public void log(LogLevel level, Exception exception) {
-		if(LogLevel.Error.equals(level)) {
-			System.err.println(String.format("[%s] [%s] %s", new Date(), String.valueOf(level), String.valueOf(exception)));
+	public void log(final LogLevel level, final Exception exception) {
+		if (LogLevel.Error.equals(level)) {
+			System.err.println(String.format("[%s] [%s] %s", new Date(), level, exception));
 		} else {
-			System.out.println(String.format("[%s] [%s] %s", new Date(), String.valueOf(level), String.valueOf(exception)));
+			System.out.println(String.format("[%s] [%s] %s", new Date(), level, exception));
 		}
 	}
-	
 }

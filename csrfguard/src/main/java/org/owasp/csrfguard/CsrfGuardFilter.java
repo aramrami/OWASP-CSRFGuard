@@ -43,33 +43,33 @@ public final class CsrfGuardFilter implements Filter {
 
     @Override
     public void destroy() {
-        filterConfig = null;
+        this.filterConfig = null;
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain filterChain) throws IOException, ServletException {
 
-        //maybe the short circuit to disable is set
+        // maybe the short circuit to disable is set
         if (!CsrfGuard.getInstance().isEnabled()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        /** only work with HttpServletRequest objects **/
+        /* only work with HttpServletRequest objects */
         if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
 
-            HttpServletRequest httpRequest = (HttpServletRequest) request;
-            HttpSession session = httpRequest.getSession(false);
+            final HttpServletRequest httpRequest = (HttpServletRequest) request;
+            final HttpSession session = httpRequest.getSession(false);
 
-            //if there is no session and we arent validating when no session exists
+            // if there is no session and we aren't validating when no session exists
             if (session == null && !CsrfGuard.getInstance().isValidateWhenNoSessionExists()) {
                 // If there is no session, no harm can be done
-                filterChain.doFilter(httpRequest, (HttpServletResponse) response);
+                filterChain.doFilter(httpRequest, response);
                 return;
             }
 
-            CsrfGuard csrfGuard = CsrfGuard.getInstance();
-            InterceptRedirectResponse httpResponse = new InterceptRedirectResponse((HttpServletResponse) response, httpRequest, csrfGuard);
+            final CsrfGuard csrfGuard = CsrfGuard.getInstance();
+            final InterceptRedirectResponse httpResponse = new InterceptRedirectResponse((HttpServletResponse) response, httpRequest, csrfGuard);
 
 //			 if(MultipartHttpServletRequest.isMultipartRequest(httpRequest)) {
 //				 httpRequest = new MultipartHttpServletRequest(httpRequest);
@@ -80,22 +80,24 @@ public final class CsrfGuardFilter implements Filter {
             } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
                 filterChain.doFilter(httpRequest, httpResponse);
             } else {
-                /** invalid request - nothing to do - actions already executed **/
+                /*
+                 TODO log
+                 invalid request - nothing to do - actions already executed
+                 */
             }
 
-            /** update tokens **/
+            /* update tokens */
             csrfGuard.updateTokens(httpRequest);
 
         } else {
-            filterConfig.getServletContext().log(String.format("[WARNING] CsrfGuard does not know how to work with requests of class %s ", request.getClass().getName()));
+            this.filterConfig.getServletContext().log(String.format("[WARNING] CSRFGuard does not know how to work with requests of class %s ", request.getClass().getName()));
 
             filterChain.doFilter(request, response);
         }
     }
 
     @Override
-    public void init(@SuppressWarnings("hiding") FilterConfig filterConfig) throws ServletException {
+    public void init(final FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
     }
-
 }

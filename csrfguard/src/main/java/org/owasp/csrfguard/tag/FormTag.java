@@ -29,32 +29,32 @@
 
 package org.owasp.csrfguard.tag;
 
-import java.io.*;
-import java.util.*;
-
-import javax.servlet.http.*;
-import javax.servlet.jsp.*;
-import javax.servlet.jsp.tagext.*;
-
-import org.owasp.csrfguard.*;
+import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.util.BrowserEncoder;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.tagext.DynamicAttributes;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class FormTag extends AbstractUriTag implements DynamicAttributes {
 
 	private final static long serialVersionUID = 0xbefee742;
 	
-	private Map<String, String> attributes = new HashMap<String, String>();
+	private final Map<String, String> attributes = new HashMap<>();
 
 	@Override
 	public int doStartTag() {
-		CsrfGuard csrfGuard = CsrfGuard.getInstance();
-		String tokenValue = csrfGuard.getTokenValue((HttpServletRequest) pageContext.getRequest(), buildUri(attributes.get("action")));
-		String tokenName = csrfGuard.getTokenName();
+		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
+		final String tokenValue = csrfGuard.getTokenValue((HttpServletRequest) this.pageContext.getRequest(), buildUri(this.attributes.get("action")));
+		final String tokenName = csrfGuard.getTokenName();
 
 		try {
-			pageContext.getOut().write(buildStartHtml(tokenName, tokenValue));
-		} catch (IOException e) {
-			pageContext.getServletContext().log(e.getLocalizedMessage(), e);
+			this.pageContext.getOut().write(buildStartHtml(tokenName, tokenValue));
+		} catch (final IOException e) {
+			this.pageContext.getServletContext().log(e.getLocalizedMessage(), e);
 		}
 
 		return EVAL_BODY_INCLUDE;
@@ -63,26 +63,26 @@ public final class FormTag extends AbstractUriTag implements DynamicAttributes {
 	@Override
 	public int doEndTag() {
 		try {
-			pageContext.getOut().write("</form>");
-		} catch (IOException e) {
-			pageContext.getServletContext().log(e.getLocalizedMessage(), e);
+			this.pageContext.getOut().write("</form>");
+		} catch (final IOException e) {
+			this.pageContext.getServletContext().log(e.getLocalizedMessage(), e);
 		}
 
 		return EVAL_PAGE;
 	}
 
 	@Override
-	public void setDynamicAttribute(String arg0, String arg1, Object arg2) throws JspException {
-		attributes.put(arg1.toLowerCase(), String.valueOf(arg2));
+	public void setDynamicAttribute(final String arg0, final String arg1, final Object arg2) throws JspException {
+		this.attributes.put(arg1.toLowerCase(), String.valueOf(arg2));
 	}
 
-	private String buildStartHtml(String tokenName, String tokenValue) {
-		StringBuilder sb = new StringBuilder();
+	private String buildStartHtml(final String tokenName, final String tokenValue) {
+		final StringBuilder sb = new StringBuilder();
 
 		sb.append("<form ");
 
-		for (String name : attributes.keySet()) {
-			String value = attributes.get(name);
+		for (final String name : this.attributes.keySet()) {
+			final String value = this.attributes.get(name);
 
 			sb.append(BrowserEncoder.encodeForAttribute(name));
 			sb.append('=');
@@ -103,5 +103,4 @@ public final class FormTag extends AbstractUriTag implements DynamicAttributes {
 
 		return sb.toString();
 	}
-	
 }
