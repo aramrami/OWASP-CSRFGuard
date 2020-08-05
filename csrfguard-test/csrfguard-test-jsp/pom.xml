@@ -57,7 +57,7 @@
                 <version>${tomcat7-maven-plugin.version}</version>
                 <configuration>
                     <path>/</path>
-                    <port>8000</port>
+                    <port>8080</port>
                     <skip>${skip.run.webapp}</skip>
                 </configuration>
                 <executions>
