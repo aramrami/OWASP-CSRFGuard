@@ -33,6 +33,7 @@
  */
 package org.owasp.csrfguard.config.overlay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 import org.owasp.csrfguard.config.properties.ConfigParameters;
 
@@ -72,32 +73,16 @@ public class ConfigurationOverlayProvider extends ConfigPropertiesCascadeBase {
 	public ConfigurationOverlayProvider() {
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.overlay.ConfigPropertiesCascadeBase#getSecondsToCheckConfigKey()
-	 */
 	@Override
 	protected String getSecondsToCheckConfigKey() {
 		return ConfigParameters.CONFIG_OVERLAY_UPDATE_CHECK_PROPERTY_NAME;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.overlay.ConfigPropertiesCascadeBase#clearCachedCalculatedValues()
-	 */
-	@Override
-	public void clearCachedCalculatedValues() {
-	}
-
-	/**
-	 * @see org.owasp.csrfguard.config.overlay.ConfigPropertiesCascadeBase#getMainConfigClasspath()
-	 */
 	@Override
 	protected String getMainConfigClasspath() {
 		return OWASP_CSRF_GUARD_OVERLAY_PROPERTIES;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.overlay.ConfigPropertiesCascadeBase#getHierarchyConfigKey()
-	 */
 	@Override
 	protected String getHierarchyConfigKey() {
 		return ConfigParameters.CONFIG_OVERLAY_HIERARCHY_PROPERTY_NAME;
@@ -108,9 +93,6 @@ public class ConfigurationOverlayProvider extends ConfigPropertiesCascadeBase {
 	 */
 	private static String mainExampleConfigClasspath = null;
 	
-	/**
-	 * @see org.owasp.csrfguard.config.overlay.ConfigPropertiesCascadeBase#getMainExampleConfigClasspath()
-	 */
 	@Override
 	protected String getMainExampleConfigClasspath() {
 
@@ -135,7 +117,6 @@ public class ConfigurationOverlayProvider extends ConfigPropertiesCascadeBase {
 		}
 		
 		//generally this is Owasp.CsrfGuard.properties
-		return ConfigPropertiesCascadeUtils.defaultIfBlank(CsrfGuardServletContextListener.getConfigFileName(), 
-				mainExampleConfigClasspath);
+		return StringUtils.defaultIfBlank(CsrfGuardServletContextListener.getConfigFileName(), mainExampleConfigClasspath);
 	}
 }
