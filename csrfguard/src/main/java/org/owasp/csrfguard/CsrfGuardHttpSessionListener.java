@@ -29,6 +29,7 @@
 
 package org.owasp.csrfguard;
 
+import org.owasp.csrfguard.token.service.TokenService;
 import org.owasp.csrfguard.util.SessionUtils;
 
 import javax.servlet.http.HttpSession;
@@ -41,14 +42,16 @@ public class CsrfGuardHttpSessionListener implements HttpSessionListener {
     public void sessionCreated(final HttpSessionEvent event) {
         final HttpSession session = event.getSession();
         final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-        csrfGuard.updateToken(session);
+
+        final TokenService tokenService = csrfGuard.getTokenService();
+        tokenService.createMasterTokenIfNotExists(session);
 
         // Check if should generate tokens for protected resources on current session
         if (csrfGuard.isTokenPerPageEnabled()
             && csrfGuard.isTokenPerPagePrecreate()
-            && !SessionUtils.tokensGenerated(session)) {
+            && !SessionUtils.areTokensGenerated(session)) {
 
-            csrfGuard.generatePageTokensForSession(session);
+            tokenService.generateProtectedPageTokens(session);
         }
     }
 

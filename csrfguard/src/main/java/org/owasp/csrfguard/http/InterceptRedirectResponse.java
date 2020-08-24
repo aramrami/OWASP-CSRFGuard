@@ -30,6 +30,7 @@
 package org.owasp.csrfguard.http;
 
 import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.token.service.TokenService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -59,7 +60,8 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 		/* ensure token included in redirects */
 		if (!sanitizedLocation.contains("://") && this.csrfGuard.isProtectedPageAndMethod(sanitizedLocation, "GET")) {
 			/* update tokens */
-			this.csrfGuard.updateTokens(this.request);
+			final TokenService tokenService = CsrfGuard.getInstance().getTokenService();
+			tokenService.generateTokensIfNotExists(this.request); // TODO who is going to send this back to the client?
 			
 			// Separate URL fragment from path, e.g. /myPath#myFragment becomes [0]: /myPath [1]: myFragment
 			final String[] splitOnFragment = location.split("#", 2);
@@ -83,7 +85,7 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 
 			sb.append(this.csrfGuard.getTokenName());
 			sb.append('=');
-			sb.append(this.csrfGuard.getTokenValue(this.request, locationUri));
+			sb.append(tokenService.getTokenValue(this.request, locationUri));
 			
 			// Add back fragment, if one exists
 			if (splitOnFragment.length > 1) {

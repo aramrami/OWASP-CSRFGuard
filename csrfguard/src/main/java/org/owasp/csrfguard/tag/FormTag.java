@@ -48,7 +48,7 @@ public final class FormTag extends AbstractUriTag implements DynamicAttributes {
 	@Override
 	public int doStartTag() {
 		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-		final String tokenValue = csrfGuard.getTokenValue((HttpServletRequest) this.pageContext.getRequest(), buildUri(this.attributes.get("action")));
+		final String tokenValue = csrfGuard.getTokenService().getTokenValue((HttpServletRequest) this.pageContext.getRequest(), buildUri(this.attributes.get("action")));
 		final String tokenName = csrfGuard.getTokenName();
 
 		try {

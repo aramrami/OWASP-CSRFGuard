@@ -31,63 +31,16 @@ package org.owasp.csrfguard.action;
 
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardException;
-import org.owasp.csrfguard.util.RandomGenerator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class Rotate extends AbstractAction {
 
-	private static final long serialVersionUID = -3164557586544451406L;
+    private static final long serialVersionUID = -3164557586544451406L;
 
-	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
-		final HttpSession session = request.getSession(false);
-
-		if (session != null) {
-			updateSessionToken(session, csrfGuard);
-
-			if (csrfGuard.isTokenPerPageEnabled()) {
-				updatePageTokens(session, csrfGuard);
-			}
-		}
-	}
-
-	private void updateSessionToken(final HttpSession session, final CsrfGuard csrfGuard) throws CsrfGuardException {
-		final String token;
-
-		try {
-			token = RandomGenerator.generateRandomId(csrfGuard.getPrng(), csrfGuard.getTokenLength());
-		} catch (final Exception e) {
-			throw new CsrfGuardException(String.format("unable to generate the random token - %s", e.getLocalizedMessage()), e);
-		}
-
-		session.setAttribute(csrfGuard.getSessionKey(), token);
-	}
-
-	private void updatePageTokens(final HttpSession session, final CsrfGuard csrfGuard) throws CsrfGuardException {
-		@SuppressWarnings("unchecked")
-		final Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
-		final List<String> pages = new ArrayList<>();
-
-		if (pageTokens != null) {
-			pages.addAll(pageTokens.keySet());
-		}
-
-		for (final String page : pages) {
- 			final String token;
-
-			try {
-				token = RandomGenerator.generateRandomId(csrfGuard.getPrng(), csrfGuard.getTokenLength());
-			} catch (final Exception e) {
-				throw new CsrfGuardException(String.format("unable to generate the random token - %s", e.getLocalizedMessage()), e);
-			}
-
-			pageTokens.put(page, token);
-		}
-	}
+    @Override
+    public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
+        csrfGuard.getTokenService().rotateAllTokens(request);
+    }
 }

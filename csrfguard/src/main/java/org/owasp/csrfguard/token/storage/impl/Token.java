@@ -26,21 +26,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.token.storage.impl;
 
-package org.owasp.csrfguard.util;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.owasp.csrfguard.CsrfGuard;
+public class Token {
 
-public final class TokenUtils {
+    private String masterToken;
+    private Map<String, String> pageTokens;
 
-    private TokenUtils() {}
+    public Token(final String masterToken) {
+        this(masterToken, new HashMap<>());
+    }
 
-    /**
-     * Create a random token according with configuration.
-     *
-     * @return a random token
-     */
-    public static String getRandomToken() {
-        return RandomGenerator.generateRandomId(CsrfGuard.getInstance().getPrng(), CsrfGuard.getInstance().getTokenLength());
+    public Token(final String masterToken, final Map<String, String> pageTokens) {
+        this.masterToken = masterToken;
+        this.pageTokens = pageTokens;
+    }
+
+    public String getMasterToken() {
+        return this.masterToken;
+    }
+
+    public void setMasterToken(final String masterToken) {
+        this.masterToken = masterToken;
+    }
+
+    public Map<String, String> getPageTokens() {
+        return this.pageTokens;
+    }
+
+    public void setPageTokens(final Map<String, String> pageTokens) {
+        this.pageTokens = pageTokens;
+    }
+
+    public String getPageToken(final String uri) {
+        return this.pageTokens.get(uri);
+    }
+
+    public void setPageToken(final String uri, final String value) {
+        this.pageTokens.put(uri, value);
     }
 }

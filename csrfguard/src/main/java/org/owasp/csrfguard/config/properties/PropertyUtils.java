@@ -33,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 
-import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Function;
 
@@ -69,21 +68,13 @@ public final class PropertyUtils {
         return getProperty(properties, propertyName, defaultValue, Integer::parseInt);
     }
 
-    public static <T> T getProperty(final Properties properties, final String propertyName, final T defaultValue, final Function<String, T> function) {
-        final T result;
-
-        final String property = getProperty(properties, propertyName);
-        if (Objects.isNull(property)) {
-            result = defaultValue;
-        } else {
-            result = function.apply(property);
-        }
-
-        return result;
-    }
-
     public static String getProperty(final Properties properties, final Pair<String, String> propertyWithDefaultValue) {
         return getProperty(properties, propertyWithDefaultValue.getKey(), propertyWithDefaultValue.getValue());
+    }
+
+    public static <T> T getProperty(final Properties properties, final String propertyName, final T defaultValue, final Function<String, T> function) {
+        final String property = getProperty(properties, propertyName);
+        return StringUtils.isBlank(property) ? defaultValue : function.apply(property);
     }
 
     /**

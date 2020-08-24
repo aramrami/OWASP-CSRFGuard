@@ -30,6 +30,7 @@
 package org.owasp.csrfguard.util;
 
 import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.token.TokenUtils;
 
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
@@ -37,14 +38,18 @@ import java.util.Map;
 
 /**
  * This class handles with logic between session and token manipulation.
+ *
+ * Should only be used from org.owasp.csrfguard.token.service.impl.SessionBoundTokenService and org.owasp.csrfguard.CsrfGuardHttpSessionListener
  */
 public final class SessionUtils {
 
     private SessionUtils() {}
 
+    public static final String PAGE_TOKENS_KEY = "Owasp_CsrfGuard_Pages_Tokens_Key";
+
     private static final String TOKENS_GENERATED = "org.owasp.csrfguard.TokensGenerated";
 
-    public static boolean tokensGenerated(final HttpSession session) {
+    public static boolean areTokensGenerated(final HttpSession session) {
         return session.getAttribute(TOKENS_GENERATED) != null
                 && (Boolean) session.getAttribute(TOKENS_GENERATED);
     }
@@ -55,19 +60,37 @@ public final class SessionUtils {
         }
     }
 
-    public static Map<String, String> extractPageTokensFromSession(final HttpSession session) {
-        final Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
+    public static Map<String, String> getPageTokens(final HttpSession session) {
+        @SuppressWarnings("unchecked")
+        final Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(PAGE_TOKENS_KEY);
 
-        if (pageTokens != null) {
+        if (pageTokens == null) {
+            final Map<String, String> emptyMap = new HashMap<>(CsrfGuard.getInstance().getProtectedPages().size());
+            session.setAttribute(PAGE_TOKENS_KEY, emptyMap);
+            return emptyMap;
+        } else {
             return pageTokens;
         }
-
-        return new HashMap<>(CsrfGuard.getInstance().getProtectedPages().size());
     }
 
-    public static void updatePageTokensOnSession(final HttpSession session, final Map<String, String> pageTokens) {
+    public static String getPageToken(final HttpSession session, final String requestUri) {
+        final Map<String, String> pageTokens = SessionUtils.getPageTokens(session);
+        return pageTokens.get(requestUri);
+    }
+
+    public static void generateNewPageToken(final HttpSession session, final String requestUri) {
+        final Map<String, String> pageTokens = SessionUtils.getPageTokens(session);
+        pageTokens.put(requestUri, TokenUtils.generateRandomToken());
+    }
+
+    public static void generatePageTokenIfNotExists(final HttpSession session, final String requestUri) {
+        final Map<String, String> pageTokens = SessionUtils.getPageTokens(session);
+        pageTokens.computeIfAbsent(requestUri, k -> TokenUtils.generateRandomToken());
+    }
+
+    public static void setPageTokens(final HttpSession session, final Map<String, String> pageTokens) {
         if (session != null && pageTokens != null) {
-            session.setAttribute(CsrfGuard.PAGE_TOKENS_KEY, pageTokens);
+            session.setAttribute(PAGE_TOKENS_KEY, pageTokens);
             setTokensGenerated(session);
         }
     }
@@ -75,42 +98,33 @@ public final class SessionUtils {
     /**
      * Invalidates the session token and the token from the resource that
      * has experienced an access attempt with an invalid token.
-     *
      * @param session      - current session
-     * @param sessionToken - token from session
-     * @param requestToken - token send on request (can be a invalid token or a token from another valid resource)
+     * @param invalidToken - token send on request (can be a invalid token or a token from another valid resource)
      */
-    public static void invalidateTokenForResource(final HttpSession session,
-                                                  final String sessionToken,
-                                                  final String requestToken) {
+    public static void invalidateTokenForResource(final HttpSession session, final String invalidToken) {
+        final Map<String, String> pageTokens = getPageTokens(session);
 
-        final Map<String, String> pageTokens = extractPageTokensFromSession(session);
+        final String masterToken = getMasterToken(session);
 
-        final String actualSessionToken = getSessionToken(session);
-
-        if (actualSessionToken.equals(sessionToken)) {
-            invalidateSessionToken(session);
+        if (masterToken.equals(invalidToken)) {
+            session.setAttribute(CsrfGuard.getInstance().getSessionKey(), TokenUtils.generateRandomToken());
         }
 
         // Invalidate request token if it's from another existing resource
-        final String existentResource = CsrfGuardUtils.getMapKeyByValue(pageTokens, requestToken);
-        if (existentResource != null) {
-            pageTokens.put(existentResource, TokenUtils.getRandomToken());
-        }
+        TokenUtils.regenerateUsedPageToken(pageTokens, invalidToken);
 
         setTokensGenerated(session);
     }
 
-    /**
-     * Overrides the current session token with a new one.
-     *
-     * @param session - current session
-     */
-    public static void invalidateSessionToken(final HttpSession session) {
-        session.setAttribute(CsrfGuard.getInstance().getSessionKey(), TokenUtils.getRandomToken());
+    public static String getMasterToken(final HttpSession session) {
+        return (String) session.getAttribute(CsrfGuard.getInstance().getSessionKey());
     }
 
-    public static String getSessionToken(final HttpSession session) {
-        return (String) session.getAttribute(CsrfGuard.getInstance().getSessionKey());
+    public static void generateNewMasterToken(final HttpSession session, final String sessionKey) {
+        session.setAttribute(sessionKey, TokenUtils.generateRandomToken());
+    }
+
+    public static void rotateAllPageTokens(final HttpSession session) {
+        TokenUtils.rotateAllPageTokens(SessionUtils.getPageTokens(session));
     }
 }

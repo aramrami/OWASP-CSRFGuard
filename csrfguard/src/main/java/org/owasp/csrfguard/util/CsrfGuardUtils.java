@@ -33,105 +33,134 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.csrfguard.config.overlay.ConfigPropertiesCascadeCommonUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.Map;
 
 /**
  * TODO document
  */
 public final class CsrfGuardUtils {
 
-	private CsrfGuardUtils() {}
+    private CsrfGuardUtils() {}
 
-	/**
-	 * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
-	 * @param url a string representing a URL
-	 * @param includeProtocol whether to include the HTTP or HTTPS protocol in the result
-	 * @return the path with or without the protocol
-	 */
-	public static String httpProtocolAndDomain(final String url, final boolean includeProtocol) {
-		if (includeProtocol) {
-			return httpProtocolAndDomain(url);
-		}
+    /**
+     * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
+     *
+     * @param url             a string representing a URL
+     * @param includeProtocol whether to include the HTTP or HTTPS protocol in the result
+     * @return the path with or without the protocol
+     */
+    public static String httpProtocolAndDomain(final String url, final boolean includeProtocol) {
+        if (includeProtocol) {
+            return httpProtocolAndDomain(url);
+        }
 
-		return httpProtocolAndDomain(url.replaceFirst("^(http[s]?)://", StringUtils.EMPTY));
-	}
+        return httpProtocolAndDomain(url.replaceFirst("^(http[s]?)://", StringUtils.EMPTY));
+    }
 
-	/**
-	 * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
-	 * @param url a string representing a URL
-	 * @return the protocol and path
-	 */
-	public static String httpProtocolAndDomain(final String url) {
-		final int firstSlashAfterProtocol = url.indexOf('/', 8); // TODO this should be rewritten..
-		if (firstSlashAfterProtocol < 0) {
-			// must not have a path
-			return url;
-		}
+    /**
+     * <pre>Returns the class object.</pre>
+     *
+     * @param origClassName is fully qualified
+     * @return the class
+     */
+    public static Class forName(final String origClassName) {
+        try {
+            return Class.forName(origClassName);
+        } catch (final Throwable t) {
+            throw new RuntimeException("Problem loading class: " + origClassName, t);
+        }
+    }
 
-		return url.substring(0, firstSlashAfterProtocol);
-	}
+    public static String readResourceFileContent(final String resourceName) {
+        try (final InputStream inputStream = CsrfGuardUtils.class.getClassLoader().getResourceAsStream(resourceName)) {
+            if (inputStream == null) {
+                throw new IllegalStateException("Could not find resource " + resourceName);
+            } else {
+                return readInputStreamContent(inputStream);
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	/**
-	 * <pre>Returns the class object.</pre>
-	 * @param origClassName is fully qualified
-	 * @return the class
-	 */
-	public static Class forName(final String origClassName) {
-		try {
-			return Class.forName(origClassName);
-		} catch (final Throwable t) {
-			throw new RuntimeException("Problem loading class: " + origClassName, t);
-		}
-	}
+    public static String readFileContent(final String fileNameWithAbsolutePath) {
+        try (final InputStream inputStream = new FileInputStream(fileNameWithAbsolutePath)) {
+            return readInputStreamContent(inputStream);
+        } catch (final IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
 
-	public static String readResourceFileContent(final String resourceName) {
-		try (final InputStream inputStream = CsrfGuardUtils.class.getClassLoader().getResourceAsStream(resourceName)) {
-			if (inputStream == null) {
-				throw new IllegalStateException("Could not find resource " + resourceName);
-			} else {
-				return readInputStreamContent(inputStream);
-			}
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    /**
+     * Construct a class
+     *
+     * @param <T>      template type
+     * @param theClass the class on which to invoke newInstance()
+     * @return the instance
+     */
+    public static <T> T newInstance(final Class<T> theClass) {
+        return ConfigPropertiesCascadeCommonUtils.newInstance(theClass);
+    }
 
-	public static String readFileContent(final String fileNameWithAbsolutePath) {
-		try (final InputStream inputStream = new FileInputStream(fileNameWithAbsolutePath)) {
-			return readInputStreamContent(inputStream);
-		} catch (final IOException ioe) {
-			throw new RuntimeException(ioe);
-		}
-	}
+    /**
+     * FIXME: taken from Tomcat - <a href="https://github.com/apache/tomcat/blob/master/java/org/apache/catalina/core/ApplicationFilterFactory.java">ApplicationFilterFactory#matchFiltersURL</a>
+     */
+    public static boolean isExtensionMatch(final String testPath, final String requestPath) {
+        final boolean result;
+        if (testPath != null && testPath.startsWith("*.")) {
+            final int slash = requestPath.lastIndexOf('/');
+            final int period = requestPath.lastIndexOf('.');
 
-	public static String readInputStreamContent(final InputStream inputStream) {
-		try {
-			return IOUtils.toString(inputStream, Charset.defaultCharset());
-		} catch (final IOException ioe) {
-			throw new RuntimeException(ioe);
-		}
-	}
+            if ((slash >= 0)
+                && (period > slash)
+                && (period != requestPath.length() - 1)
+                && ((requestPath.length() - period) == (testPath.length() - 1))) {
+                result = testPath.regionMatches(2, requestPath, period + 1, testPath.length() - 2);
+            } else {
+                result = false;
+            }
+        } else {
+            result = false;
+        }
 
-	/**
-	 * Construct a class
-	 * @param <T> template type
-	 * @param theClass the class on which to invoke newInstance()
-	 * @return the instance
-	 */
-	public static <T> T newInstance(final Class<T> theClass) {
-		return ConfigPropertiesCascadeCommonUtils.newInstance(theClass);
-	}
+        return result;
+    }
 
-    public static <T, E> T getMapKeyByValue(final Map<T, E> map, final E value) {
-        for (final Map.Entry<T, E> entry : map.entrySet()) {
-            if (entry.getValue().equals(value)) {
-                return entry.getKey();
+    public static boolean isAjaxRequest(final HttpServletRequest request) {
+        final String header = request.getHeader("X-Requested-With");
+        if (header == null) {
+            return false;
+        }
+        final String[] headers = header.split(",");
+        for (final String requestedWithHeader : headers) {
+            if ("XMLHttpRequest".equals(requestedWithHeader.trim())) {
+                return true;
             }
         }
-        return null;
+        return false;
+    }
+
+    private static String readInputStreamContent(final InputStream inputStream) {
+        try {
+            return IOUtils.toString(inputStream, Charset.defaultCharset());
+        } catch (final IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
+    /**
+     * for a url, get the protocol and domain, e.g. for url https://a.b/path, will return https://a.b
+     *
+     * @param url a string representing a URL
+     * @return the protocol and path
+     */
+    private static String httpProtocolAndDomain(final String url) {
+        final int firstSlashAfterProtocol = url.indexOf('/', 8); // FIXME this should be rewritten..
+        return firstSlashAfterProtocol < 0 ? url // must not have a path
+                                           : url.substring(0, firstSlashAfterProtocol);
     }
 }

@@ -27,33 +27,77 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.owasp.csrfguard.tag;
+package org.owasp.csrfguard.token.storage;
 
-import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.token.service.TokenService;
+import org.owasp.csrfguard.token.storage.impl.Token;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
+import java.util.Map;
 
-public final class TokenValueTag extends AbstractUriTag {
+/**
+ * Methods of this class should only be used through the {@link TokenService} and its relevant subclass(es)
+ * TODO document
+ */
+public interface TokenHolder {
 
-	private final static long serialVersionUID = 0xaaca46d3;
+    /**
+     * TODO document
+     * @param key
+     * @param value
+     */
+    void setMasterToken(final String key, final String value);
 
-	@Override
-	public int doStartTag() {
-		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
+    /**
+     * Note: this method returns a copy of the tokens in order to prevent outside modification.
+     * TODO document
+     * @return
+     */
+    Map<String, Token> getTokens();
 
-		if (csrfGuard.isTokenPerPageEnabled() && getUri() == null) {
-			throw new IllegalStateException("must define 'uri' attribute when token per page is enabled");
-		}
+    /**
+     * TODO document
+     * @return
+     */
+    Token getToken(final String key);
 
-		final String tokenValue = csrfGuard.getTokenService().getTokenValue((HttpServletRequest) this.pageContext.getRequest(), getUri());
+    /**
+     * TODO document
+     * @param key
+     * @param uri
+     * @return
+     */
+    String getPageToken(String key, String uri);
 
-		try {
-			this.pageContext.getOut().write(tokenValue);
-		} catch (final IOException e) {
-			this.pageContext.getServletContext().log(e.getLocalizedMessage(), e);
-		}
+    /**
+     * TODO document
+     * @param key
+     * @param uri
+     * @param value
+     */
+    void setPageToken(String key, String uri, String value);
 
-		return SKIP_BODY;
-	}
+    /**
+     * Note: this method returns a copy of the page tokens in order to prevent outside modification.
+     * TODO document
+     * @return
+     */
+    Map<String, String> getPageTokens(String key);
+
+    /**
+     * TODO document
+     * @param tokenKey
+     */
+    void remove(String tokenKey);
+
+    /**
+     * TODO document
+     */
+    void rotateAllPageTokens(final String key);
+
+    /**
+     * TODO document
+     * @param tokenKey
+     * @param tokenFromRequest
+     */
+    void regenerateUsedPageToken(final String tokenKey, final String tokenFromRequest);
 }

@@ -31,6 +31,8 @@ package org.owasp.csrfguard.config;
 
 import org.owasp.csrfguard.action.IAction;
 import org.owasp.csrfguard.log.ILogger;
+import org.owasp.csrfguard.token.storage.TokenHolder;
+import org.owasp.csrfguard.token.storage.TokenKeyExtractor;
 
 import java.security.SecureRandom;
 import java.util.List;
@@ -137,9 +139,12 @@ public interface ConfigurationProvider {
     boolean isAjaxEnabled();
 
     /**
-     * TODO document
+     * The default behavior of CSRFGuard is to protect all pages. Pages marked as unprotected will not be protected.<br>
+     * If the Protect property is enabled, this behavior is reversed. Pages must be marked as protected to be protected.
+     * All other pages will not be protected. This is useful when the CsrfGuardFilter is aggressively mapped (ex: /*),
+     * but you only want to protect a few pages.
      *
-     * @return
+     * @return false if all pages are protected, true if pages are required to be explicit protected
      */
     boolean isProtectEnabled();
 
@@ -286,9 +291,28 @@ public interface ConfigurationProvider {
     String getJavascriptTemplateCode();
 
     /**
+     * TODO document
      * example: "js,css,gif,png,ico,jpg"
      *
-     * @return TODO
+     * @return
      */
     String getJavascriptUnprotectedExtensions();
+
+    /**
+     * TODO document
+     * @return
+     */
+    TokenHolder getTokenHolder();
+
+    /**
+     * TODO document
+     * @return
+     */
+    TokenKeyExtractor getTokenKeyExtractor();
+
+    /**
+     * TODO document
+     * @return
+     */
+    boolean isStateless();
 }

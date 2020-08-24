@@ -26,34 +26,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-package org.owasp.csrfguard.tag;
-
-import org.owasp.csrfguard.CsrfGuard;
+package org.owasp.csrfguard.token.storage;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 
-public final class TokenValueTag extends AbstractUriTag {
+/**
+ * TODO document
+ */
+public interface TokenKeyExtractor {
 
-	private final static long serialVersionUID = 0xaaca46d3;
-
-	@Override
-	public int doStartTag() {
-		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-
-		if (csrfGuard.isTokenPerPageEnabled() && getUri() == null) {
-			throw new IllegalStateException("must define 'uri' attribute when token per page is enabled");
-		}
-
-		final String tokenValue = csrfGuard.getTokenService().getTokenValue((HttpServletRequest) this.pageContext.getRequest(), getUri());
-
-		try {
-			this.pageContext.getOut().write(tokenValue);
-		} catch (final IOException e) {
-			this.pageContext.getServletContext().log(e.getLocalizedMessage(), e);
-		}
-
-		return SKIP_BODY;
-	}
+    /**
+     * TODO document
+     * @param httpServletRequest
+     *
+     * @return the extracted, unique data that can be used as a key for storing tokens
+     */
+    String extract(final HttpServletRequest httpServletRequest);
 }

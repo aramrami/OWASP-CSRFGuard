@@ -33,6 +33,8 @@ import org.owasp.csrfguard.action.IAction;
 import org.owasp.csrfguard.config.properties.ConfigParameters;
 import org.owasp.csrfguard.log.ConsoleLogger;
 import org.owasp.csrfguard.log.ILogger;
+import org.owasp.csrfguard.token.storage.TokenHolder;
+import org.owasp.csrfguard.token.storage.TokenKeyExtractor;
 
 import java.security.SecureRandom;
 import java.util.Collections;
@@ -46,186 +48,201 @@ import java.util.regex.Pattern;
  */
 public final class NullConfigurationProvider implements ConfigurationProvider {
 
-	private static final ILogger LOGGER = new ConsoleLogger();
-	
-	public NullConfigurationProvider() {}
+    private static final ILogger LOGGER = new ConsoleLogger();
 
-	@Override
-	public ILogger getLogger() {
-		return LOGGER;
-	}
+    public NullConfigurationProvider() {}
 
-	@Override
-	public String getTokenName() {
-		return null;
-	}
+    @Override
+    public boolean isCacheable() {
+        return true;
+    }
 
-	@Override
-	public int getTokenLength() {
-		return 0;
-	}
+    @Override
+    public boolean isPrintConfig() {
+        return false;
+    }
 
-	@Override
-	public boolean isRotateEnabled() {
-		return false;
-	}
+    @Override
+    public ILogger getLogger() {
+        return LOGGER;
+    }
 
-	@Override
-	public boolean isTokenPerPageEnabled() {
-		return false;
-	}
+    @Override
+    public String getTokenName() {
+        return null;
+    }
 
-	@Override
-	public boolean isTokenPerPagePrecreateEnabled() {
-		return false;
-	}
+    @Override
+    public boolean isValidateWhenNoSessionExists() {
+        return false;
+    }
 
-	@Override
-	public SecureRandom getPrng() {
-		try {
-			return SecureRandom.getInstance(ConfigParameters.DEFAULT_PRNG.getValue(), ConfigParameters.DEFAULT_PRNG.getKey());
-		} catch (final Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+    @Override
+    public int getTokenLength() {
+        return 0;
+    }
 
-	@Override
-	public String getNewTokenLandingPage() {
-		return null;
-	}
+    @Override
+    public boolean isRotateEnabled() {
+        return false;
+    }
 
-	@Override
-	public boolean isUseNewTokenLandingPage() {
-		return false;
-	}
+    @Override
+    public boolean isTokenPerPageEnabled() {
+        return false;
+    }
 
-	@Override
-	public boolean isAjaxEnabled() {
-		return false;
-	}
+    @Override
+    public boolean isTokenPerPagePrecreateEnabled() {
+        return false;
+    }
 
-	@Override
-	public boolean isProtectEnabled() {
-		return false;
-	}
+    @Override
+    public SecureRandom getPrng() {
+        try {
+            return SecureRandom.getInstance(ConfigParameters.DEFAULT_PRNG.getValue(), ConfigParameters.DEFAULT_PRNG.getKey());
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	@Override
-	public String getSessionKey() {
-		return null;
-	}
+    @Override
+    public String getNewTokenLandingPage() {
+        return null;
+    }
 
-	@Override
-	public Set<String> getProtectedPages() {
-		return Collections.emptySet();
-	}
+    @Override
+    public boolean isUseNewTokenLandingPage() {
+        return false;
+    }
 
-	@Override
-	public Set<String> getUnprotectedPages() {
-		return Collections.emptySet();
-	}
+    @Override
+    public boolean isAjaxEnabled() {
+        return false;
+    }
 
-	@Override
-	public Set<String> getProtectedMethods() {
-		return Collections.emptySet();
-	}
+    @Override
+    public boolean isProtectEnabled() {
+        return false;
+    }
 
-	@Override
-	public List<IAction> getActions() {
-		return Collections.emptyList();
-	}
+    @Override
+    public String getSessionKey() {
+        return null;
+    }
 
-	@Override
-	public boolean isPrintConfig() {
-		return false;
-	}
+    @Override
+    public Set<String> getProtectedPages() {
+        return Collections.emptySet();
+    }
 
-	@Override
-	public String getJavascriptSourceFile() {
-		return null;
-	}
+    @Override
+    public Set<String> getUnprotectedPages() {
+        return Collections.emptySet();
+    }
 
-	@Override
-	public boolean isJavascriptDomainStrict() {
-		return false;
-	}
+    @Override
+    public Set<String> getProtectedMethods() {
+        return Collections.emptySet();
+    }
 
-	@Override
-	public String getJavascriptCacheControl() {
-		return null;
-	}
+    @Override
+    public Set<String> getUnprotectedMethods() {
+        return Collections.emptySet();
+    }
 
-	@Override
-	public Pattern getJavascriptRefererPattern() {
-		return null;
-	}
+    @Override
+    public boolean isEnabled() {
+        return false;
+    }
 
-	@Override
-	public boolean isJavascriptInjectIntoForms() {
-		return false;
-	}
+    @Override
+    public List<IAction> getActions() {
+        return Collections.emptyList();
+    }
 
-	@Override
-	public boolean isJavascriptInjectIntoAttributes() {
-		return false;
-	}
+    @Override
+    public String getJavascriptSourceFile() {
+        return null;
+    }
 
-	@Override
-	public String getJavascriptXrequestedWith() {
-		return null;
-	}
+    @Override
+    public boolean isJavascriptDomainStrict() {
+        return false;
+    }
 
-	@Override
-	public String getJavascriptTemplateCode() {
-		return null;
-	}
+    @Override
+    public String getDomainOrigin() {
+        return null;
+    }
 
-	@Override
-	public boolean isCacheable() {
-		return true;
-	}
+    @Override
+    public String getJavascriptCacheControl() {
+        return null;
+    }
 
-	@Override
-	public Set<String> getUnprotectedMethods() {
-		return Collections.emptySet();
-	}
+    @Override
+    public Pattern getJavascriptRefererPattern() {
+        return null;
+    }
 
-	@Override
-	public boolean isJavascriptRefererMatchProtocol() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptInjectGetForms() {
+        return false;
+    }
 
-	@Override
-	public boolean isJavascriptRefererMatchDomain() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptInjectFormAttributes() {
+        return false;
+    }
 
-	@Override
-	public boolean isEnabled() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptInjectIntoForms() {
+        return false;
+    }
 
-	@Override
-	public boolean isValidateWhenNoSessionExists() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptRefererMatchProtocol() {
+        return false;
+    }
 
-	@Override
-	public boolean isJavascriptInjectGetForms() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptRefererMatchDomain() {
+        return false;
+    }
 
-	@Override
-	public boolean isJavascriptInjectFormAttributes() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptInjectIntoAttributes() {
+        return false;
+    }
 
-	@Override
-	public String getDomainOrigin() {
-		return null;
-	}
+    @Override
+    public String getJavascriptXrequestedWith() {
+        return null;
+    }
 
-	@Override
-	public String getJavascriptUnprotectedExtensions() {
-		return null;
-	}
+    @Override
+    public String getJavascriptTemplateCode() {
+        return null;
+    }
+
+    @Override
+    public String getJavascriptUnprotectedExtensions() {
+        return null;
+    }
+
+    @Override
+    public TokenHolder getTokenHolder() {
+        return null;
+    }
+
+    @Override
+    public TokenKeyExtractor getTokenKeyExtractor() {
+        return null;
+    }
+
+    @Override
+    public boolean isStateless() {
+        return false;
+    }
 }

@@ -50,6 +50,9 @@ public final class ConfigParameters {
     public static final Pair<String, String> PRNG = Pair.of("org.owasp.csrfguard.PRNG", DEFAULT_PRNG.getValue());
     public static final Pair<String, String> PRNG_PROVIDER = Pair.of( "org.owasp.csrfguard.PRNG.Provider", DEFAULT_PRNG.getKey());
     public static final Pair<String, String> SESSION_KEY = Pair.of( "org.owasp.csrfguard.SessionKey", "OWASP_CSRFGUARD_KEY");
+    public static final Pair<String, String> TOKEN_HOLDER = Pair.of( "org.owasp.csrfguard.TokenHolder", "org.owasp.csrfguard.token.storage.impl.InMemoryTokenHolder");
+
+    public static final String TOKEN_KEY_EXTRACTOR_NAME = "org.owasp.csrfguard.TokenKeyExtractor";
 
     public static final String NEW_TOKEN_LANDING_PAGE = "org.owasp.csrfguard.NewTokenLandingPage";
     public static final String UNPROTECTED_METHODS = "org.owasp.csrfguard.UnprotectedMethods";

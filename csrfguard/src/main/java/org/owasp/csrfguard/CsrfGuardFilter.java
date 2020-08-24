@@ -30,6 +30,7 @@
 package org.owasp.csrfguard;
 
 import org.owasp.csrfguard.http.InterceptRedirectResponse;
+import org.owasp.csrfguard.log.LogLevel;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -48,56 +49,76 @@ public final class CsrfGuardFilter implements Filter {
 
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain filterChain) throws IOException, ServletException {
+        final CsrfGuard csrfGuard = CsrfGuard.getInstance();
 
-        // maybe the short circuit to disable is set
-        if (!CsrfGuard.getInstance().isEnabled()) {
+        if (!csrfGuard.isEnabled()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        /* only work with HttpServletRequest objects */
         if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
-
             final HttpServletRequest httpRequest = (HttpServletRequest) request;
-            final HttpSession session = httpRequest.getSession(false);
-
-            // if there is no session and we aren't validating when no session exists
-            if (session == null && !CsrfGuard.getInstance().isValidateWhenNoSessionExists()) {
-                // If there is no session, no harm can be done
-                filterChain.doFilter(httpRequest, response);
-                return;
-            }
-
-            final CsrfGuard csrfGuard = CsrfGuard.getInstance();
             final InterceptRedirectResponse httpResponse = new InterceptRedirectResponse((HttpServletResponse) response, httpRequest, csrfGuard);
 
-//			 if(MultipartHttpServletRequest.isMultipartRequest(httpRequest)) {
-//				 httpRequest = new MultipartHttpServletRequest(httpRequest);
-//			 }
-
-            if ((session != null && session.isNew()) && csrfGuard.isUseNewTokenLandingPage()) {
-                csrfGuard.writeLandingPage(httpRequest, httpResponse);
-            } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
-                filterChain.doFilter(httpRequest, httpResponse);
+            if (csrfGuard.isStateless()) {
+                filterStateless(filterChain, csrfGuard, httpRequest, httpResponse);
             } else {
-                /*
-                 TODO log
-                 invalid request - nothing to do - actions already executed
-                 */
+                final HttpSession session = httpRequest.getSession(false);
+
+                // if there is no session and we aren't validating when no session exists
+                if (session == null && !csrfGuard.isValidateWhenNoSessionExists()) {
+                    // If there is no session, no harm can be done
+                    filterChain.doFilter(httpRequest, response);
+                    return;
+                }
+
+                /*if (MultipartHttpServletRequest.isMultipartRequest(httpRequest)) {
+				     httpRequest = new MultipartHttpServletRequest(httpRequest);
+			    }*/
+
+                if (session != null && (session.isNew() && csrfGuard.isUseNewTokenLandingPage())) {
+                    csrfGuard.writeLandingPage(httpRequest, httpResponse);
+                } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
+                    filterChain.doFilter(httpRequest, httpResponse);
+                } else {
+                    logInvalidRequest(csrfGuard, httpRequest);
+                }
             }
 
-            /* update tokens */
-            csrfGuard.updateTokens(httpRequest);
-
+            // FIXME who and when is going to send this back to the UI?
+            csrfGuard.getTokenService().generateTokensIfNotExists(httpRequest);
         } else {
-            this.filterConfig.getServletContext().log(String.format("[WARNING] CSRFGuard does not know how to work with requests of class %s ", request.getClass().getName()));
+            handleNonHttpServletMessages(request, response, filterChain, csrfGuard);
+        }
+    }
 
-            filterChain.doFilter(request, response);
+    private void filterStateless(final FilterChain filterChain, final CsrfGuard csrfGuard, final HttpServletRequest httpRequest, final InterceptRedirectResponse httpResponse) throws IOException, ServletException {
+        if (csrfGuard.isUseNewTokenLandingPage()) {
+            csrfGuard.writeLandingPage(httpRequest, httpResponse);
+        } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
+            filterChain.doFilter(httpRequest, httpResponse);
+        } else {
+            logInvalidRequest(csrfGuard, httpRequest);
         }
     }
 
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
+    }
+
+    private void handleNonHttpServletMessages(final ServletRequest request, final ServletResponse response, final FilterChain filterChain, final CsrfGuard csrfGuard) throws IOException, ServletException {
+        final String message = String.format("CSRFGuard does not know how to work with requests of class %s ", request.getClass().getName());
+        csrfGuard.getLogger().log(LogLevel.Warning, message);
+        this.filterConfig.getServletContext().log("[WARNING]" + message);
+
+        filterChain.doFilter(request, response);
+    }
+
+    private void logInvalidRequest(final CsrfGuard csrfGuard, final HttpServletRequest httpRequest) {
+        final String requestURI = httpRequest.getRequestURI();
+        final String remoteAddress = httpRequest.getRemoteAddr();
+
+        csrfGuard.getLogger().log(LogLevel.Warning, String.format("Invalid request: \r\nURI:\r\n%s\r\nRemote Address:%s", requestURI, remoteAddress));
     }
 }

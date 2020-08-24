@@ -31,11 +31,14 @@ package org.owasp.csrfguard.config;
 
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.csrfguard.action.IAction;
-import org.owasp.csrfguard.config.properties.*;
+import org.owasp.csrfguard.config.properties.ConfigParameters;
+import org.owasp.csrfguard.config.properties.PropertyUtils;
 import org.owasp.csrfguard.config.properties.javascript.JavaScriptConfigParameters;
 import org.owasp.csrfguard.config.properties.javascript.JsConfigParameter;
 import org.owasp.csrfguard.log.ILogger;
 import org.owasp.csrfguard.servlet.JavaScriptServlet;
+import org.owasp.csrfguard.token.storage.TokenHolder;
+import org.owasp.csrfguard.token.storage.TokenKeyExtractor;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 
 import javax.servlet.ServletConfig;
@@ -121,6 +124,10 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private String javascriptUnprotectedExtensions;
 
+	private TokenKeyExtractor tokenKeyExtractor;
+
+	private TokenHolder tokenHolder;
+
 	public PropertiesConfigurationProvider(final Properties properties) {
 		try {
 			this.propertiesCache = properties;
@@ -155,6 +162,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 			this.sessionKey = PropertyUtils.getProperty(properties, ConfigParameters.SESSION_KEY);
 			this.ajax = PropertyUtils.getProperty(properties, ConfigParameters.AJAX_ENABLED);
+
+			initializeStatelessParameters(properties);
 
 			initializeActionParameters(properties, instantiateActions(properties));
 
@@ -354,6 +363,21 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		return this.javascriptUnprotectedExtensions;
 	}
 
+	@Override
+	public TokenHolder getTokenHolder() {
+		return this.tokenHolder;
+	}
+
+	@Override
+	public TokenKeyExtractor getTokenKeyExtractor() {
+		return this.tokenKeyExtractor;
+	}
+
+	@Override
+	public boolean isStateless() {
+		return Objects.nonNull(this.tokenKeyExtractor);
+	}
+
 	private Map<String, IAction> instantiateActions(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		final Map<String, IAction> actionsMap = new HashMap<>();
 
@@ -379,18 +403,22 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	}
 
 	private void initializeMethodProtection(final Properties properties) {
-		final String protectedMethodList = PropertyUtils.getProperty(properties, ConfigParameters.PROTECTED_METHODS);
+		initializeMethodProtection(properties, ConfigParameters.PROTECTED_METHODS, this.protectedMethods);
+		initializeMethodProtection(properties, ConfigParameters.UNPROTECTED_METHODS, this.unprotectedMethods);
+
+		final HashSet<String> intersection = new HashSet<>(this.protectedMethods);
+		intersection.retainAll(this.unprotectedMethods);
+
+		if (!intersection.isEmpty()) {
+			throw new IllegalArgumentException(String.format("The %s HTTP method(s) cannot be both protected and unprotected.", intersection.toString()));
+		}
+	}
+
+	private static void initializeMethodProtection(final Properties properties, final String protectedMethods, final Set<String> protectedMethods2) {
+		final String protectedMethodList = PropertyUtils.getProperty(properties, protectedMethods);
 		if (StringUtils.isNotBlank(protectedMethodList)) {
 			for (final String method : protectedMethodList.split(",")) {
-				this.protectedMethods.add(method.trim());
-			}
-		}
-
-		/* initialize unprotected methods */
-		final String unProtectedMethodList = PropertyUtils.getProperty(properties, ConfigParameters.UNPROTECTED_METHODS);
-		if (StringUtils.isNotBlank(unProtectedMethodList)) {
-			for (final String method : unProtectedMethodList.split(",")) {
-				this.unprotectedMethods.add(method.trim());
+				protectedMethods2.add(method.trim());
 			}
 		}
 	}
@@ -498,5 +526,38 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private <T> T getProperty(final JsConfigParameter<T> jsConfigParameter, final ServletConfig servletConfig) {
 		return jsConfigParameter.getProperty(servletConfig, this.propertiesCache);
+	}
+
+	// TODO give a better name maybe
+	private void initializeStatelessParameters(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+		final String tokenKeyExtractorName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_KEY_EXTRACTOR_NAME);
+		if (StringUtils.isNoneBlank(tokenKeyExtractorName)) {
+			this.tokenKeyExtractor = instantiate(TokenKeyExtractor.class);
+
+			final String tokenHolderClassName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_HOLDER);
+
+			if (StringUtils.isNoneBlank(tokenHolderClassName)) {
+				this.tokenHolder = (TokenHolder) Class.forName(PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_HOLDER)).newInstance();
+			} else {
+				this.tokenHolder = instantiate(TokenHolder.class);
+			}
+		}
+	}
+
+	private static <T> T instantiate(final Class<T> clazz) {
+		final ServiceLoader<T> serviceLoader = ServiceLoader.load(clazz);
+		final Iterator<T> iterator = serviceLoader.iterator();
+
+		if (iterator.hasNext()) {
+			final T instance = iterator.next();
+
+			 if (iterator.hasNext()) {
+				throw new IllegalStateException(String.format("There should be only one %s implementation on the classpath!", clazz.getSimpleName()));
+			} else {
+				return instance;
+			}
+		} else {
+			throw new IllegalStateException(String.format("Implementation for class '%s' is missing from classpath!", clazz.getSimpleName()));
+		}
 	}
 }

@@ -34,18 +34,13 @@ import org.owasp.csrfguard.CsrfGuardException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 public final class Invalidate extends AbstractAction {
 
 	private static final long serialVersionUID = -3060679616261531773L;
 
 	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
-		final HttpSession session = request.getSession(false);
-
-		if (session != null) {
-			session.invalidate();
-		}
+	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
+		csrfGuard.getTokenService().invalidate(request);
 	}
 }

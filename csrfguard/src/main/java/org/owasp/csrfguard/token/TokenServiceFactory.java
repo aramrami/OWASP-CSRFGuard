@@ -26,34 +26,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-package org.owasp.csrfguard.tag;
+package org.owasp.csrfguard.token;
 
 import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.token.service.TokenService;
+import org.owasp.csrfguard.token.service.impl.CustomTokenService;
+import org.owasp.csrfguard.token.service.impl.SessionBoundTokenService;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
+public final class TokenServiceFactory {
 
-public final class TokenValueTag extends AbstractUriTag {
-
-	private final static long serialVersionUID = 0xaaca46d3;
-
-	@Override
-	public int doStartTag() {
-		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-
-		if (csrfGuard.isTokenPerPageEnabled() && getUri() == null) {
-			throw new IllegalStateException("must define 'uri' attribute when token per page is enabled");
-		}
-
-		final String tokenValue = csrfGuard.getTokenService().getTokenValue((HttpServletRequest) this.pageContext.getRequest(), getUri());
-
-		try {
-			this.pageContext.getOut().write(tokenValue);
-		} catch (final IOException e) {
-			this.pageContext.getServletContext().log(e.getLocalizedMessage(), e);
-		}
-
-		return SKIP_BODY;
-	}
+    public static TokenService getService(final CsrfGuard csrfGuard) {
+        if (csrfGuard.isStateless()) {
+            return new CustomTokenService(csrfGuard);
+        } else {
+            return new SessionBoundTokenService(csrfGuard);
+        }
+    }
 }

@@ -47,10 +47,10 @@ public final class TokenTag extends AbstractUriTag {
 			throw new IllegalStateException("must define 'uri' attribute when token per page is enabled");
 		}
 
-		final String tokenValue = csrfGuard.getTokenValue((HttpServletRequest) this.pageContext.getRequest(), getUri());
+		final String tokenValue = csrfGuard.getTokenService().getTokenValue((HttpServletRequest) this.pageContext.getRequest(), getUri());
 
 		try {
-			this.pageContext.getOut().write(tokenName + "=" + tokenValue);
+			this.pageContext.getOut().write(tokenName + '=' + tokenValue);
 		} catch (final IOException e) {
 			this.pageContext.getServletContext().log(e.getLocalizedMessage(), e);
 		}
