@@ -42,7 +42,7 @@ public final class Log extends AbstractAction {
 	private static final long serialVersionUID = 8238761463376338707L;
 
 	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
+	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
 		String logMessage = getParameter("Message");
 
 		/* Exception Information */

@@ -41,7 +41,7 @@ public final class Error extends AbstractAction {
 	private static final long serialVersionUID = 5479074081984904252L;
 
 	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
+	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
 		try {
 			final int code = Integer.parseInt(getParameter("Code"));
 			final String message = getParameter("Message");

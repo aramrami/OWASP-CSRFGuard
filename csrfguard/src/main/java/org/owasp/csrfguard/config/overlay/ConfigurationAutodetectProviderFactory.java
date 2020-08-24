@@ -56,7 +56,7 @@ public class ConfigurationAutodetectProviderFactory implements ConfigurationProv
 	/**
 	 * configuration provider cached
 	 */
-	private static ExpirableCache<Boolean, ConfigurationProvider> configurationProviderCache = new ExpirableCache<Boolean, ConfigurationProvider>(2);
+	private static ExpirableCache<Boolean, ConfigurationProvider> configurationProviderCache = new ExpirableCache<Boolean, ConfigurationProvider>(2); // TODO does this really reload the configurations in every 2 minutes?!
 	
 	/**
 	 * @see org.owasp.csrfguard.config.ConfigurationProviderFactory#retrieveConfiguration(java.util.Properties)

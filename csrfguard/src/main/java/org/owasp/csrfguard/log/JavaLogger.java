@@ -29,8 +29,6 @@
 
 package org.owasp.csrfguard.log;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

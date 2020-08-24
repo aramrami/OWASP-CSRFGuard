@@ -35,12 +35,15 @@ import org.owasp.csrfguard.CsrfGuardException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * TODO document or why it is needed or remove this Action
+ */
 public final class Empty extends AbstractAction {
 
 	private static final long serialVersionUID = 3530383602177340966L;
 
 	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
+	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
 		// nothing to do
 	}
 }

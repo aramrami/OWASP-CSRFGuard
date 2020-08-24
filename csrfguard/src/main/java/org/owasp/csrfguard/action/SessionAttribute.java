@@ -36,12 +36,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+/**
+ * TODO document
+ * TODO What is the exact/intended purpose of this Action?
+ * TODO Would it make sense to implement for the Custom Token Holder (Stateless) implementation as well?
+ */
 public final class SessionAttribute extends AbstractAction {
 
 	private static final long serialVersionUID = 1367492926060283228L;
 
 	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
+	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
 		final String attributeName = getParameter("AttributeName");
 		final HttpSession session = request.getSession(false);
 
