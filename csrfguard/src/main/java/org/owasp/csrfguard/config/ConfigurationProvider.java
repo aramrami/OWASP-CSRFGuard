@@ -31,8 +31,8 @@ package org.owasp.csrfguard.config;
 
 import org.owasp.csrfguard.action.IAction;
 import org.owasp.csrfguard.log.ILogger;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
-import org.owasp.csrfguard.token.storage.TokenKeyExtractor;
 
 import java.security.SecureRandom;
 import java.util.List;
@@ -147,13 +147,6 @@ public interface ConfigurationProvider {
      * @return false if all pages are protected, true if pages are required to be explicit protected
      */
     boolean isProtectEnabled();
-
-    /**
-     * TODO document
-     *
-     * @return
-     */
-    String getSessionKey();
 
     /**
      * TODO document
@@ -308,11 +301,5 @@ public interface ConfigurationProvider {
      * TODO document
      * @return
      */
-    TokenKeyExtractor getTokenKeyExtractor();
-
-    /**
-     * TODO document
-     * @return
-     */
-    boolean isStateless();
+    LogicalSessionExtractor getLogicalSessionExtractor();
 }

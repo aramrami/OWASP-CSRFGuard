@@ -61,7 +61,7 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 		if (!sanitizedLocation.contains("://") && this.csrfGuard.isProtectedPageAndMethod(sanitizedLocation, "GET")) {
 			/* update tokens */
 			final TokenService tokenService = CsrfGuard.getInstance().getTokenService();
-			tokenService.generateTokensIfNotExists(this.request); // TODO who is going to send this back to the client?
+			tokenService.generateTokensIfAbsent(this.request); // TODO who is going to send this back to the client?
 			
 			// Separate URL fragment from path, e.g. /myPath#myFragment becomes [0]: /myPath [1]: myFragment
 			final String[] splitOnFragment = location.split("#", 2);

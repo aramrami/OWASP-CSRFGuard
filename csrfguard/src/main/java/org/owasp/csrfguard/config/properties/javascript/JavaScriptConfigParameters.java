@@ -35,7 +35,7 @@ public final class JavaScriptConfigParameters {
 
     private JavaScriptConfigParameters() {}
 
-    public static final StringJsConfigParameter CACHE_CONTROL = new StringJsConfigParameter("cache-control", "org.owasp.csrfguard.JavascriptServlet.cacheControl", "private, maxage=28800");
+    public static final StringJsConfigParameter CACHE_CONTROL = new StringJsConfigParameter("cache-control", "org.owasp.csrfguard.JavascriptServlet.cacheControl", "private, max-age=28800");
     public static final StringJsConfigParameter REFERER_PATTERN  = new StringJsConfigParameter("referer-pattern", "org.owasp.csrfguard.JavascriptServlet.refererPattern", ".*");
     public static final StringJsConfigParameter UNPROTECTED_EXTENSIONS = new StringJsConfigParameter("unprotected-extensions", "org.owasp.csrfguard.JavascriptServlet.UnprotectedExtensions", StringUtils.EMPTY);
     public static final StringJsConfigParameter SOURCE_FILE = new StringJsConfigParameter("source-file", "org.owasp.csrfguard.JavascriptServlet.sourceFile", null);

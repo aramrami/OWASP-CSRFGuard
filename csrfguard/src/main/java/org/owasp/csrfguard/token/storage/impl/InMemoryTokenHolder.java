@@ -29,12 +29,14 @@
 
 package org.owasp.csrfguard.token.storage.impl;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.owasp.csrfguard.token.TokenUtils;
 import org.owasp.csrfguard.token.storage.TokenHolder;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 // TODO make thread safe
 public class InMemoryTokenHolder implements TokenHolder {
@@ -43,13 +45,13 @@ public class InMemoryTokenHolder implements TokenHolder {
 
     public InMemoryTokenHolder() {}
 
-    public InMemoryTokenHolder(final String key, final Token token) {
-        TOKENS.put(key, token);
+    public InMemoryTokenHolder(final String sessionKey, final Token token) {
+        TOKENS.put(sessionKey, token);
     }
 
     @Override
-    public void setMasterToken(final String key, final String value) {
-        TOKENS.compute(key, (k, v) -> {
+    public void setMasterToken(final String sessionKey, final String value) {
+        TOKENS.compute(sessionKey, (k, v) -> {
             final Token result;
             if (Objects.isNull(v)) {
                 result = new Token(value);
@@ -62,44 +64,79 @@ public class InMemoryTokenHolder implements TokenHolder {
     }
 
     @Override
+    public String createMasterTokenIfAbsent(final String sessionKey, final Supplier<String> valueSupplier) {
+        final Token token = TOKENS.computeIfAbsent(sessionKey, k -> new Token(valueSupplier.get()));
+        return token.getMasterToken();
+    }
+
+    @Override
+    public String createPageTokenIfAbsent(final String sessionKey, final String resourceUri, final Supplier<String> valueSupplier) {
+        final Token token = TOKENS.get(sessionKey);
+        if (Objects.isNull(token)) {
+            final String newPageToken = valueSupplier.get();
+            TOKENS.computeIfAbsent(sessionKey, k -> new Token(valueSupplier.get(), Pair.of(resourceUri, newPageToken)));
+            return newPageToken;
+        } else {
+            return token.setPageTokenIfAbsent(resourceUri, valueSupplier);
+        }
+    }
+
+    @Override
     public Map<String, Token> getTokens() {
         return TOKENS;
     }
 
     @Override
-    public Token getToken(final String key) {
-        return TOKENS.get(key);
+    public Token getToken(final String sessionKey) {
+        return TOKENS.get(sessionKey);
     }
 
     @Override
-    public String getPageToken(final String key, final String uri) {
-        return TOKENS.get(key).getPageToken(uri);
+    public String getPageToken(final String sessionKey, final String resourceUri) {
+        final Token token = TOKENS.get(sessionKey);
+
+        return Objects.nonNull(token) ? token.getPageToken(resourceUri) : null;
     }
 
     @Override
-    public void setPageToken(final String key, final String uri, final String value) {
-        TOKENS.get(key).getPageTokens().put(uri, value);
+    public void setPageToken(final String sessionKey, final String resourceUri, final String value) {
+        getTokenOrException(sessionKey).getPageTokens().put(resourceUri, value);
     }
 
     @Override
-    public Map<String, String> getPageTokens(final String key) {
-        return TOKENS.get(key).getPageTokens();
+    public void setPageTokens(final String sessionKey, final Map<String, String> pageTokens) {
+        getTokenOrException(sessionKey).getPageTokens().putAll(pageTokens);
     }
 
     @Override
-    public void remove(final String tokenKey) {
-        TOKENS.remove(tokenKey);
+    public Map<String, String> getPageTokens(final String sessionKey) {
+        return getTokenOrException(sessionKey).getPageTokens();
     }
 
     @Override
-    public void rotateAllPageTokens(final String key) {
-        final Map<String, String> pageTokens = getPageTokens(key);
+    public void remove(final String sessionKey) {
+        TOKENS.remove(sessionKey);
+    }
+
+    @Override
+    public void rotateAllPageTokens(final String sessionKey) {
+        final Map<String, String> pageTokens = getPageTokens(sessionKey);
         TokenUtils.rotateAllPageTokens(pageTokens);
     }
 
     @Override
-    public void regenerateUsedPageToken(final String tokenKey, final String tokenFromRequest) {
-        final Map<String, String> pageTokens = getPageTokens(tokenKey);
+    public void regenerateUsedPageToken(final String sessionKey, final String tokenFromRequest) {
+        final Map<String, String> pageTokens = getPageTokens(sessionKey);
         TokenUtils.regenerateUsedPageToken(pageTokens, tokenFromRequest);
+    }
+
+    private Token getTokenOrException(final String sessionKey) {
+        final Token token = TOKENS.get(sessionKey);
+
+        if (Objects.isNull(token)) {
+            throw new IllegalStateException("Token with the provided session key does not exist!");
+        } else {
+            return token;
+        }
     }
 }

@@ -26,20 +26,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.owasp.csrfguard.token;
 
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.token.service.TokenService;
-import org.owasp.csrfguard.token.service.impl.CustomTokenService;
-import org.owasp.csrfguard.token.service.impl.SessionBoundTokenService;
+package org.owasp.csrfguard;
 
-public final class TokenServiceFactory {
+import org.owasp.csrfguard.session.ContainerSession;
+import org.owasp.csrfguard.session.LogicalSession;
 
-    public static TokenService getService(final CsrfGuard csrfGuard) {
-        if (csrfGuard.isStateless()) {
-            return new CustomTokenService(csrfGuard);
-        } else {
-            return new SessionBoundTokenService(csrfGuard);
-        }
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
+
+public class CsrfGuardHttpSessionListener implements HttpSessionListener {
+
+    @Override
+    public void sessionCreated(final HttpSessionEvent event) {
+        final HttpSession session = event.getSession();
+        final LogicalSession logicalSession = new ContainerSession(session);
+        CsrfGuard.getInstance().onSessionCreated(logicalSession);
+    }
+
+    @Override
+    public void sessionDestroyed(final HttpSessionEvent event) {
+        final HttpSession session = event.getSession();
+        final LogicalSession logicalSession = new ContainerSession(session);
+        CsrfGuard.getInstance().onSessionDestroyed(logicalSession);
     }
 }

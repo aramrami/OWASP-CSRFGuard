@@ -26,32 +26,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.token.storage;
 
-package org.owasp.csrfguard.action;
-
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.CsrfGuardException;
+import org.owasp.csrfguard.session.LogicalSession;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-/**
- * TODO document
- * TODO What is the exact/intended purpose of this Action?
- * TODO Would it make sense to implement for the Custom Token Holder (Stateless) implementation as well?
- */
-public final class SessionAttribute extends AbstractAction {
+public interface LogicalSessionExtractor {
 
-	private static final long serialVersionUID = 1367492926060283228L;
-
-	@Override
-	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
-		final String attributeName = getParameter("AttributeName");
-		final HttpSession session = request.getSession(false);
-
-		if (session != null) {
-			session.setAttribute(attributeName, csrfe);
-		}
-	}
+    /**
+     * Returns a logical session implementation based on the information extracted from the current HTTP request
+     *
+     * @param httpServletRequest current request
+     *
+     * @return a logical session created based on the current request or null if that was not possible
+     */
+    LogicalSession extract(final HttpServletRequest httpServletRequest);
 }

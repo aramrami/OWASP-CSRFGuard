@@ -31,20 +31,22 @@ package org.owasp.csrfguard;
 
 import org.owasp.csrfguard.http.InterceptRedirectResponse;
 import org.owasp.csrfguard.log.LogLevel;
+import org.owasp.csrfguard.session.LogicalSession;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Objects;
 
 public final class CsrfGuardFilter implements Filter {
 
     private FilterConfig filterConfig = null;
 
     @Override
-    public void destroy() {
-        this.filterConfig = null;
+    public void init(final FilterConfig filterConfig) throws ServletException {
+        this.filterConfig = filterConfig;
     }
 
     @Override
@@ -60,51 +62,39 @@ public final class CsrfGuardFilter implements Filter {
             final HttpServletRequest httpRequest = (HttpServletRequest) request;
             final InterceptRedirectResponse httpResponse = new InterceptRedirectResponse((HttpServletResponse) response, httpRequest, csrfGuard);
 
-            if (csrfGuard.isStateless()) {
-                filterStateless(filterChain, csrfGuard, httpRequest, httpResponse);
+
+            final LogicalSessionExtractor sessionKeyExtractor = csrfGuard.getLogicalSessionExtractor();
+            final LogicalSession logicalSession = sessionKeyExtractor.extract(httpRequest);
+
+            // if there is no session and we aren't validating when no session exists
+            if (Objects.isNull(logicalSession) && !csrfGuard.isValidateWhenNoSessionExists()) {
+                // If there is no session, no harm can be done
+                filterChain.doFilter(httpRequest, response);
+                return;
+            }
+
+            /*if (MultipartHttpServletRequest.isMultipartRequest(httpRequest)) {
+                 httpRequest = new MultipartHttpServletRequest(httpRequest);
+            }*/
+
+            if (Objects.nonNull(logicalSession) && (logicalSession.isNew() && csrfGuard.isUseNewTokenLandingPage())) {
+                csrfGuard.writeLandingPage(httpRequest, httpResponse);
+            } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
+                filterChain.doFilter(httpRequest, httpResponse);
             } else {
-                final HttpSession session = httpRequest.getSession(false);
-
-                // if there is no session and we aren't validating when no session exists
-                if (session == null && !csrfGuard.isValidateWhenNoSessionExists()) {
-                    // If there is no session, no harm can be done
-                    filterChain.doFilter(httpRequest, response);
-                    return;
-                }
-
-                /*if (MultipartHttpServletRequest.isMultipartRequest(httpRequest)) {
-				     httpRequest = new MultipartHttpServletRequest(httpRequest);
-			    }*/
-
-                if (session != null && (session.isNew() && csrfGuard.isUseNewTokenLandingPage())) {
-                    csrfGuard.writeLandingPage(httpRequest, httpResponse);
-                } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
-                    filterChain.doFilter(httpRequest, httpResponse);
-                } else {
-                    logInvalidRequest(csrfGuard, httpRequest);
-                }
+                logInvalidRequest(csrfGuard, httpRequest);
             }
 
             // FIXME who and when is going to send this back to the UI?
-            csrfGuard.getTokenService().generateTokensIfNotExists(httpRequest);
+            csrfGuard.getTokenService().generateTokensIfAbsent(httpRequest);
         } else {
             handleNonHttpServletMessages(request, response, filterChain, csrfGuard);
         }
     }
 
-    private void filterStateless(final FilterChain filterChain, final CsrfGuard csrfGuard, final HttpServletRequest httpRequest, final InterceptRedirectResponse httpResponse) throws IOException, ServletException {
-        if (csrfGuard.isUseNewTokenLandingPage()) {
-            csrfGuard.writeLandingPage(httpRequest, httpResponse);
-        } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
-            filterChain.doFilter(httpRequest, httpResponse);
-        } else {
-            logInvalidRequest(csrfGuard, httpRequest);
-        }
-    }
-
     @Override
-    public void init(final FilterConfig filterConfig) throws ServletException {
-        this.filterConfig = filterConfig;
+    public void destroy() {
+        this.filterConfig = null;
     }
 
     private void handleNonHttpServletMessages(final ServletRequest request, final ServletResponse response, final FilterChain filterChain, final CsrfGuard csrfGuard) throws IOException, ServletException {

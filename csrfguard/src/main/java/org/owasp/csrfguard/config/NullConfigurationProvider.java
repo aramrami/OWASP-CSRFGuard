@@ -33,8 +33,8 @@ import org.owasp.csrfguard.action.IAction;
 import org.owasp.csrfguard.config.properties.ConfigParameters;
 import org.owasp.csrfguard.log.ConsoleLogger;
 import org.owasp.csrfguard.log.ILogger;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
-import org.owasp.csrfguard.token.storage.TokenKeyExtractor;
 
 import java.security.SecureRandom;
 import java.util.Collections;
@@ -124,11 +124,6 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
     @Override
     public boolean isProtectEnabled() {
         return false;
-    }
-
-    @Override
-    public String getSessionKey() {
-        return null;
     }
 
     @Override
@@ -237,12 +232,7 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
     }
 
     @Override
-    public TokenKeyExtractor getTokenKeyExtractor() {
+    public LogicalSessionExtractor getLogicalSessionExtractor() {
         return null;
-    }
-
-    @Override
-    public boolean isStateless() {
-        return false;
     }
 }

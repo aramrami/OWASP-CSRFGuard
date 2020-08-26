@@ -28,6 +28,16 @@
 
     <dependencies>
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>csrfguard</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>csrfguard-extension-session</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
         </dependency>
@@ -35,14 +45,10 @@
             <groupId>javax.servlet.jsp</groupId>
             <artifactId>jsp-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.owasp</groupId>
-            <artifactId>csrfguard</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
+        <!-- TODO move the TAGS extension TLD file under the WEB-INF/csrfguard.tld when creating the war -->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

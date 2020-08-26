@@ -34,18 +34,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 import org.owasp.csrfguard.log.LogLevel;
+import org.owasp.csrfguard.session.LogicalSession;
+import org.owasp.csrfguard.token.service.TokenService;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,33 +56,33 @@ import java.util.stream.Collectors;
 public final class JavaScriptServlet extends HttpServlet {
 
 	private static final long serialVersionUID = -1459584282530150483L;
-	
+
 	private static final String TOKEN_NAME_IDENTIFIER = "%TOKEN_NAME%";
-	
+
 	private static final String TOKEN_VALUE_IDENTIFIER = "%TOKEN_VALUE%";
-	
+
 	private static final String DOMAIN_ORIGIN_IDENTIFIER = "%DOMAIN_ORIGIN%";
-	
+
 	private static final String DOMAIN_STRICT_IDENTIFIER = "%DOMAIN_STRICT%";
-	
+
 	private static final String INJECT_INTO_XHR_IDENTIFIER = "%INJECT_XHR%";
-	
+
 	private static final String INJECT_INTO_FORMS_IDENTIFIER = "%INJECT_FORMS%";
 
 	private static final String INJECT_GET_FORMS_IDENTIFIER = "%INJECT_GET_FORMS%";
-	
+
 	private static final String INJECT_FORM_ATTRIBUTES_IDENTIFIER = "%INJECT_FORM_ATTRIBUTES%";
-	
+
 	private static final String INJECT_INTO_ATTRIBUTES_IDENTIFIER = "%INJECT_ATTRIBUTES%";
-	
+
 	private static final String CONTEXT_PATH_IDENTIFIER = "%CONTEXT_PATH%";
-	
+
 	private static final String SERVLET_PATH_IDENTIFIER = "%SERVLET_PATH%";
-	
+
 	private static final String X_REQUESTED_WITH_IDENTIFIER = "%X_REQUESTED_WITH%";
-	
+
 	private static final String TOKENS_PER_PAGE_IDENTIFIER = "%TOKENS_PER_PAGE%";
-	
+
 	private static final String UNPROTECTED_EXTENSIONS_IDENTIFIER = "%UNPROTECTED_EXTENSIONS%";
 
 	private static final String TEXT_PLAIN_MIME_TYPE = "text/plain";
@@ -133,15 +136,15 @@ public final class JavaScriptServlet extends HttpServlet {
 		}
 
 		if (!hasError) {
-			
+
 			// save this path so javascript is whitelisted
 			final String javascriptPath = request.getContextPath() + request.getServletPath();
-			
+
 			// don't know why there would be more than one... hmmm
 			if (javascriptUris.size() < 100) {
 				javascriptUris.add(javascriptPath);
 			}
-			
+
 			writeJavaScript(request, response);
 		}
 	}
@@ -159,7 +162,7 @@ public final class JavaScriptServlet extends HttpServlet {
 		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
 		final String isFetchCsrfToken = request.getHeader("FETCH-CSRF-TOKEN");
 
-		if (csrfGuard != null && isFetchCsrfToken != null){
+		if (csrfGuard != null && isFetchCsrfToken != null) {
 			writeMasterToken(request, response);
 		} else {
 			if (csrfGuard != null && csrfGuard.isTokenPerPageEnabled()) {
@@ -176,11 +179,16 @@ public final class JavaScriptServlet extends HttpServlet {
 		response.setContentType(TEXT_PLAIN_MIME_TYPE);
 
 		/* write dynamic javascript */
-		response.getWriter().write(CsrfGuard.getInstance().getTokenService().getMasterTokenHeader(request));
+		final TokenService tokenService = CsrfGuard.getInstance().getTokenService();
+		final String masterTokenNameAndValue = delimitTokenFromValue(CsrfGuard.getInstance().getTokenName(), tokenService.getMasterToken(request));
+
+		response.getWriter().write(masterTokenNameAndValue);
 	}
 
 	private static void writePageTokens(final HttpServletResponse response, final Map<String, String> pageTokens) throws IOException {
-		final String aggregatedPageTokens = pageTokens.entrySet().stream().map(e -> e.getKey() + ':' + e.getValue()).collect(Collectors.joining(","));
+		final String aggregatedPageTokens = pageTokens.entrySet().stream()
+													  .map(e -> delimitTokenFromValue(e.getKey(), e.getValue()))
+													  .collect(Collectors.joining(","));
 
 		/* setup headers */
 		response.setContentType(TEXT_PLAIN_MIME_TYPE);
@@ -207,15 +215,9 @@ public final class JavaScriptServlet extends HttpServlet {
 		/* build dynamic javascript */
 		String code = csrfGuard.getJavascriptTemplateCode();
 
-		/*--------------------------TODO review --------------------------*/
-		final HttpSession session = request.getSession(true);
-		final String masterToken = (String) session.getAttribute(csrfGuard.getSessionKey());
-
-		code = code.replace(TOKEN_VALUE_IDENTIFIER, StringUtils.defaultString(masterToken));
-		/*--------------------------TODO review--------------------------*/
-
 		// FIXME why not use booleans instead of string representation?
 		code = code.replace(TOKEN_NAME_IDENTIFIER, StringUtils.defaultString(csrfGuard.getTokenName()))
+				   .replace(TOKEN_VALUE_IDENTIFIER, StringUtils.defaultString(getMasterToken(request, csrfGuard)))
 				   .replace(INJECT_INTO_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoForms()))
 				   .replace(INJECT_GET_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectGetForms()))
 				   .replace(INJECT_FORM_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectFormAttributes()))
@@ -233,6 +235,14 @@ public final class JavaScriptServlet extends HttpServlet {
 		response.getWriter().write(code);
 	}
 
+	// TODO review
+	private static String getMasterToken(final HttpServletRequest request, final CsrfGuard csrfGuard) {
+		final LogicalSessionExtractor sessionKeyExtractor = csrfGuard.getLogicalSessionExtractor();
+		final LogicalSession logicalSession = sessionKeyExtractor.extract(request);
+
+		return Objects.isNull(logicalSession) ? null : csrfGuard.getTokenService().getMasterToken(request);
+	}
+
 	private static String parseDomain(final StringBuffer url) {
 		try {
 			return new URL(url.toString()).getHost();
@@ -240,5 +250,9 @@ public final class JavaScriptServlet extends HttpServlet {
 			// Should not occur. javax.servlet.http.HttpServletRequest.getRequestURL should only returns valid URLs.
 			return "INVALID_URL: " + url.toString();
 		}
+	}
+
+	private static String delimitTokenFromValue(final String tokenName, final String tokenValue) {
+		return tokenName + ':' + tokenValue;
 	}
 }

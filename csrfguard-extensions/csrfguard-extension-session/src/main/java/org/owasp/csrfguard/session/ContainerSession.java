@@ -26,37 +26,54 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-package org.owasp.csrfguard;
-
-import org.owasp.csrfguard.token.service.TokenService;
-import org.owasp.csrfguard.util.SessionUtils;
+package org.owasp.csrfguard.session;
 
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionEvent;
-import javax.servlet.http.HttpSessionListener;
+import java.util.Objects;
 
-public class CsrfGuardHttpSessionListener implements HttpSessionListener {
+public class ContainerSession implements LogicalSession {
+
+    private final HttpSession httpSession;
+    private boolean areTokensGenerated;
+
+    public ContainerSession(final HttpSession httpSession) {
+        this.httpSession = httpSession;
+    }
 
     @Override
-    public void sessionCreated(final HttpSessionEvent event) {
-        final HttpSession session = event.getSession();
-        final CsrfGuard csrfGuard = CsrfGuard.getInstance();
+    public String getKey() {
+        return this.httpSession.getId();
+    }
 
-        final TokenService tokenService = csrfGuard.getTokenService();
-        tokenService.createMasterTokenIfNotExists(session);
+    @Override
+    public boolean isNew() {
+        return Objects.nonNull(this.httpSession) && this.httpSession.isNew();
+    }
 
-        // Check if should generate tokens for protected resources on current session
-        if (csrfGuard.isTokenPerPageEnabled()
-            && csrfGuard.isTokenPerPagePrecreate()
-            && !SessionUtils.areTokensGenerated(session)) {
-
-            tokenService.generateProtectedPageTokens(session);
+    @Override
+    public void invalidate() {
+        if (Objects.nonNull(this.httpSession)) {
+            this.httpSession.invalidate();
         }
     }
 
     @Override
-    public void sessionDestroyed(final HttpSessionEvent event) {
-        /* nothing to do */
+    public boolean areTokensGenerated() {
+        return this.areTokensGenerated;
+    }
+
+    @Override
+    public void setTokensGenerated(final boolean areTokensGenerated) {
+        this.areTokensGenerated = areTokensGenerated;
+    }
+
+    @Override
+    public void setAttribute(final String name, final Object value) {
+        this.httpSession.setAttribute(name, value);
+    }
+
+    @Override
+    public Object getAttribute(final String attributeName) {
+        return this.httpSession.getAttribute(attributeName);
     }
 }

@@ -26,20 +26,33 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.owasp.csrfguard.token.storage;
+
+package org.owasp.csrfguard.action;
+
+import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.CsrfGuardException;
+import org.owasp.csrfguard.config.properties.ConfigParameters;
+import org.owasp.csrfguard.session.LogicalSession;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Objects;
 
 /**
- * TODO document
+ * Saves the thrown CsrfGuardException object after a token validation to the session, bound to the attribute name extracted from the properties file.
  */
-public interface TokenKeyExtractor {
+public final class SessionAttribute extends AbstractAction {
 
-    /**
-     * TODO document
-     * @param httpServletRequest
-     *
-     * @return the extracted, unique data that can be used as a key for storing tokens
-     */
-    String extract(final HttpServletRequest httpServletRequest);
+	private static final long serialVersionUID = 1367492926060283228L;
+
+	@Override
+	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
+		final String attributeName = getParameter(ConfigParameters.ACTION_ATTRIBUTE_NAME);
+
+		final LogicalSession logicalSession = CsrfGuard.getInstance().getLogicalSessionExtractor().extract(request);
+
+		if (Objects.nonNull(logicalSession)) {
+			logicalSession.setAttribute(attributeName, csrfe);
+		}
+	}
 }

@@ -33,6 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 
+import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Function;
 
@@ -87,8 +88,8 @@ public final class PropertyUtils {
      * @see #commonSubstitutions(String)
      */
     public static String getProperty(final Properties properties, final String propertyName, final String defaultValue) {
-        final String value = defaultValue == null ? properties.getProperty(propertyName)
-                                                  : properties.getProperty(propertyName, defaultValue);
+        final String value = Objects.isNull(defaultValue) ? properties.getProperty(propertyName)
+                                                          : properties.getProperty(propertyName, defaultValue);
 
         return commonSubstitutions(value);
     }
@@ -101,10 +102,9 @@ public final class PropertyUtils {
      * @return new string with "common" expressions replaced by configuration values
      */
     public static String commonSubstitutions(String input) {
-        if (input == null || !input.contains("%")) {
+        if (!StringUtils.contains(input, "%")) {
             return input;
         }
-        input = input.replace("%servletContext%", StringUtils.defaultString(CsrfGuardServletContextListener.getServletContext()));
-        return input;
+        return input.replace("%servletContext%", StringUtils.defaultString(CsrfGuardServletContextListener.getServletContext()));
     }
 }

@@ -49,10 +49,9 @@ public final class ConfigParameters {
     public static final Pair<String, String> DEFAULT_PRNG = Pair.of("SUN", "SHA1PRNG");
     public static final Pair<String, String> PRNG = Pair.of("org.owasp.csrfguard.PRNG", DEFAULT_PRNG.getValue());
     public static final Pair<String, String> PRNG_PROVIDER = Pair.of( "org.owasp.csrfguard.PRNG.Provider", DEFAULT_PRNG.getKey());
-    public static final Pair<String, String> SESSION_KEY = Pair.of( "org.owasp.csrfguard.SessionKey", "OWASP_CSRFGUARD_KEY");
     public static final Pair<String, String> TOKEN_HOLDER = Pair.of( "org.owasp.csrfguard.TokenHolder", "org.owasp.csrfguard.token.storage.impl.InMemoryTokenHolder");
 
-    public static final String TOKEN_KEY_EXTRACTOR_NAME = "org.owasp.csrfguard.TokenKeyExtractor";
+    public static final String LOGICAL_SESSION_EXTRACTOR_NAME = "org.owasp.csrfguard.LogicalSessionExtractor";
 
     public static final String NEW_TOKEN_LANDING_PAGE = "org.owasp.csrfguard.NewTokenLandingPage";
     public static final String UNPROTECTED_METHODS = "org.owasp.csrfguard.UnprotectedMethods";
@@ -63,6 +62,8 @@ public final class ConfigParameters {
     public static final String CONFIG_PROVIDER_FACTORY_PROPERTY_NAME = "org.owasp.csrfguard.configuration.provider.factory";
 
     public final static String ACTION_PREFIX = "org.owasp.csrfguard.action.";
+    public static final String ACTION_ATTRIBUTE_NAME = "AttributeName";
+
     public final static String PROTECTED_PAGE_PREFIX = "org.owasp.csrfguard.protected.";
     public final static String UNPROTECTED_PAGE_PREFIX = "org.owasp.csrfguard.unprotected.";
 

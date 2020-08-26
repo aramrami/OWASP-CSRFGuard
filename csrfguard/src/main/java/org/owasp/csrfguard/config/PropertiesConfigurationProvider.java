@@ -37,8 +37,8 @@ import org.owasp.csrfguard.config.properties.javascript.JavaScriptConfigParamete
 import org.owasp.csrfguard.config.properties.javascript.JsConfigParameter;
 import org.owasp.csrfguard.log.ILogger;
 import org.owasp.csrfguard.servlet.JavaScriptServlet;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
-import org.owasp.csrfguard.token.storage.TokenKeyExtractor;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 
 import javax.servlet.ServletConfig;
@@ -77,8 +77,6 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	private final boolean ajax;
 
 	private final boolean protect;
-
-	private final String sessionKey;
 
 	private final Set<String> protectedPages;
 
@@ -124,7 +122,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private String javascriptUnprotectedExtensions;
 
-	private TokenKeyExtractor tokenKeyExtractor;
+	private LogicalSessionExtractor logicalSessionExtractor;
 
 	private TokenHolder tokenHolder;
 
@@ -138,7 +136,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 			this.unprotectedMethods = new HashSet<>();
 
 			/* load simple properties */
-			this.logger = (ILogger) Class.forName(PropertyUtils.getProperty(properties, ConfigParameters.LOGGER)).newInstance();
+
+			this.logger = CsrfGuardUtils.<ILogger>forName(PropertyUtils.getProperty(properties, ConfigParameters.LOGGER)).newInstance();
 			this.tokenName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_NAME);
 			this.tokenLength = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_LENGTH);
 			this.rotate = PropertyUtils.getProperty(properties, ConfigParameters.ROTATE);
@@ -160,10 +159,9 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 			this.newTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.NEW_TOKEN_LANDING_PAGE);
 			this.useNewTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.getUseNewTokenLandingPage(this.newTokenLandingPage));
 
-			this.sessionKey = PropertyUtils.getProperty(properties, ConfigParameters.SESSION_KEY);
 			this.ajax = PropertyUtils.getProperty(properties, ConfigParameters.AJAX_ENABLED);
 
-			initializeStatelessParameters(properties);
+			initializeTokenPersistenceConfigurations(properties);
 
 			initializeActionParameters(properties, instantiateActions(properties));
 
@@ -233,11 +231,6 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	@Override
 	public boolean isProtectEnabled() {
 		return this.protect;
-	}
-
-	@Override
-	public String getSessionKey() {
-		return this.sessionKey;
 	}
 
 	@Override
@@ -369,13 +362,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	}
 
 	@Override
-	public TokenKeyExtractor getTokenKeyExtractor() {
-		return this.tokenKeyExtractor;
-	}
-
-	@Override
-	public boolean isStateless() {
-		return Objects.nonNull(this.tokenKeyExtractor);
+	public LogicalSessionExtractor getLogicalSessionExtractor() {
+		return this.logicalSessionExtractor;
 	}
 
 	private Map<String, IAction> instantiateActions(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
@@ -391,7 +379,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				/* action name/class */
 				if (index < 0) {
 					final String actionClass = PropertyUtils.getProperty(properties, key);
-					final IAction action = (IAction) Class.forName(actionClass).newInstance();
+					final IAction action = CsrfGuardUtils.<IAction>forName(actionClass).newInstance();
 
 					action.setName(directive);
 					actionsMap.put(action.getName(), action);
@@ -503,7 +491,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				this.javascriptSourceFile = getProperty(JavaScriptConfigParameters.SOURCE_FILE, servletConfig);
 				this.javascriptXrequestedWith = getProperty(JavaScriptConfigParameters.X_REQUESTED_WITH, servletConfig);
 
-				if (this.javascriptSourceFile == null) {
+				if (StringUtils.isBlank(this.javascriptSourceFile)) {
 					this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent("META-INF/csrfguard.js");
 				} else if (this.javascriptSourceFile.startsWith("META-INF/")) {
 					this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(this.javascriptSourceFile);
@@ -528,36 +516,15 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		return jsConfigParameter.getProperty(servletConfig, this.propertiesCache);
 	}
 
-	// TODO give a better name maybe
-	private void initializeStatelessParameters(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-		final String tokenKeyExtractorName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_KEY_EXTRACTOR_NAME);
-		if (StringUtils.isNoneBlank(tokenKeyExtractorName)) {
-			this.tokenKeyExtractor = instantiate(TokenKeyExtractor.class);
+	private void initializeTokenPersistenceConfigurations(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+		final String logicalSessionExtractorName = PropertyUtils.getProperty(properties, ConfigParameters.LOGICAL_SESSION_EXTRACTOR_NAME);
+		if (StringUtils.isNoneBlank(logicalSessionExtractorName)) {
+			this.logicalSessionExtractor = CsrfGuardUtils.<LogicalSessionExtractor>forName(logicalSessionExtractorName).newInstance();
 
-			final String tokenHolderClassName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_HOLDER);
-
-			if (StringUtils.isNoneBlank(tokenHolderClassName)) {
-				this.tokenHolder = (TokenHolder) Class.forName(PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_HOLDER)).newInstance();
-			} else {
-				this.tokenHolder = instantiate(TokenHolder.class);
-			}
-		}
-	}
-
-	private static <T> T instantiate(final Class<T> clazz) {
-		final ServiceLoader<T> serviceLoader = ServiceLoader.load(clazz);
-		final Iterator<T> iterator = serviceLoader.iterator();
-
-		if (iterator.hasNext()) {
-			final T instance = iterator.next();
-
-			 if (iterator.hasNext()) {
-				throw new IllegalStateException(String.format("There should be only one %s implementation on the classpath!", clazz.getSimpleName()));
-			} else {
-				return instance;
-			}
+			final String tokenHolderClassName = StringUtils.defaultIfBlank(PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_HOLDER), ConfigParameters.TOKEN_HOLDER.getValue());
+			this.tokenHolder = CsrfGuardUtils.<TokenHolder>forName(tokenHolderClassName).newInstance();
 		} else {
-			throw new IllegalStateException(String.format("Implementation for class '%s' is missing from classpath!", clazz.getSimpleName()));
+			throw new IllegalArgumentException(String.format("Mandatory parameter [%s] is missing from the configuration!", ConfigParameters.LOGICAL_SESSION_EXTRACTOR_NAME));
 		}
 	}
 }

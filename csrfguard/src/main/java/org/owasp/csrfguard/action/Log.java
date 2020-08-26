@@ -36,53 +36,59 @@ import org.owasp.csrfguard.log.LogLevel;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.security.Principal;
 
 public final class Log extends AbstractAction {
 
-	private static final long serialVersionUID = 8238761463376338707L;
+    private static final long serialVersionUID = 8238761463376338707L;
 
-	@Override
-	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
-		String logMessage = getParameter("Message");
+    @Override
+    public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
+        String logMessage = getParameter("Message");
 
-		/* Exception Information */
-		logMessage = logMessage.replace("%exception%", String.valueOf(csrfe))
-							   .replace("%exception_message%", csrfe.getLocalizedMessage());
+        /* Exception Information */
+        logMessage = logMessage.replace("%exception%", String.valueOf(csrfe))
+                               .replace("%exception_message%", csrfe.getLocalizedMessage());
 
-		/* Remote Network Information */
-		logMessage = logMessage.replace("%remote_ip%", StringUtils.defaultString(request.getRemoteAddr()))
-							   .replace("%remote_host%", StringUtils.defaultString(request.getRemoteHost()))
-							   .replace("%remote_port%", String.valueOf(request.getRemotePort()));
+        /* Remote Network Information */
+        logMessage = logMessage.replace("%remote_ip%", StringUtils.defaultString(request.getRemoteAddr()))
+                               .replace("%remote_host%", StringUtils.defaultString(request.getRemoteHost()))
+                               .replace("%remote_port%", String.valueOf(request.getRemotePort()));
 
-		/* Local Network Information */
-		logMessage = logMessage.replace("%local_ip%", StringUtils.defaultString(request.getLocalAddr()))
-							   .replace("%local_host%", StringUtils.defaultString(request.getLocalName()))
-							   .replace("%local_port%", String.valueOf(request.getLocalPort()));
+        /* Local Network Information */
+        logMessage = logMessage.replace("%local_ip%", StringUtils.defaultString(request.getLocalAddr()))
+                               .replace("%local_host%", StringUtils.defaultString(request.getLocalName()))
+                               .replace("%local_port%", String.valueOf(request.getLocalPort()));
 
-		/* Requested Resource Information */
-		logMessage = logMessage.replace("%request_method%", StringUtils.defaultString(request.getMethod()))
-							   .replace("%request_uri%", StringUtils.defaultString(request.getRequestURI()))
-							   .replace("%request_url%", request.getRequestURL().toString());
+        /* Requested Resource Information */
+        logMessage = logMessage.replace("%request_method%", StringUtils.defaultString(request.getMethod()))
+                               .replace("%request_uri%", StringUtils.defaultString(request.getRequestURI()))
+                               .replace("%request_url%", request.getRequestURL().toString());
 
-		// JavaEE Principal Information
-		String user = request.getRemoteUser();
+        logMessage = logMessage.replace("%user%", getUserName(request));
 
-		if (StringUtils.isBlank(user)) {
-	        user = (String) request.getAttribute("REMOTE_USER");
-		}
+        csrfGuard.getLogger().log(LogLevel.Error, logMessage);
+    }
 
-		if (StringUtils.isBlank(user)) {
-			if (request.getUserPrincipal() != null) {
-				user = request.getUserPrincipal().getName();
-			}
-		}
+    private String getUserName(final HttpServletRequest request) {
+        // JavaEE Principal Information
+        String user = request.getRemoteUser();
 
-		if (StringUtils.isNotBlank(user)) {
-			logMessage = logMessage.replace("%user%", user);
-		} else {
-			logMessage = logMessage.replace("%user%", "<anonymous>");
-		}
+        if (StringUtils.isBlank(user)) {
+            user = (String) request.getAttribute("REMOTE_USER");
+        }
 
-		csrfGuard.getLogger().log(LogLevel.Error, logMessage);
-	}
+        if (StringUtils.isBlank(user)) {
+            final Principal userPrincipal = request.getUserPrincipal();
+            if (userPrincipal != null) {
+                user = userPrincipal.getName();
+            }
+        }
+
+        if (StringUtils.isBlank(user)) {
+            user = "<anonymous>";
+        }
+
+        return user;
+    }
 }

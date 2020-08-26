@@ -67,9 +67,9 @@ public final class CsrfGuardUtils {
      * @param origClassName is fully qualified
      * @return the class
      */
-    public static Class forName(final String origClassName) {
+    public static <T> Class<T> forName(final String origClassName) {
         try {
-            return Class.forName(origClassName);
+            return (Class<T>) Class.forName(origClassName);
         } catch (final Throwable t) {
             throw new RuntimeException("Problem loading class: " + origClassName, t);
         }
@@ -111,7 +111,7 @@ public final class CsrfGuardUtils {
      */
     public static boolean isExtensionMatch(final String testPath, final String requestPath) {
         final boolean result;
-        if (testPath != null && testPath.startsWith("*.")) {
+        if (StringUtils.startsWith(testPath, "*.")) {
             final int slash = requestPath.lastIndexOf('/');
             final int period = requestPath.lastIndexOf('.');
 

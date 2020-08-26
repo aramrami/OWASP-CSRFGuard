@@ -28,8 +28,11 @@
  */
 package org.owasp.csrfguard.token.storage.impl;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class Token {
 
@@ -38,6 +41,10 @@ public class Token {
 
     public Token(final String masterToken) {
         this(masterToken, new HashMap<>());
+    }
+
+    public Token(final String masterToken, final Pair<String, String> pageToken) {
+        this(masterToken, toMap(pageToken));
     }
 
     public Token(final String masterToken, final Map<String, String> pageTokens) {
@@ -65,7 +72,17 @@ public class Token {
         return this.pageTokens.get(uri);
     }
 
+    public String setPageTokenIfAbsent(final String uri, final Supplier<String> valueSupplier) {
+        return this.pageTokens.computeIfAbsent(uri, k -> valueSupplier.get());
+    }
+
     public void setPageToken(final String uri, final String value) {
         this.pageTokens.put(uri, value);
+    }
+
+    private static Map<String, String> toMap(final Pair<String, String> pageToken) {
+        final HashMap<String, String> pageTokens = new HashMap<>();
+        pageTokens.put(pageToken.getKey(), pageToken.getValue());
+        return pageTokens;
     }
 }

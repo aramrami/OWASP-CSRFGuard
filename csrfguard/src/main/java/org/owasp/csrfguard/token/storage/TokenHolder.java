@@ -33,6 +33,7 @@ import org.owasp.csrfguard.token.service.TokenService;
 import org.owasp.csrfguard.token.storage.impl.Token;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Methods of this class should only be used through the {@link TokenService} and its relevant subclass(es)
@@ -41,11 +42,29 @@ import java.util.Map;
 public interface TokenHolder {
 
     /**
-     * TODO document
-     * @param key
+     * Sets or overwrites the master token bound to a specific session key.
+     * It does not overwrite the session key associated page tokens.
+     * @param sessionKey
      * @param value
      */
-    void setMasterToken(final String key, final String value);
+    void setMasterToken(final String sessionKey, final String value);
+
+    /**
+     * TODO document
+     * @param sessionKey
+     * @param valueSupplier
+     * @return
+     */
+    String createMasterTokenIfAbsent(final String sessionKey, final Supplier<String> valueSupplier);
+
+    /**
+     * TODO document
+     * @param sessionKey
+     * @param resourceUri
+     * @param valueSupplier
+     * @return
+     */
+    String createPageTokenIfAbsent(String sessionKey, String resourceUri, Supplier<String> valueSupplier);
 
     /**
      * Note: this method returns a copy of the tokens in order to prevent outside modification.
@@ -58,46 +77,52 @@ public interface TokenHolder {
      * TODO document
      * @return
      */
-    Token getToken(final String key);
+    Token getToken(final String sessionKey);
 
     /**
      * TODO document
-     * @param key
-     * @param uri
+     * @param sessionKey
+     * @param resourceUri
      * @return
      */
-    String getPageToken(String key, String uri);
+    String getPageToken(String sessionKey, String resourceUri);
 
     /**
      * TODO document
-     * @param key
-     * @param uri
+     * @param sessionKey
+     * @param resourceUri
      * @param value
      */
-    void setPageToken(String key, String uri, String value);
+    void setPageToken(String sessionKey, String resourceUri, String value);
+
+    /**
+     * @param sessionKey
+     * @param pageTokens
+     */
+    void setPageTokens(final String sessionKey, final Map<String, String> pageTokens);
 
     /**
      * Note: this method returns a copy of the page tokens in order to prevent outside modification.
      * TODO document
      * @return
      */
-    Map<String, String> getPageTokens(String key);
+    Map<String, String> getPageTokens(String sessionKey);
 
     /**
      * TODO document
-     * @param tokenKey
+     * @param sessionKey
      */
-    void remove(String tokenKey);
+    void remove(String sessionKey);
 
     /**
      * TODO document
      */
-    void rotateAllPageTokens(final String key);
+    void rotateAllPageTokens(final String sessionKey);
 
     /**
      * TODO document
-     * @param tokenKey
+     * @param sessionKey
      * @param tokenFromRequest
      */
-    void regenerateUsedPageToken(final String tokenKey, final String tokenFromRequest);
+    void regenerateUsedPageToken(final String sessionKey, final String tokenFromRequest);
 }
