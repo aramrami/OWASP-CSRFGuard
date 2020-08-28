@@ -30,6 +30,7 @@
 package org.owasp.csrfguard.tag;
 
 import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.session.LogicalSession;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -47,7 +48,8 @@ public final class TokenValueTag extends AbstractUriTag {
 			throw new IllegalStateException("Must define 'uri' attribute when token per page is enabled");
 		}
 
-		final String tokenValue = csrfGuard.getTokenService().getTokenValue((HttpServletRequest) this.pageContext.getRequest(), getUri());
+		final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract((HttpServletRequest) this.pageContext.getRequest());
+		final String tokenValue = Objects.nonNull(logicalSession) ? csrfGuard.getTokenService().getTokenValue(logicalSession.getKey(), getUri()) : null;
 
 		try {
 			this.pageContext.getOut().write(tokenValue);

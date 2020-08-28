@@ -31,9 +31,12 @@ package org.owasp.csrfguard.action;
 
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardException;
+import org.owasp.csrfguard.session.LogicalSession;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Objects;
 
 public class Rotate extends AbstractAction {
 
@@ -41,6 +44,11 @@ public class Rotate extends AbstractAction {
 
     @Override
     public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
-        csrfGuard.getTokenService().rotateAllTokens(request);
+        final LogicalSessionExtractor logicalSessionExtractor = csrfGuard.getLogicalSessionExtractor();
+        final LogicalSession logicalSession = logicalSessionExtractor.extract(request);
+
+        if (Objects.nonNull(logicalSession)) {
+            csrfGuard.getTokenService().rotateAllTokens(logicalSession.getKey());
+        }
     }
 }

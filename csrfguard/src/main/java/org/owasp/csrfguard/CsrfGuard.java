@@ -273,6 +273,7 @@ public final class CsrfGuard {
             && !logicalSession.areTokensGenerated()) {
 
             tokenService.generateProtectedPageTokens(logicalSessionKey);
+            logicalSession.setTokensGenerated(true);
         }
     }
 
@@ -287,7 +288,7 @@ public final class CsrfGuard {
         getTokenHolder().remove(logicalSession.getKey());
     }
 
-    public void writeLandingPage(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+    public void writeLandingPage(final HttpServletRequest request, final HttpServletResponse response, final String logicalSessionKey) throws IOException {
         String landingPage = getNewTokenLandingPage();
 
         /* default to current page */
@@ -319,7 +320,7 @@ public final class CsrfGuard {
               .append(getTokenName())
               .append("\");").append(NEW_LINE)
               .append("hiddenField.setAttribute(\"value\", \"")
-              .append(getTokenService().getTokenValue(request, landingPage))
+              .append(getTokenService().getTokenValue(logicalSessionKey, landingPage))
               .append("\");").append(NEW_LINE)
               .append("form.appendChild(hiddenField);").append(NEW_LINE);
         }
@@ -401,22 +402,33 @@ public final class CsrfGuard {
 
     private boolean isTokenValidInRequest(final HttpServletRequest request, final HttpServletResponse response) {
         boolean isValid = false;
-        final String masterToken = getTokenService().getMasterToken(request);
-        if (Objects.nonNull(masterToken)) {
-            try {
-                final String usedValidToken = getTokenService().verifyToken(request, masterToken);
 
-                if (!CsrfGuardUtils.isAjaxRequest(request) && isRotateEnabled()) {
-                    getTokenService().rotateUsedToken(request, usedValidToken);
+        final LogicalSession logicalSession = CsrfGuard.getInstance().getLogicalSessionExtractor().extract(request);
+
+        if (Objects.nonNull(logicalSession)) {
+            final TokenService tokenService = getTokenService();
+            final String logicalSessionKey = logicalSession.getKey();
+            final String masterToken = tokenService.getMasterToken(logicalSessionKey);
+
+            if (Objects.nonNull(masterToken)) {
+                try {
+                    final String usedValidToken = tokenService.verifyToken(request, logicalSessionKey, masterToken);
+
+                    if (!CsrfGuardUtils.isAjaxRequest(request) && isRotateEnabled()) {
+                        tokenService.rotateUsedToken(logicalSessionKey, request.getRequestURI(), usedValidToken);
+                    }
+
+                    isValid = true;
+                } catch (final CsrfGuardException csrfe) {
+                    callActionsOnError(request, response, csrfe);
                 }
-
-                isValid = true;
-            } catch (final CsrfGuardException csrfe) {
-                callActionsOnError(request, response, csrfe);
+            } else {
+                callActionsOnError(request, response, new CsrfGuardException(MessageConstants.TOKEN_MISSING_FROM_STORAGE_MSG));
             }
         } else {
             callActionsOnError(request, response, new CsrfGuardException(MessageConstants.TOKEN_MISSING_FROM_STORAGE_MSG));
         }
+
         return isValid;
     }
 
@@ -425,6 +437,8 @@ public final class CsrfGuard {
         if (JavaScriptServlet.getJavascriptUris().contains(uri)) {
             return false;
         }
+
+        // TODO add / in front of URI if missing
 
         final Predicate<String> predicate = page -> isUriMatch(page, uri);
         return isProtectEnabled() ? getProtectedPages().stream().anyMatch(predicate)     /* all links are unprotected, except the ones that were explicitly specified */

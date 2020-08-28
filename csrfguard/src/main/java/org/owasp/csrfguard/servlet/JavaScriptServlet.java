@@ -166,8 +166,16 @@ public final class JavaScriptServlet extends HttpServlet {
 			writeMasterToken(request, response);
 		} else {
 			if (csrfGuard != null && csrfGuard.isTokenPerPageEnabled()) {
-				final Map<String, String> pageTokens = csrfGuard.getTokenService().getPageTokens(request);
-				writePageTokens(response, pageTokens);
+				// TODO pass the logical session downstream, see whether the null check can be done from here
+				final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);
+
+				if (Objects.isNull(logicalSession)) {
+					writeMasterToken(request, response);
+				} else {
+					final Map<String, String> pageTokens = csrfGuard.getTokenService().getPageTokens(logicalSession.getKey());
+					writePageTokens(response, pageTokens);
+				}
+
 			} else {
 				response.sendError(404);
 			}
@@ -179,10 +187,17 @@ public final class JavaScriptServlet extends HttpServlet {
 		response.setContentType(TEXT_PLAIN_MIME_TYPE);
 
 		/* write dynamic javascript */
-		final TokenService tokenService = CsrfGuard.getInstance().getTokenService();
-		final String masterTokenNameAndValue = delimitTokenFromValue(CsrfGuard.getInstance().getTokenName(), tokenService.getMasterToken(request));
+		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
+		final TokenService tokenService = csrfGuard.getTokenService();
+		final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);
 
-		response.getWriter().write(masterTokenNameAndValue);
+		if (Objects.isNull(logicalSession)) {
+			throw new IllegalStateException("This should not happen");
+		} else {
+			final String masterTokenNameAndValue = delimitTokenFromValue(csrfGuard.getTokenName(), tokenService.getMasterToken(logicalSession.getKey()));
+
+			response.getWriter().write(masterTokenNameAndValue);
+		}
 	}
 
 	private static void writePageTokens(final HttpServletResponse response, final Map<String, String> pageTokens) throws IOException {
@@ -235,12 +250,11 @@ public final class JavaScriptServlet extends HttpServlet {
 		response.getWriter().write(code);
 	}
 
-	// TODO review
 	private static String getMasterToken(final HttpServletRequest request, final CsrfGuard csrfGuard) {
 		final LogicalSessionExtractor sessionKeyExtractor = csrfGuard.getLogicalSessionExtractor();
-		final LogicalSession logicalSession = sessionKeyExtractor.extract(request);
+		final LogicalSession logicalSession = sessionKeyExtractor.extractOrCreate(request);
 
-		return Objects.isNull(logicalSession) ? null : csrfGuard.getTokenService().getMasterToken(request);
+		return csrfGuard.getTokenService().getMasterToken(logicalSession.getKey());
 	}
 
 	private static String parseDomain(final StringBuffer url) {

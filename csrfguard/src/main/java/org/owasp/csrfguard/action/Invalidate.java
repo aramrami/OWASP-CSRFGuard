@@ -31,9 +31,11 @@ package org.owasp.csrfguard.action;
 
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardException;
+import org.owasp.csrfguard.session.LogicalSession;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Objects;
 
 public final class Invalidate extends AbstractAction {
 
@@ -41,6 +43,11 @@ public final class Invalidate extends AbstractAction {
 
 	@Override
 	public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
-		csrfGuard.getTokenService().invalidate(request);
+
+		final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);
+
+		if (Objects.nonNull(logicalSession)) {
+			csrfGuard.getTokenService().invalidate(logicalSession);
+		}
 	}
 }

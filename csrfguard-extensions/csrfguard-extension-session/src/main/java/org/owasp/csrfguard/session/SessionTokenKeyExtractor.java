@@ -42,7 +42,16 @@ public class SessionTokenKeyExtractor implements LogicalSessionExtractor {
      */
     @Override
     public LogicalSession extract(final HttpServletRequest httpServletRequest) {
-        final HttpSession session = httpServletRequest.getSession(false);
+        return extractOrCreate(httpServletRequest, false);
+    }
+
+    @Override
+    public LogicalSession extractOrCreate(final HttpServletRequest httpServletRequest) {
+        return extractOrCreate(httpServletRequest, true);
+    }
+
+    private LogicalSession extractOrCreate(final HttpServletRequest httpServletRequest, final boolean create) {
+        final HttpSession session = httpServletRequest.getSession(create);
 
         return Objects.isNull(session) ? null : new ContainerSession(session);
     }

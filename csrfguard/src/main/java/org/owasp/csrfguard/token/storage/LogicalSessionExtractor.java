@@ -35,11 +35,19 @@ import javax.servlet.http.HttpServletRequest;
 public interface LogicalSessionExtractor {
 
     /**
-     * Returns a logical session implementation based on the information extracted from the current HTTP request
+     * Returns a logical session implementation based on the information extracted from the current HTTP request or null if that was not possible
      *
      * @param httpServletRequest current request
      *
      * @return a logical session created based on the current request or null if that was not possible
      */
     LogicalSession extract(final HttpServletRequest httpServletRequest);
+
+    /**
+     * Returns a logical session implementation based on the information extracted from the current HTTP request or creates a new one
+     *
+     * @param httpServletRequest current request
+     * @return logical session implementation based on the information extracted from the current HTTP request or creates a new one
+     */
+    LogicalSession extractOrCreate(HttpServletRequest httpServletRequest);
 }

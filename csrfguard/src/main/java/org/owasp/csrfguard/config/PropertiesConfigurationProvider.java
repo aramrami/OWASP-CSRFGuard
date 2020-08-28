@@ -423,6 +423,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				if (index < 0) {
 					final String pageUri = PropertyUtils.getProperty(properties, key);
 
+					// TODO add / in front of URI if missing
+
 					this.protectedPages.add(pageUri);
 				}
 			}
@@ -434,6 +436,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				/* page name/class */
 				if (index < 0) {
 					final String pageUri = PropertyUtils.getProperty(properties, key);
+
+					// TODO add / in front of URI if missing
 
 					this.unprotectedPages.add(pageUri);
 				}

@@ -53,42 +53,55 @@ public final class CsrfGuardFilter implements Filter {
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain filterChain) throws IOException, ServletException {
         final CsrfGuard csrfGuard = CsrfGuard.getInstance();
 
-        if (!csrfGuard.isEnabled()) {
+        if (csrfGuard.isEnabled()) {
+            if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
+                doFilter((HttpServletRequest) request, (HttpServletResponse) response, filterChain, csrfGuard);
+            } else {
+                handleNonHttpServletMessages(request, response, filterChain, csrfGuard);
+            }
+        } else {
             filterChain.doFilter(request, response);
-            return;
+        }
+    }
+
+    private void doFilter(final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final FilterChain filterChain, final CsrfGuard csrfGuard) throws IOException, ServletException {
+        final InterceptRedirectResponse interceptRedirectResponse = new InterceptRedirectResponse(httpServletResponse, httpServletRequest, csrfGuard);
+
+        final LogicalSessionExtractor sessionKeyExtractor = csrfGuard.getLogicalSessionExtractor();
+        final LogicalSession logicalSession = sessionKeyExtractor.extract(httpServletRequest);
+
+        if (Objects.isNull(logicalSession)) {
+            handleNoSession(httpServletRequest, httpServletResponse, interceptRedirectResponse, filterChain, csrfGuard);
+        } else {
+            handleSession(httpServletRequest, interceptRedirectResponse, filterChain, logicalSession, csrfGuard);
+        }
+    }
+
+    private void handleSession(final HttpServletRequest httpServletRequest, final InterceptRedirectResponse interceptRedirectResponse, final FilterChain filterChain,
+                               final LogicalSession logicalSession, final CsrfGuard csrfGuard) throws IOException, ServletException {
+        final String logicalSessionKey = logicalSession.getKey();
+
+        if (logicalSession.isNew() && csrfGuard.isUseNewTokenLandingPage()) {
+            csrfGuard.writeLandingPage(httpServletRequest, interceptRedirectResponse, logicalSessionKey);
+        } else if (csrfGuard.isValidRequest(httpServletRequest, interceptRedirectResponse)) {
+            filterChain.doFilter(httpServletRequest, interceptRedirectResponse);
+        } else {
+            logInvalidRequest(httpServletRequest, csrfGuard);
         }
 
-        if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
-            final HttpServletRequest httpRequest = (HttpServletRequest) request;
-            final InterceptRedirectResponse httpResponse = new InterceptRedirectResponse((HttpServletResponse) response, httpRequest, csrfGuard);
+        // FIXME who and when is going to send this back to the UI?
+        csrfGuard.getTokenService().generateTokensIfAbsent(logicalSessionKey, httpServletRequest.getRequestURI());
+    }
 
-
-            final LogicalSessionExtractor sessionKeyExtractor = csrfGuard.getLogicalSessionExtractor();
-            final LogicalSession logicalSession = sessionKeyExtractor.extract(httpRequest);
-
-            // if there is no session and we aren't validating when no session exists
-            if (Objects.isNull(logicalSession) && !csrfGuard.isValidateWhenNoSessionExists()) {
-                // If there is no session, no harm can be done
-                filterChain.doFilter(httpRequest, response);
-                return;
-            }
-
-            /*if (MultipartHttpServletRequest.isMultipartRequest(httpRequest)) {
-                 httpRequest = new MultipartHttpServletRequest(httpRequest);
-            }*/
-
-            if (Objects.nonNull(logicalSession) && (logicalSession.isNew() && csrfGuard.isUseNewTokenLandingPage())) {
-                csrfGuard.writeLandingPage(httpRequest, httpResponse);
-            } else if (csrfGuard.isValidRequest(httpRequest, httpResponse)) {
-                filterChain.doFilter(httpRequest, httpResponse);
+    private void handleNoSession(final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final InterceptRedirectResponse interceptRedirectResponse, final FilterChain filterChain, final CsrfGuard csrfGuard) throws IOException, ServletException {
+        if (csrfGuard.isValidateWhenNoSessionExists()) {
+            if (csrfGuard.isValidRequest(httpServletRequest, interceptRedirectResponse)) {
+                filterChain.doFilter(httpServletRequest, interceptRedirectResponse);
             } else {
-                logInvalidRequest(csrfGuard, httpRequest);
+                logInvalidRequest(httpServletRequest, csrfGuard);
             }
-
-            // FIXME who and when is going to send this back to the UI?
-            csrfGuard.getTokenService().generateTokensIfAbsent(httpRequest);
         } else {
-            handleNonHttpServletMessages(request, response, filterChain, csrfGuard);
+            filterChain.doFilter(httpServletRequest, httpServletResponse);
         }
     }
 
@@ -105,7 +118,7 @@ public final class CsrfGuardFilter implements Filter {
         filterChain.doFilter(request, response);
     }
 
-    private void logInvalidRequest(final CsrfGuard csrfGuard, final HttpServletRequest httpRequest) {
+    private void logInvalidRequest(final HttpServletRequest httpRequest, final CsrfGuard csrfGuard) {
         final String requestURI = httpRequest.getRequestURI();
         final String remoteAddress = httpRequest.getRemoteAddr();
 

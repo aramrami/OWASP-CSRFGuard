@@ -30,12 +30,14 @@
 package org.owasp.csrfguard.http;
 
 import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.session.LogicalSession;
 import org.owasp.csrfguard.token.service.TokenService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
+import java.util.Objects;
 
 public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 
@@ -59,42 +61,46 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 		
 		/* ensure token included in redirects */
 		if (!sanitizedLocation.contains("://") && this.csrfGuard.isProtectedPageAndMethod(sanitizedLocation, "GET")) {
-			/* update tokens */
-			final TokenService tokenService = CsrfGuard.getInstance().getTokenService();
-			tokenService.generateTokensIfAbsent(this.request); // TODO who is going to send this back to the client?
-			
 			// Separate URL fragment from path, e.g. /myPath#myFragment becomes [0]: /myPath [1]: myFragment
 			final String[] splitOnFragment = location.split("#", 2);
 
-			final StringBuilder sb = new StringBuilder();
+			final StringBuilder stringBuilder = new StringBuilder();
 
 			if (!sanitizedLocation.startsWith("/")) {
-				sb.append(this.request.getContextPath()).append('/').append(sanitizedLocation);
+				stringBuilder.append(this.request.getContextPath()).append('/').append(sanitizedLocation);
 			} else {
-				sb.append(sanitizedLocation);
+				stringBuilder.append(sanitizedLocation);
 			}
 			
 			if (sanitizedLocation.contains("?")) {
-				sb.append('&');
+				stringBuilder.append('&');
 			} else {
-				sb.append('?');
+				stringBuilder.append('?');
 			}
 
 			// remove any query parameters from the sanitizedLocation
 			final String locationUri = sanitizedLocation.split("\\?", 2)[0];
 
-			sb.append(this.csrfGuard.getTokenName());
-			sb.append('=');
-			sb.append(tokenService.getTokenValue(this.request, locationUri));
+			stringBuilder.append(this.csrfGuard.getTokenName())
+			  .append('=')
+			  .append(computeTokenValue(locationUri));
 			
 			// Add back fragment, if one exists
 			if (splitOnFragment.length > 1) {
-				sb.append('#').append(splitOnFragment[1]);
+				stringBuilder.append('#').append(splitOnFragment[1]);
 			}
 
-			this.response.sendRedirect(sb.toString());
+			this.response.sendRedirect(stringBuilder.toString());
 		} else {
 			this.response.sendRedirect(sanitizedLocation);
 		}
+	}
+
+	private String computeTokenValue(final String locationUri) {
+		final TokenService tokenService = CsrfGuard.getInstance().getTokenService();
+
+		final LogicalSession logicalSession = this.csrfGuard.getLogicalSessionExtractor().extract(this.request);
+
+		return Objects.nonNull(logicalSession) ? tokenService.generateTokensIfAbsent(logicalSession.getKey(), locationUri) : null;
 	}
 }

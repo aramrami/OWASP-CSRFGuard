@@ -30,6 +30,7 @@
 package org.owasp.csrfguard.tag;
 
 import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.session.LogicalSession;
 import org.owasp.csrfguard.util.BrowserEncoder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +39,7 @@ import javax.servlet.jsp.tagext.DynamicAttributes;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public final class FormTag extends AbstractUriTag implements DynamicAttributes {
 
@@ -48,8 +50,10 @@ public final class FormTag extends AbstractUriTag implements DynamicAttributes {
 	@Override
 	public int doStartTag() {
 		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-		final String tokenValue = csrfGuard.getTokenService().getTokenValue((HttpServletRequest) this.pageContext.getRequest(), buildUri(this.attributes.get("action")));
 		final String tokenName = csrfGuard.getTokenName();
+
+		final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract((HttpServletRequest) this.pageContext.getRequest());
+		final String tokenValue = Objects.nonNull(logicalSession) ? csrfGuard.getTokenService().getTokenValue(logicalSession.getKey(), buildUri(this.attributes.get("action"))) : null;
 
 		try {
 			this.pageContext.getOut().write(buildStartHtml(tokenName, tokenValue));
