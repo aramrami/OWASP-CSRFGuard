@@ -243,12 +243,12 @@ public final class CsrfGuard {
         final boolean isValid;
 
         final ILogger logger = getLogger();
-        final String requestURI = request.getRequestURI();
+        final String normalizedResourceURI = CsrfGuardUtils.normalizeResourceURI(request);
         if (isProtectedPageAndMethod(request)) {
-            logger.log(LogLevel.Debug, String.format("CSRFGuard analyzing protected resource: '%s'", requestURI));
+            logger.log(LogLevel.Debug, String.format("CSRFGuard analyzing protected resource: '%s'", normalizedResourceURI));
             isValid = isTokenValidInRequest(request, response);
         } else {
-            logger.log(LogLevel.Debug, String.format("Unprotected page: %s", requestURI));
+            logger.log(LogLevel.Debug, String.format("Unprotected page: %s", normalizedResourceURI));
             isValid = true;
         }
 
@@ -342,7 +342,7 @@ public final class CsrfGuard {
     }
 
     public boolean isProtectedPageAndMethod(final String page, final String method) {
-        return (isProtectedPage(page) && isProtectedMethod(method));
+        return (isProtectedPage(CsrfGuardUtils.normalizeResourceURI(page)) && isProtectedMethod(method));
     }
 
     public boolean isProtectedPageAndMethod(final HttpServletRequest request) {
@@ -432,15 +432,13 @@ public final class CsrfGuard {
         return isValid;
     }
 
-    private boolean isProtectedPage(final String uri) {
+    private boolean isProtectedPage(final String normalizedResourceUri) {
         /* if this is a javascript page, let it go through */
-        if (JavaScriptServlet.getJavascriptUris().contains(uri)) {
+        if (JavaScriptServlet.getJavascriptUris().contains(normalizedResourceUri)) {
             return false;
         }
 
-        // TODO add / in front of URI if missing
-
-        final Predicate<String> predicate = page -> isUriMatch(page, uri);
+        final Predicate<String> predicate = page -> isUriMatch(page, normalizedResourceUri);
         return isProtectEnabled() ? getProtectedPages().stream().anyMatch(predicate)     /* all links are unprotected, except the ones that were explicitly specified */
                                   : getUnprotectedPages().stream().noneMatch(predicate); /* all links are protected, except the ones were explicitly excluded */
     }

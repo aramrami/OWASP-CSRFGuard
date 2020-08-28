@@ -40,7 +40,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 
 /**
- * TODO document
+ * Various utility methods/helpers.
  */
 public final class CsrfGuardUtils {
 
@@ -142,6 +142,14 @@ public final class CsrfGuardUtils {
             }
         }
         return false;
+    }
+
+    public static String normalizeResourceURI(final HttpServletRequest httpServletRequest) {
+        return normalizeResourceURI(httpServletRequest.getRequestURI());
+    }
+
+    public static String normalizeResourceURI(final String resourceURI) {
+        return resourceURI.startsWith("/") ? resourceURI : '/' + resourceURI;
     }
 
     private static String readInputStreamContent(final InputStream inputStream) {

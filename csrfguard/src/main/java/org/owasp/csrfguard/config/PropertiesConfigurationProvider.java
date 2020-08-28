@@ -30,6 +30,7 @@
 package org.owasp.csrfguard.config;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.owasp.csrfguard.action.IAction;
 import org.owasp.csrfguard.config.properties.ConfigParameters;
 import org.owasp.csrfguard.config.properties.PropertyUtils;
@@ -45,6 +46,7 @@ import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 
 /**
@@ -134,8 +136,6 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 			this.unprotectedPages = new HashSet<>();
 			this.protectedMethods = new HashSet<>();
 			this.unprotectedMethods = new HashSet<>();
-
-			/* load simple properties */
 
 			this.logger = CsrfGuardUtils.<ILogger>forName(PropertyUtils.getProperty(properties, ConfigParameters.LOGGER)).newInstance();
 			this.tokenName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_NAME);
@@ -370,21 +370,17 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		final Map<String, IAction> actionsMap = new HashMap<>();
 
 		for (final Object obj : properties.keySet()) {
-			final String key = (String) obj;
+			final String propertyKey = (String) obj;
 
-			if (key.startsWith(ConfigParameters.ACTION_PREFIX)) {
-				final String directive = key.substring(ConfigParameters.ACTION_PREFIX.length());
-				final int index = directive.indexOf('.');
+			final String actionProperty = getPrimaryPropertyDirective(propertyKey, ConfigParameters.ACTION_PREFIX);
 
-				/* action name/class */
-				if (index < 0) {
-					final String actionClass = PropertyUtils.getProperty(properties, key);
-					final IAction action = CsrfGuardUtils.<IAction>forName(actionClass).newInstance();
+			if (Objects.nonNull(actionProperty)) {
+				final String actionClass = PropertyUtils.getProperty(properties, propertyKey);
+				final IAction action = CsrfGuardUtils.<IAction>forName(actionClass).newInstance();
 
-					action.setName(directive);
-					actionsMap.put(action.getName(), action);
-					this.actions.add(action);
-				}
+				action.setName(actionProperty);
+				actionsMap.put(action.getName(), action);
+				this.actions.add(action);
 			}
 		}
 		return actionsMap;
@@ -413,33 +409,16 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private void initializePageProtection(final Properties properties) {
 		for (final Object obj : properties.keySet()) {
-			final String key = (String) obj;
+			final String propertyKey = (String) obj;
 
-			if (key.startsWith(ConfigParameters.PROTECTED_PAGE_PREFIX)) {
-				final String directive = key.substring(ConfigParameters.PROTECTED_PAGE_PREFIX.length());
-				final int index = directive.indexOf('.');
+			final String protectedPage = getPageProperty(properties, propertyKey, ConfigParameters.PROTECTED_PAGE_PREFIX);
 
-				/* page name/class */
-				if (index < 0) {
-					final String pageUri = PropertyUtils.getProperty(properties, key);
-
-					// TODO add / in front of URI if missing
-
-					this.protectedPages.add(pageUri);
-				}
-			}
-
-			if (key.startsWith(ConfigParameters.UNPROTECTED_PAGE_PREFIX)) {
-				final String directive = key.substring(ConfigParameters.UNPROTECTED_PAGE_PREFIX.length());
-				final int index = directive.indexOf('.');
-
-				/* page name/class */
-				if (index < 0) {
-					final String pageUri = PropertyUtils.getProperty(properties, key);
-
-					// TODO add / in front of URI if missing
-
-					this.unprotectedPages.add(pageUri);
+			if (Objects.nonNull(protectedPage)) {
+				this.protectedPages.add(protectedPage);
+			} else {
+				final String unProtectedPage = getPageProperty(properties, propertyKey, ConfigParameters.UNPROTECTED_PAGE_PREFIX);
+				if (Objects.nonNull(unProtectedPage)) {
+					this.unprotectedPages.add(unProtectedPage);
 				}
 			}
 		}
@@ -447,26 +426,25 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private void initializeActionParameters(final Properties properties, final Map<String, IAction> actionsMap) throws IOException {
 		for (final Object obj : properties.keySet()) {
-			final String key = (String) obj;
+			final String propertyKey = (String) obj;
 
-			if (key.startsWith(ConfigParameters.ACTION_PREFIX)) {
-				final String directive = key.substring(ConfigParameters.ACTION_PREFIX.length());
-				final int index = directive.indexOf('.');
+			final Pair<String, Integer> actionParameterProperty = getParameterPropertyDirective(propertyKey, ConfigParameters.ACTION_PREFIX);
 
-				/* action name/class */
-				if (index >= 0) {
-					final String actionName = directive.substring(0, index);
-					final IAction action = actionsMap.get(actionName);
+			if (Objects.nonNull(actionParameterProperty)) {
+				final String directive = actionParameterProperty.getKey();
+				final int index = actionParameterProperty.getValue();
 
-					if (action == null) {
-						throw new IOException(String.format("action class %s has not yet been specified", actionName));
-					}
+				final String actionName = directive.substring(0, index);
+				final IAction action = actionsMap.get(actionName);
 
-					final String parameterName = directive.substring(index + 1);
-					final String parameterValue = PropertyUtils.getProperty(properties, key);
-
-					action.setParameter(parameterName, parameterValue);
+				if (action == null) {
+					throw new IOException(String.format("action class %s has not yet been specified", actionName));
 				}
+
+				final String parameterName = directive.substring(index + 1);
+				final String parameterValue = PropertyUtils.getProperty(properties, propertyKey);
+
+				action.setParameter(parameterName, parameterValue);
 			}
 		}
 
@@ -474,6 +452,43 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		if (this.actions.size() <= 0) {
 			throw new IOException("failure to define at least one action");
 		}
+	}
+
+	private static Pair<String, Integer> getParameterPropertyDirective(final String propertyKey, final String propertyKeyPrefix) {
+		return getPropertyDirective(propertyKey, propertyKeyPrefix, i -> i >= 0);
+	}
+
+	private static String getPrimaryPropertyDirective(final String propertyKey, final String propertyKeyPrefix) {
+		final Pair<String, Integer> propertyDirective = getPropertyDirective(propertyKey, propertyKeyPrefix, i -> i < 0);
+
+		return Objects.isNull(propertyDirective) ? null : propertyDirective.getKey();
+	}
+
+	private static Pair<String, Integer> getPropertyDirective(final String propertyKey, final String propertyKeyPrefix, final IntPredicate directivePredicate) {
+		Pair<String, Integer> result = null;
+		if (propertyKey.startsWith(propertyKeyPrefix)) {
+			final String directive = propertyKey.substring(propertyKeyPrefix.length());
+			final int index = directive.indexOf('.');
+
+			if (directivePredicate.test(index)) {
+				result = Pair.of(directive, index);
+			}
+		}
+
+		return result;
+	}
+
+	private static String getPageProperty(final Properties properties, final String propertyKey, final String propertyKeyPrefix) {
+		String result = null;
+		final String pageProperty = getPrimaryPropertyDirective(propertyKey, propertyKeyPrefix);
+
+		if (Objects.nonNull(pageProperty)) {
+			final String pageUri = PropertyUtils.getProperty(properties, propertyKey);
+
+			result = CsrfGuardUtils.normalizeResourceURI(pageUri);
+		}
+
+		return result;
 	}
 
 	private void javascriptInitParamsIfNeeded() {
@@ -520,7 +535,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		return jsConfigParameter.getProperty(servletConfig, this.propertiesCache);
 	}
 
-	private void initializeTokenPersistenceConfigurations(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+	private void initializeTokenPersistenceConfigurations(final Properties properties) throws InstantiationException, IllegalAccessException {
 		final String logicalSessionExtractorName = PropertyUtils.getProperty(properties, ConfigParameters.LOGICAL_SESSION_EXTRACTOR_NAME);
 		if (StringUtils.isNoneBlank(logicalSessionExtractorName)) {
 			this.logicalSessionExtractor = CsrfGuardUtils.<LogicalSessionExtractor>forName(logicalSessionExtractorName).newInstance();

@@ -108,7 +108,7 @@ public class TokenService {
     public String generateTokensIfAbsent(final String logicalSessionKey, final String requestURI) {
         final TokenHolder tokenHolder = this.csrfGuard.getTokenHolder();
 
-        return this.csrfGuard.isTokenPerPageEnabled() ? tokenHolder.createPageTokenIfAbsent(logicalSessionKey, requestURI, TokenUtils::generateRandomToken)
+        return this.csrfGuard.isTokenPerPageEnabled() ? tokenHolder.createPageTokenIfAbsent(logicalSessionKey, CsrfGuardUtils.normalizeResourceURI(requestURI), TokenUtils::generateRandomToken)
                                                       : tokenHolder.createMasterTokenIfAbsent(logicalSessionKey, TokenUtils::generateRandomToken);
     }
 
@@ -149,6 +149,7 @@ public class TokenService {
      * @param usedValidToken    a verified token that has validated the current request
      */
     public void rotateUsedToken(final String logicalSessionKey, final String requestURI, final String usedValidToken) {
+        final String normalizedResourceURI = CsrfGuardUtils.normalizeResourceURI(requestURI);
         final TokenHolder tokenHolder = this.csrfGuard.getTokenHolder();
 
         final String masterToken = getMasterToken(tokenHolder, logicalSessionKey);
@@ -157,8 +158,8 @@ public class TokenService {
             tokenHolder.setMasterToken(logicalSessionKey, TokenUtils.generateRandomToken());
         } else {
             if (this.csrfGuard.isTokenPerPageEnabled()) {
-                if (usedValidToken.equals(tokenHolder.getPageToken(logicalSessionKey, requestURI))) {
-                    tokenHolder.setPageToken(logicalSessionKey, requestURI, TokenUtils.generateRandomToken());
+                if (usedValidToken.equals(tokenHolder.getPageToken(logicalSessionKey, normalizedResourceURI))) {
+                    tokenHolder.setPageToken(logicalSessionKey, normalizedResourceURI, TokenUtils.generateRandomToken());
                 } else {
                     throw new IllegalStateException("The verified token was not associated to the current resource.");
                 }
@@ -219,7 +220,7 @@ public class TokenService {
         if (Objects.isNull(tokenFromRequest)) {
             throw new CsrfGuardException(MessageConstants.REQUEST_MISSING_TOKEN_MSG);
         } else {
-            usedValidToken = this.csrfGuard.isTokenPerPageEnabled() ? verifyPageToken(masterToken, tokenFromRequest, logicalSessionKey, request.getRequestURI())
+            usedValidToken = this.csrfGuard.isTokenPerPageEnabled() ? verifyPageToken(masterToken, tokenFromRequest, logicalSessionKey, CsrfGuardUtils.normalizeResourceURI(request))
                                                                     : verifyMasterToken(masterToken, tokenFromRequest);
         }
 
