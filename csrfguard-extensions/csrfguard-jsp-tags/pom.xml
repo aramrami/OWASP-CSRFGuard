@@ -35,25 +35,25 @@
 
     <parent>
         <groupId>org.owasp</groupId>
-        <artifactId>csrfguard-parent</artifactId>
+        <artifactId>csrfguard-extensions</artifactId>
         <version>3.1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>csrfguard-extensions</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>csrfguard-jsp-tags</artifactId>
 
-    <modules>
-        <module>csrfguard-extension-session</module>
-        <module>csrfguard-jsp-tags</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>csrfguard</artifactId>
+        </dependency>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>csrfguard</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+        </dependency>
+    </dependencies>
 </project>

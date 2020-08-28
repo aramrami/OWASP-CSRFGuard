@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <!--
   ~ The OWASP CSRFGuard Project, BSD License
   ~ Copyright (c) 2011, Eric Sheridan (eric@infraredsecurity.com)
@@ -27,33 +27,45 @@
   ~ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   ~ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <parent>
-        <groupId>org.owasp</groupId>
-        <artifactId>csrfguard-parent</artifactId>
-        <version>3.1.0-SNAPSHOT</version>
-    </parent>
-
-    <artifactId>csrfguard-extensions</artifactId>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>csrfguard-extension-session</module>
-        <module>csrfguard-jsp-tags</module>
-    </modules>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>csrfguard</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-</project>
+<!-- TODO move to a separate maven module as it seems that it's plug-and-playable -->
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0">
+	<tlib-version>1.2</tlib-version>
+	<jsp-version>2.0</jsp-version>
+	<short-name>Owasp CsrfGuard Tag Library</short-name>
+	<uri>http://www.owasp.org/index.php/Category:OWASP_CSRFGuard_Project/Owasp.CsrfGuard.tld</uri>
+	<tag>
+		<name>token</name>
+		<tag-class>org.owasp.csrfguard.tag.TokenTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>uri</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+	<tag>
+		<name>tokenname</name>
+		<tag-class>org.owasp.csrfguard.tag.TokenNameTag</tag-class>
+		<body-content>empty</body-content>
+	</tag>
+	<tag>
+		<name>tokenvalue</name>
+		<tag-class>org.owasp.csrfguard.tag.TokenValueTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>uri</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+	<tag>
+		<name>a</name>
+		<tag-class>org.owasp.csrfguard.tag.ATag</tag-class>
+		<dynamic-attributes>true</dynamic-attributes>
+	</tag>
+	<tag>
+		<name>form</name>
+		<tag-class>org.owasp.csrfguard.tag.FormTag</tag-class>
+		<dynamic-attributes>true</dynamic-attributes>
+	</tag>
+</taglib>
