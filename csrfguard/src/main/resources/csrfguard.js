@@ -300,7 +300,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 	/**
 	 *  inject tokens as hidden fields into forms
 	 */
-	function injectTokenForm(form, tokenName, tokenValue, pageTokens,injectGetForms) {
+	function injectTokenForm(form, tokenName, tokenValue, pageTokens, injectGetForms) {
 	  
 		if (!injectGetForms) {
 			var method = form.getAttribute("method");
@@ -392,12 +392,12 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 	/**
 	 *  inject csrf prevention tokens throughout dom
 	 */
-	function injectTokens(tokenName, tokenValue) {
+	function injectTokens(tokenName, tokenValue, existingPageTokens) {
 		/* obtain reference to page tokens if enabled */
 		var pageTokens = {};
 		
 		if (%TOKENS_PER_PAGE% == true) {
-			pageTokens = requestPageTokens();
+			pageTokens = existingPageTokens;
 		}
 		
 		/* iterate over all elements and injection token */
@@ -414,7 +414,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 			var element = all[i];
 			
 			/* inject into form */
-			if (element.tagName.toLowerCase() == "form") {
+			if (element.tagName.toLowerCase() === "form") {
 				if (injectForms) {
 					injectTokenForm(element, tokenName, tokenValue, pageTokens, injectGetForms);
 
@@ -432,87 +432,129 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 		}
 	}
 
-	/**
-	 *  obtain array of page specific tokens
-	 */
-	function requestPageTokens() {
-		var xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject("Microsoft.XMLHTTP");
-		var pageTokens = {};
-		
-		xhr.open("POST", "%SERVLET_PATH%", false);
-		xhr.send(null);
-		
-		var text = xhr.responseText;
+	function parsePageTokens(response) {
 		var name = "";
 		var value = "";
 		var nameContext = true;
-		
-		for (var i = 0; i < text.length; i++) {
-			var character = text.charAt(i);
-			
-			if (character == ':') {
+
+		let pageTokens = {}
+		for (var i = 0; i < response.length; i++) {
+			var character = response.charAt(i);
+
+			if (character === ':') {
 				nameContext = false;
-			} else if (character != ',') {
-				if (nameContext == true) {
+			} else if (character !== ',') {
+				if (nameContext === true) {
 					name += character;
 				} else {
 					value += character;
 				}
 			}
-			
-			if (character == ',' || (i + 1) >= text.length) {
+
+			if (character === ',' || (i + 1) >= response.length) {
 				pageTokens[name] = value;
 				name = "";
 				value = "";
 				nameContext = true;
 			}
 		}
-		
+
 		return pageTokens;
 	}
-	
-	/*
-	 * Only inject the tokens if the JavaScript was referenced from HTML that
-	 * was served by us. Otherwise, the code was referenced from malicious HTML
-	 * which may be trying to steal tokens using JavaScript hijacking techniques.
-	 * The token is now removed and fetched using another POST request to solve,
-	 * the token hijacking problem.
+
+	/**
+	 *  obtain array of page specific tokens
 	 */
+	function requestPageTokens(tokenName, tokenValue, callback) {
+		var xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject("Microsoft.XMLHTTP");
+
+		xhr.open("POST", "%SERVLET_PATH%", true);
+		if (%INJECT_XHR% !== true) {
+			if (tokenName !== undefined && tokenValue !== undefined) {
+				xhr.setRequestHeader(tokenName, tokenValue)
+			}
+		}
+
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4) {
+				if(xhr.status == 200) {
+					let pageTokens = parsePageTokens(xhr.responseText);
+					callback.call(this, pageTokens);
+				} else {
+					alert(xhr.status + ': failed csrf check');
+				}
+			}
+		}
+
+		xhr.send(null);
+	}
+
+	/*
+         * Only inject the tokens if the JavaScript was referenced from HTML that
+         * was served by us. Otherwise, the code was referenced from malicious HTML
+         * which may be trying to steal tokens using JavaScript hijacking techniques.
+         * The token is now removed and fetched using another POST request to solve,
+         * the token hijacking problem.
+         */
 	if (isValidDomain(document.domain, "%DOMAIN_ORIGIN%")) {
-		var token_name = '%TOKEN_NAME%';
-		var token_value = '%TOKEN_VALUE%';
+		var masterTokenName = '%TOKEN_NAME%';
+		var masterTokenValue = '%TOKEN_VALUE%';
+
+		var isLoadedWrapper = { isDomContentLoaded: false };
+
+		var pageTokenWrapper = { pageTokens: {} };
+
+		addEvent(window, 'unload', EventCache.flush);
+
+		addEvent(window, 'DOMContentLoaded', function () {
+			isLoadedWrapper.isDomContentLoaded = true;
+
+			if (pageTokenWrapper.pageTokensLoaded) {
+				injectTokens(masterTokenName, masterTokenValue, pageTokenWrapper.pageTokens);
+			}
+		});
+
 		/* optionally include Ajax support */
 		if (%INJECT_XHR% == true) {
-			if (navigator.appName == "Microsoft Internet Explorer") {
+			if (navigator.appName === "Microsoft Internet Explorer") {
 				hijackExplorer();
 			} else {
 				hijackStandard();
 			}
-		
-		var xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject("Microsoft.XMLHTTP");
-		var csrfToken = {};
-		xhr.open("POST", "%SERVLET_PATH%", false);
-		xhr.setRequestHeader("FETCH-CSRF-TOKEN", "1");
-		xhr.send(null);
-		
-		var token_pair = xhr.responseText;
-		token_pair = token_pair.split(":");
-		token_name = token_pair[0];
-		token_value = token_pair[1];
 
-			XMLHttpRequest.prototype.onsend = function(data) {
+			XMLHttpRequest.prototype.onsend = function (data) {
 				if (isValidUrl(this.url)) {
 					this.setRequestHeader("X-Requested-With", "XMLHttpRequest")
-					this.setRequestHeader(token_name, token_value);
+
+					let modifiedUrl = this.url.startsWith('/') ? this.url : '/' + this.url;
+
+					if (pageTokenWrapper.pageTokens !== null && pageTokenWrapper.pageTokens[modifiedUrl] !== undefined) {
+						this.setRequestHeader(masterTokenName, pageTokenWrapper.pageTokens[modifiedUrl]);
+					} else {
+						this.setRequestHeader(masterTokenName, masterTokenValue);
+					}
 				}
-			};
+			}
 		}
-		
-		/* update nodes in DOM after load */
-		addEvent(window,'unload',EventCache.flush);
-		addEvent(window,'DOMContentLoaded', function() {
-			injectTokens(token_name, token_value);
-		});
+
+		let pageTokenRequestCallback = function(receivedPageTokens) {
+			pageTokenWrapper.pageTokens = receivedPageTokens;
+
+			pageTokenWrapper.pageTokensLoaded = true;
+
+			if (isLoadedWrapper.isDomContentLoaded) {
+				injectTokens(masterTokenName, masterTokenValue, receivedPageTokens);
+			}
+		}
+
+		if (%TOKENS_PER_PAGE% == true) {
+			requestPageTokens(masterTokenName, masterTokenValue, pageTokenRequestCallback);
+		} else {
+			/* update nodes in DOM after load */
+			addEvent(window, 'DOMContentLoaded', function () {
+				injectTokens(masterTokenName, masterTokenValue, {});
+			});
+		}
 	} else {
 		alert("OWASP CSRFGuard JavaScript was included from within an unauthorized domain!");
 	}

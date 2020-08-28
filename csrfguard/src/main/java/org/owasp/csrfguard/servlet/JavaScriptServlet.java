@@ -160,25 +160,22 @@ public final class JavaScriptServlet extends HttpServlet {
 	@Override
 	public void doPost(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
 		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-		final String isFetchCsrfToken = request.getHeader("FETCH-CSRF-TOKEN");
 
-		if (csrfGuard != null && isFetchCsrfToken != null) {
-			writeMasterToken(request, response);
-		} else {
-			if (csrfGuard != null && csrfGuard.isTokenPerPageEnabled()) {
+		if (csrfGuard.isValidRequest(request, response)) {
+			if (csrfGuard.isTokenPerPageEnabled()) {
 				// TODO pass the logical session downstream, see whether the null check can be done from here
 				final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);
-
 				if (Objects.isNull(logicalSession)) {
 					writeMasterToken(request, response);
 				} else {
-					final Map<String, String> pageTokens = csrfGuard.getTokenService().getPageTokens(logicalSession.getKey());
+					final Map<String, String> pageTokens =  csrfGuard.getTokenService().getPageTokens(logicalSession.getKey());
 					writePageTokens(response, pageTokens);
 				}
-
 			} else {
-				response.sendError(404);
+				writeMasterToken(request, response);
 			}
+		} else {
+			response.sendError(403, "Master token missing from the request.");
 		}
 	}
 
