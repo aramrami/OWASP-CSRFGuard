@@ -63,28 +63,33 @@ public final class JavaScriptServlet extends HttpServlet {
 
 	private static final String DOMAIN_ORIGIN_IDENTIFIER = "%DOMAIN_ORIGIN%";
 
-	private static final String DOMAIN_STRICT_IDENTIFIER = "%DOMAIN_STRICT%";
-
-	private static final String INJECT_INTO_XHR_IDENTIFIER = "%INJECT_XHR%";
-
-	private static final String INJECT_INTO_FORMS_IDENTIFIER = "%INJECT_FORMS%";
-
-	private static final String INJECT_GET_FORMS_IDENTIFIER = "%INJECT_GET_FORMS%";
-
-	private static final String INJECT_FORM_ATTRIBUTES_IDENTIFIER = "%INJECT_FORM_ATTRIBUTES%";
-
-	private static final String INJECT_INTO_ATTRIBUTES_IDENTIFIER = "%INJECT_ATTRIBUTES%";
-
 	private static final String CONTEXT_PATH_IDENTIFIER = "%CONTEXT_PATH%";
 
 	private static final String SERVLET_PATH_IDENTIFIER = "%SERVLET_PATH%";
 
 	private static final String X_REQUESTED_WITH_IDENTIFIER = "%X_REQUESTED_WITH%";
 
-	private static final String TOKENS_PER_PAGE_IDENTIFIER = "%TOKENS_PER_PAGE%";
-
 	private static final String UNPROTECTED_EXTENSIONS_IDENTIFIER = "%UNPROTECTED_EXTENSIONS%";
 
+	/*
+	 * Non-string configuration placeholder names that has to be replaced together with the single quotes
+	 * The single quotes around the attribute names are needed so the template code would be parsable by linters and automated code minifiers.
+	 */
+	private static final String DOMAIN_STRICT_IDENTIFIER = "'%DOMAIN_STRICT%'";
+
+	private static final String INJECT_INTO_XHR_IDENTIFIER = "'%INJECT_XHR%'";
+
+	private static final String INJECT_INTO_FORMS_IDENTIFIER = "'%INJECT_FORMS%'";
+
+	private static final String INJECT_GET_FORMS_IDENTIFIER = "'%INJECT_GET_FORMS%'";
+
+	private static final String INJECT_FORM_ATTRIBUTES_IDENTIFIER = "'%INJECT_FORM_ATTRIBUTES%'";
+
+	private static final String INJECT_INTO_ATTRIBUTES_IDENTIFIER = "'%INJECT_ATTRIBUTES%'";
+
+	private static final String TOKENS_PER_PAGE_IDENTIFIER = "'%TOKENS_PER_PAGE%'";
+
+	/* MIME Type constants */
 	private static final String TEXT_PLAIN_MIME_TYPE = "text/plain";
 	private static final String JAVASCRIPT_MIME_TYPE = "text/javascript";
 
@@ -227,7 +232,6 @@ public final class JavaScriptServlet extends HttpServlet {
 		/* build dynamic javascript */
 		String code = csrfGuard.getJavascriptTemplateCode();
 
-		// FIXME why not use booleans instead of string representation?
 		code = code.replace(TOKEN_NAME_IDENTIFIER, StringUtils.defaultString(csrfGuard.getTokenName()))
 				   .replace(TOKEN_VALUE_IDENTIFIER, StringUtils.defaultString(getMasterToken(request, csrfGuard)))
 				   .replace(INJECT_INTO_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoForms()))

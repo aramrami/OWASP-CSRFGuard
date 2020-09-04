@@ -34,529 +34,545 @@
  */
 var owaspCSRFGuardScriptHasLoaded = owaspCSRFGuardScriptHasLoaded || {};
 if (owaspCSRFGuardScriptHasLoaded !== true) {
-(function() {
-	owaspCSRFGuardScriptHasLoaded = true;
+    (function () {
+        owaspCSRFGuardScriptHasLoaded = true;
 
-	/**
-	 * Code to ensure our event always gets triggered when the DOM is updated.
-	 * @param obj
-	 * @param type
-	 * @param fn
-	 * @source http://www.dustindiaz.com/rock-solid-addevent/
-	 */
-	function addEvent( obj, type, fn ) {
-	    if (obj.addEventListener) {
-	        obj.addEventListener( type, fn, false );
-	        EventCache.add(obj, type, fn);
-	    }
-	    else if (obj.attachEvent) {
-	        obj["e" + type + fn] = fn;
-	        obj[type + fn] = function() { obj["e" + type + fn]( window.event ); }
-	        obj.attachEvent( "on" + type, obj[type + fn] );
-	        EventCache.add(obj, type, fn);
-	    }
-	    else {
-	        obj["on" + type] = obj["e" + type + fn];
-	    }
-	}
-	
-	var EventCache = function() {
-	    var listEvents = [];
-	    return {
-	        listEvents : listEvents,
-	        add : function(node, sEventName, fHandler) {
-	            listEvents.push(arguments);
-	        },
-	        flush : function() {
-	            var i, item;
-	            for (i = listEvents.length - 1; i >= 0; i = i - 1) {
-	                item = listEvents[i];
-	                if (item[0].removeEventListener) {
-	                    item[0].removeEventListener(item[1], item[2], item[3]);
-	                }
-
-	                if (item[1].substring(0, 2) != "on") {
-	                    item[1] = "on" + item[1];
-	                }
-
-	                if (item[0].detachEvent) {
-	                    item[0].detachEvent(item[1], item[2]);
-	                }
-	            }
-	        }
-	    };
-	}();
-	
-	/* string utility functions */
-	function startsWith(s, prefix) {
-		return s.indexOf(prefix) === 0;
-	}
-
-	function endsWith(s, suffix) {
-		return s.substring(s.length - suffix.length) === suffix;
-	}
-
-	/**
-	 *  hook using standards based prototype
-	 */
-	function hijackStandard() {
-		XMLHttpRequest.prototype._open = XMLHttpRequest.prototype.open;
-		XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
-			this.url = url;
-			
-			this._open.apply(this, arguments);
-		};
-		
-		XMLHttpRequest.prototype._send = XMLHttpRequest.prototype.send;
-		XMLHttpRequest.prototype.send = function(data) {
-			if (this.onsend != null) {
-				this.onsend.apply(this, arguments);
-			}
-			
-			this._send.apply(this, arguments);
-		};
-	}
-
-	/**
-	 *  ie does not properly support prototype - wrap completely
-	 */
-	function hijackExplorer() {
-		var _XMLHttpRequest = window.XMLHttpRequest;
-		
-		function alloc_XMLHttpRequest() {
-			this.base = _XMLHttpRequest ? new _XMLHttpRequest : new window.ActiveXObject("Microsoft.XMLHTTP");
-		}
-		
-		function init_XMLHttpRequest() {
-			return new alloc_XMLHttpRequest;
-		}
-		
-		init_XMLHttpRequest.prototype = alloc_XMLHttpRequest.prototype;
-		
-		/* constants */
-		init_XMLHttpRequest.UNSENT = 0;
-		init_XMLHttpRequest.OPENED = 1;
-		init_XMLHttpRequest.HEADERS_RECEIVED = 2;
-		init_XMLHttpRequest.LOADING = 3;
-		init_XMLHttpRequest.DONE = 4;
-		
-		/* properties */
-		init_XMLHttpRequest.prototype.status = 0;
-		init_XMLHttpRequest.prototype.statusText = "";
-		init_XMLHttpRequest.prototype.readyState = init_XMLHttpRequest.UNSENT;
-		init_XMLHttpRequest.prototype.responseText = "";
-		init_XMLHttpRequest.prototype.responseXML = null;
-		init_XMLHttpRequest.prototype.onsend = null;
-		
-		init_XMLHttpRequest.url = null;
-		init_XMLHttpRequest.onreadystatechange = null;
-
-		/* methods */
-		init_XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
-			var self = this;
-			this.url = url;
-			
-			this.base.onreadystatechange = function() {
-				try { self.status = self.base.status; } catch (e) { }
-				try { self.statusText = self.base.statusText; } catch (e) { }
-				try { self.readyState = self.base.readyState; } catch (e) { }
-				try { self.responseText = self.base.responseText; } catch(e) { }
-				try { self.responseXML = self.base.responseXML; } catch(e) { }
-				
-				if (self.onreadystatechange != null) {
-					self.onreadystatechange.apply(this, arguments);
-				}
-			}
-			
-			this.base.open(method, url, async, user, pass);
-		};
-		
-		init_XMLHttpRequest.prototype.send = function(data) {
-			if (this.onsend != null) {
-				this.onsend.apply(this, arguments);
-			}
-			
-			this.base.send(data);
-		};
-		
-		init_XMLHttpRequest.prototype.abort = function() {
-			this.base.abort();
-		};
-		
-		init_XMLHttpRequest.prototype.getAllResponseHeaders = function() {
-			return this.base.getAllResponseHeaders();
-		};
-		
-		init_XMLHttpRequest.prototype.getResponseHeader = function(name) {
-			return this.base.getResponseHeader(name);
-		};
-		
-		init_XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
-			return this.base.setRequestHeader(name, value);
-		};
-		
-		/* hook */
-		window.XMLHttpRequest = init_XMLHttpRequest;
-	}
-
-	/**
-	 *  check if valid domain based on domainStrict
-	 */
-	function isValidDomain(current, target) {
-		var result = false;
-		
-		/* check exact or subdomain match */
-		if (current == target) {
-			result = true;
-		} else if (%DOMAIN_STRICT% == false) {
-			if (target.charAt(0) == '.') {
-				result = endsWith(current, target);
-			} else {
-				result = endsWith(current, '.' + target);
-			}
-		}
-		
-		return result;
-	}
-
-	/**
-	 *  determine if uri/url points to valid domain
-	 */
-	function isValidUrl(src) {
-		var result = false;
-		var urlStartsWithProtocol = /^[a-zA-Z][a-zA-Z0-9.+-]*:/;
-
-		/* parse out domain to make sure it points to our own */
-		if (src.substring(0, 7) == "http://" || src.substring(0, 8) == "https://") {
-			var token = "://";
-			var index = src.indexOf(token);
-			var part = src.substring(index + token.length);
-			var domain = "";
-			
-			/* parse up to end, first slash, or anchor */
-			for (var i = 0; i < part.length; i++) {
-				var character = part.charAt(i);
-				
-				if (character == '/' || character == ':' || character == '#') {
-					break;
-				} else {
-					domain += character;
-				}
-			}
-			
-			result = isValidDomain(document.domain, domain);
-			/* explicitly skip anchors */
-		} else if (src.charAt(0) == '#') {
-			result = false;
-			/* ensure it is a local resource without a protocol */
-		} else if (!startsWith(src, "//") && (src.charAt(0) == '/' || src.search(urlStartsWithProtocol) === -1)) {
-			result = true;
-		}
-		
-		return result;
-	}
-
-	/* parse uri from url */
-	function parseUri(url) {
-		var uri = "";
-		var token = "://";
-		var index = url.indexOf(token);
-		var part = "";
-		
-		/*
-		 * ensure to skip protocol and prepend context path for non-qualified
-		 * resources (ex: "protect.html" vs
-		 * "/Owasp.CsrfGuard.Test/protect.html").
-		 */
-		if (index > 0) {
-			part = url.substring(index + token.length);
-		} else if (url.charAt(0) != '/') {
-			part = "%CONTEXT_PATH%/" + url;
-		} else {
-			part = url;
-		}
-		
-		/* parse up to end or query string */
-		var uriContext = (index == -1);
-		
-		for (var i = 0; i < part.length; i++) {
-			var character = part.charAt(i);
-			
-			if (character == '/') {
-				uriContext = true;
-			} else if (uriContext == true && (character == '?' || character == '#')) {
-				uriContext = false;
-				break;
-			}
-			
-			if (uriContext == true) {
-				uri += character;
-			}
-		}
-		
-		return uri;
-	}
-
-	/**
-	 *  inject tokens as hidden fields into forms
-	 */
-	function injectTokenForm(form, tokenName, tokenValue, pageTokens, injectGetForms) {
-	  
-		if (!injectGetForms) {
-			var method = form.getAttribute("method");
-	  
-			if ((typeof method != 'undefined') && method != null && method.toLowerCase() == "get") {
-				return;
-			}
-		}
-	  
-		var value = tokenValue;
-		var action = form.getAttribute("action");
-		
-		if (action != null && isValidUrl(action)) {
-			var uri = parseUri(action);
-			value = pageTokens[uri] != null ? pageTokens[uri] : tokenValue;
-		}
-		
-		var hidden = document.createElement("input");
-		
-		hidden.setAttribute("type", "hidden");
-		hidden.setAttribute("name", tokenName);
-		hidden.setAttribute("value", value);
-		
-		form.appendChild(hidden);
-	}
-
-	/**
-	 *  inject tokens as query string parameters into url
-	 */
-	function injectTokenAttribute(element, attr, tokenName, tokenValue, pageTokens) {
-		var location = element.getAttribute(attr);
-		
-		if (location != null && isValidUrl(location) && !isUnprotectedExtension(location)) {
-			var uri = parseUri(location);
-			var value = (pageTokens[uri] != null ? pageTokens[uri] : tokenValue);
-			
-			if (location.indexOf('?') != -1) {
-				location = location + '&' + tokenName + '=' + value;
-			} else {
-				location = location + '?' + tokenName + '=' + value;
-			}
-
-			try {
-				element.setAttribute(attr, location);
-			} catch (e) {
-				// attempted to set/update unsupported attribute
-			}
-		}
-	}
-	/**
-	 * Added to support isUnprotectedExtension(src)
-	 * @param filename
-	 * @return extension or EMPTY
-	 */
-	function getFileExtension(filename) {
-		var rc = '';
-		/* take the part before the ';' if it exists (often for UrlRewriting - ex: ;JSESSIONID=x) */
-		if (filename.indexOf(';') !== -1) {
-			filename = filename.split(';')[0];
-		}
-
-		if (filename.indexOf('.') !== -1) {
-			rc = filename.substring(filename.lastIndexOf('.') + 1, filename.length) || filename;
-		}
-		return rc;
-	}
-	/**
-	 * get the file extension and match it against a list of known static file extensions
-	 * @param src
-	 * @return
-	 */
-	function isUnprotectedExtension(src) {
-		var rc = false;
-		var exts = "%UNPROTECTED_EXTENSIONS%";/* example(for properties): "js,css,gif,png,ico,jpg" */
-		if (exts !== "") {
-			var filename = parseUri(src);
-			var ext = getFileExtension(filename).toLowerCase();
-			var e = exts.split(',');
-			for (var i = 0; i < e.length; i++) {
-				if (e[i] === ext) {
-					rc = true;
-					break;
-				}
-			}
-		}
-		return rc;
-	}
-
-	/**
-	 *  inject csrf prevention tokens throughout dom
-	 */
-	function injectTokens(tokenName, tokenValue, existingPageTokens) {
-		/* obtain reference to page tokens if enabled */
-		var pageTokens = {};
-		
-		if (%TOKENS_PER_PAGE% == true) {
-			pageTokens = existingPageTokens;
-		}
-		
-		/* iterate over all elements and injection token */
-		var all = document.all ? document.all : document.getElementsByTagName('*');
-		var len = all.length;
-
-		//these are read from the csrf guard config file(s)
-		var injectForms = %INJECT_FORMS%;
-		var injectGetForms = %INJECT_GET_FORMS%;
-		var injectFormAttributes = %INJECT_FORM_ATTRIBUTES%;
-		var injectAttributes = %INJECT_ATTRIBUTES%;
-		
-		for (var i = 0; i < len; i++) {
-			var element = all[i];
-			
-			/* inject into form */
-			if (element.tagName.toLowerCase() === "form") {
-				if (injectForms) {
-					injectTokenForm(element, tokenName, tokenValue, pageTokens, injectGetForms);
-
-					/* adjust array length after addition of new element */
-					len = all.length;
-				}
-				if (injectFormAttributes) {
-					injectTokenAttribute(element, "action", tokenName, tokenValue, pageTokens);
-				}
-				/* inject into attribute */
-			} else if (injectAttributes) {
-				injectTokenAttribute(element, "src", tokenName, tokenValue, pageTokens);
-				injectTokenAttribute(element, "href", tokenName, tokenValue, pageTokens);
-			}
-		}
-	}
-
-	function parsePageTokens(response) {
-		var name = "";
-		var value = "";
-		var nameContext = true;
-
-		let pageTokens = {}
-		for (var i = 0; i < response.length; i++) {
-			var character = response.charAt(i);
-
-			if (character === ':') {
-				nameContext = false;
-			} else if (character !== ',') {
-				if (nameContext === true) {
-					name += character;
-				} else {
-					value += character;
-				}
-			}
-
-			if (character === ',' || (i + 1) >= response.length) {
-				pageTokens[name] = value;
-				name = "";
-				value = "";
-				nameContext = true;
-			}
-		}
-
-		return pageTokens;
-	}
-
-	/**
-	 *  obtain array of page specific tokens
-	 */
-	function requestPageTokens(tokenName, tokenValue, callback) {
-		var xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject("Microsoft.XMLHTTP");
-
-		xhr.open("POST", "%SERVLET_PATH%", true);
-		if (%INJECT_XHR% !== true) {
-			if (tokenName !== undefined && tokenValue !== undefined) {
-				xhr.setRequestHeader(tokenName, tokenValue)
-			}
-		}
-
-		xhr.onreadystatechange = function() {
-			if (xhr.readyState == 4) {
-				if(xhr.status == 200) {
-					let pageTokens = parsePageTokens(xhr.responseText);
-					callback.call(this, pageTokens);
-				} else {
-					alert(xhr.status + ': failed csrf check');
-				}
-			}
-		}
-
-		xhr.send(null);
-	}
-
-	/*
-         * Only inject the tokens if the JavaScript was referenced from HTML that
-         * was served by us. Otherwise, the code was referenced from malicious HTML
-         * which may be trying to steal tokens using JavaScript hijacking techniques.
-         * The token is now removed and fetched using another POST request to solve,
-         * the token hijacking problem.
+        /**
+         * Code to ensure our event always gets triggered when the DOM is updated.
+         * @param obj
+         * @param type
+         * @param fn
+         * @source http://www.dustindiaz.com/rock-solid-addevent/
          */
-	if (isValidDomain(document.domain, "%DOMAIN_ORIGIN%")) {
-		var masterTokenName = '%TOKEN_NAME%';
-		var masterTokenValue = '%TOKEN_VALUE%';
+        function addEvent(obj, type, fn) {
+            if (obj.addEventListener) {
+                obj.addEventListener(type, fn, false);
+                EventCache.add(obj, type, fn);
+            } else if (obj.attachEvent) {
+                obj['e' + type + fn] = fn;
+                obj[type + fn] = function () {
+                    obj['e' + type + fn](window.event);
+                };
+                obj.attachEvent('on' + type, obj[type + fn]);
+                EventCache.add(obj, type, fn);
+            } else {
+                obj['on' + type] = obj['e' + type + fn];
+            }
+        }
 
-		var isLoadedWrapper = { isDomContentLoaded: false };
+        var EventCache = function () {
+            var listEvents = [];
+            return {
+                listEvents: listEvents,
+                add: function (node, sEventName, fHandler) {
+                    listEvents.push(arguments);
+                },
+                flush: function () {
+                    var i, item;
+                    for (i = listEvents.length - 1; i >= 0; i = i - 1) {
+                        item = listEvents[i];
+                        if (item[0].removeEventListener) {
+                            item[0].removeEventListener(item[1], item[2], item[3]);
+                        }
 
-		var pageTokenWrapper = { pageTokens: {} };
+                        if (item[1].substring(0, 2) !== 'on') {
+                            item[1] = 'on' + item[1];
+                        }
 
-		addEvent(window, 'unload', EventCache.flush);
+                        if (item[0].detachEvent) {
+                            item[0].detachEvent(item[1], item[2]);
+                        }
+                    }
+                }
+            };
+        }();
 
-		addEvent(window, 'DOMContentLoaded', function () {
-			isLoadedWrapper.isDomContentLoaded = true;
+        /* string utility functions */
+        function startsWith(s, prefix) {
+            return s.indexOf(prefix) === 0;
+        }
 
-			if (pageTokenWrapper.pageTokensLoaded) {
-				injectTokens(masterTokenName, masterTokenValue, pageTokenWrapper.pageTokens);
-			}
-		});
+        function endsWith(s, suffix) {
+            return s.substring(s.length - suffix.length) === suffix;
+        }
 
-		/* optionally include Ajax support */
-		if (%INJECT_XHR% == true) {
-			if (navigator.appName === "Microsoft Internet Explorer") {
-				hijackExplorer();
-			} else {
-				hijackStandard();
-			}
+        /**
+         *  hook using standards based prototype
+         */
+        function hijackStandard() {
+            XMLHttpRequest.prototype._open = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
+                this.url = url;
 
-			XMLHttpRequest.prototype.onsend = function (data) {
-				if (isValidUrl(this.url)) {
-					this.setRequestHeader("X-Requested-With", "XMLHttpRequest")
+                this._open.apply(this, arguments);
+            };
 
-					let modifiedUrl = this.url.startsWith('/') ? this.url : '/' + this.url;
+            XMLHttpRequest.prototype._send = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.send = function (data) {
+                if (this.onsend !== null) {
+                    this.onsend.apply(this, arguments);
+                }
 
-					if (pageTokenWrapper.pageTokens !== null && pageTokenWrapper.pageTokens[modifiedUrl] !== undefined) {
-						this.setRequestHeader(masterTokenName, pageTokenWrapper.pageTokens[modifiedUrl]);
-					} else {
-						this.setRequestHeader(masterTokenName, masterTokenValue);
-					}
-				}
-			}
-		}
+                this._send.apply(this, arguments);
+            };
+        }
 
-		let pageTokenRequestCallback = function(receivedPageTokens) {
-			pageTokenWrapper.pageTokens = receivedPageTokens;
+        /**
+         *  ie does not properly support prototype - wrap completely
+         */
+        function hijackExplorer() {
+            var xmlHttpRequest = window.XMLHttpRequest;
 
-			pageTokenWrapper.pageTokensLoaded = true;
+            function allocXMLHttpRequest() {
+                this.base = xmlHttpRequest ? new xmlHttpRequest : new window.ActiveXObject('Microsoft.XMLHTTP');
+            }
 
-			if (isLoadedWrapper.isDomContentLoaded) {
-				injectTokens(masterTokenName, masterTokenValue, receivedPageTokens);
-			}
-		}
+            function initXMLHttpRequest() {
+                return new allocXMLHttpRequest;
+            }
 
-		if (%TOKENS_PER_PAGE% == true) {
-			requestPageTokens(masterTokenName, masterTokenValue, pageTokenRequestCallback);
-		} else {
-			/* update nodes in DOM after load */
-			addEvent(window, 'DOMContentLoaded', function () {
-				injectTokens(masterTokenName, masterTokenValue, {});
-			});
-		}
-	} else {
-		alert("OWASP CSRFGuard JavaScript was included from within an unauthorized domain!");
-	}
-})();
+            initXMLHttpRequest.prototype = allocXMLHttpRequest.prototype;
+
+            /* constants */
+            initXMLHttpRequest.UNSENT = 0;
+            initXMLHttpRequest.OPENED = 1;
+            initXMLHttpRequest.HEADERS_RECEIVED = 2;
+            initXMLHttpRequest.LOADING = 3;
+            initXMLHttpRequest.DONE = 4;
+
+            /* properties */
+            initXMLHttpRequest.prototype.status = 0;
+            initXMLHttpRequest.prototype.statusText = '';
+            initXMLHttpRequest.prototype.readyState = initXMLHttpRequest.UNSENT;
+            initXMLHttpRequest.prototype.responseText = '';
+            initXMLHttpRequest.prototype.responseXML = null;
+            initXMLHttpRequest.prototype.onsend = null;
+
+            initXMLHttpRequest.url = null;
+            initXMLHttpRequest.onreadystatechange = null;
+
+            /* methods */
+            initXMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
+                var self = this;
+                this.url = url;
+
+                this.base.onreadystatechange = function () {
+                    try {
+                        self.status = self.base.status;
+                    } catch (e) {
+                    }
+                    try {
+                        self.statusText = self.base.statusText;
+                    } catch (e) {
+                    }
+                    try {
+                        self.readyState = self.base.readyState;
+                    } catch (e) {
+                    }
+                    try {
+                        self.responseText = self.base.responseText;
+                    } catch (e) {
+                    }
+                    try {
+                        self.responseXML = self.base.responseXML;
+                    } catch (e) {
+                    }
+
+                    if (self.onreadystatechange !== null) {
+                        self.onreadystatechange.apply(this, arguments);
+                    }
+                };
+
+                this.base.open(method, url, async, user, pass);
+            };
+
+            initXMLHttpRequest.prototype.send = function (data) {
+                if (this.onsend !== null) {
+                    this.onsend.apply(this, arguments);
+                }
+
+                this.base.send(data);
+            };
+
+            initXMLHttpRequest.prototype.abort = function () {
+                this.base.abort();
+            };
+
+            initXMLHttpRequest.prototype.getAllResponseHeaders = function () {
+                return this.base.getAllResponseHeaders();
+            };
+
+            initXMLHttpRequest.prototype.getResponseHeader = function (name) {
+                return this.base.getResponseHeader(name);
+            };
+
+            initXMLHttpRequest.prototype.setRequestHeader = function (name, value) {
+                return this.base.setRequestHeader(name, value);
+            };
+
+            /* hook */
+            window.XMLHttpRequest = initXMLHttpRequest;
+        }
+
+        /**
+         *  check if valid domain based on domainStrict
+         */
+        function isValidDomain(current, target) {
+            var result = false;
+
+            /* check exact or subdomain match */
+            if (current === target) {
+                result = true;
+            } else if ('%DOMAIN_STRICT%' === false) {
+                if (target.charAt(0) === '.') {
+                    result = endsWith(current, target);
+                } else {
+                    result = endsWith(current, '.' + target);
+                }
+            }
+
+            return result;
+        }
+
+        /**
+         *  determine if uri/url points to valid domain
+         */
+        function isValidUrl(src) {
+            var result = false;
+            var urlStartsWithProtocol = /^[a-zA-Z][a-zA-Z0-9.+-]*:/;
+
+            /* parse out domain to make sure it points to our own */
+            if (src.substring(0, 7) === 'http://' || src.substring(0, 8) === 'https://') {
+                var token = '://';
+                var index = src.indexOf(token);
+                var part = src.substring(index + token.length);
+                var domain = '';
+
+                /* parse up to end, first slash, or anchor */
+                for (var i = 0; i < part.length; i++) {
+                    var character = part.charAt(i);
+                    if (character === '/' || character === ':' || character === '#') {
+                        break;
+                    } else {
+                        domain += character;
+                    }
+                }
+
+                result = isValidDomain(document.domain, domain);
+                /* explicitly skip anchors */
+            } else if (src.charAt(0) === '#') {
+                result = false;
+                /* ensure it is a local resource without a protocol */
+            } else if (!startsWith(src, '//') && (src.charAt(0) === '/' || src.search(urlStartsWithProtocol) === -1)) {
+                result = true;
+            }
+
+            return result;
+        }
+
+        /* parse uri from url */
+        function parseUri(url) {
+            var uri = '';
+            var token = '://';
+            var index = url.indexOf(token);
+            var part = '';
+
+            /*
+             * ensure to skip protocol and prepend context path for non-qualified
+                 * resources (ex: 'protect.html' vs
+                 * '/Owasp.CsrfGuard.Test/protect.html').
+             */
+            if (index > 0) {
+                part = url.substring(index + token.length);
+            } else if (url.charAt(0) !== '/') {
+                part = '%CONTEXT_PATH%/' + url;
+            } else {
+                part = url;
+            }
+
+            /* parse up to end or query string */
+            var uriContext = (index === -1);
+
+            for (var i = 0; i < part.length; i++) {
+                var character = part.charAt(i);
+
+                if (character === '/') {
+                    uriContext = true;
+                } else if (uriContext === true && (character === '?' || character === '#')) {
+                    uriContext = false;
+                    break;
+                }
+
+                if (uriContext === true) {
+                    uri += character;
+                }
+            }
+
+            return uri;
+        }
+
+        /**
+         *  inject tokens as hidden fields into forms
+         */
+        function injectTokenForm(form, tokenName, tokenValue, pageTokens, injectGetForms) {
+
+            if (!injectGetForms) {
+                var method = form.getAttribute('method');
+
+                if ((typeof method !== 'undefined') && method !== null && method.toLowerCase() === 'get') {
+                    return;
+                }
+            }
+
+            var value = tokenValue;
+            var action = form.getAttribute('action');
+
+            if (action !== null && isValidUrl(action)) {
+                var uri = parseUri(action);
+                value = pageTokens[uri] !== null ? pageTokens[uri] : tokenValue;
+            }
+
+            var hidden = document.createElement('input');
+
+            hidden.setAttribute('type', 'hidden');
+            hidden.setAttribute('name', tokenName);
+            hidden.setAttribute('value', value);
+
+            form.appendChild(hidden);
+        }
+
+        /**
+         *  inject tokens as query string parameters into url
+         */
+        function injectTokenAttribute(element, attr, tokenName, tokenValue, pageTokens) {
+            var location = element.getAttribute(attr);
+
+            if (location !== null && isValidUrl(location) && !isUnprotectedExtension(location)) {
+                var uri = parseUri(location);
+                var value = (pageTokens[uri] !== null ? pageTokens[uri] : tokenValue);
+
+                if (location.indexOf('?') !== -1) {
+                    location = location + '&' + tokenName + '=' + value;
+                } else {
+                    location = location + '?' + tokenName + '=' + value;
+                }
+
+                try {
+                    element.setAttribute(attr, location);
+                } catch (e) {
+                    // attempted to set/update unsupported attribute
+                }
+            }
+        }
+
+        /**
+         * Added to support isUnprotectedExtension(src)
+         * @param filename
+         * @return extension or EMPTY
+         */
+        function getFileExtension(filename) {
+            var extension = '';
+            /* take the part before the ';' if it exists (often for UrlRewriting - ex: ;JSESSIONID=x) */
+            if (filename.indexOf(';') !== -1) {
+                filename = filename.split(';')[0];
+            }
+
+            if (filename.indexOf('.') !== -1) {
+                extension = filename.substring(filename.lastIndexOf('.') + 1, filename.length) || filename;
+            }
+            return extension;
+        }
+
+        /**
+         * get the file extension and match it against a list of known static file extensions
+         * @param src
+         * @return
+         */
+        function isUnprotectedExtension(src) {
+            var isSupported = false;
+            var exts = '%UNPROTECTED_EXTENSIONS%';/* example(for properties): 'js,css,gif,png,ico,jpg' */
+            if (exts !== '') {
+                var filename = parseUri(src);
+                var ext = getFileExtension(filename).toLowerCase();
+                var e = exts.split(',');
+                for (var i = 0; i < e.length; i++) {
+                    if (e[i] === ext) {
+                        isSupported = true;
+                        break;
+                    }
+                }
+            }
+            return isSupported;
+        }
+
+        /**
+         *  inject csrf prevention tokens throughout dom
+         */
+        function injectTokens(tokenName, tokenValue, existingPageTokens) {
+            /* obtain reference to page tokens if enabled */
+            var pageTokens = {};
+
+            if ('%TOKENS_PER_PAGE%') {
+                pageTokens = existingPageTokens;
+            }
+
+            /* iterate over all elements and injection token */
+            var all = document.all ? document.all : document.getElementsByTagName('*');
+            var len = all.length;
+
+            //these are read from the csrf guard config file(s)
+            var injectForms = '%INJECT_FORMS%';
+            var injectGetForms = '%INJECT_GET_FORMS%';
+            var injectFormAttributes = '%INJECT_FORM_ATTRIBUTES%';
+            var injectAttributes = '%INJECT_ATTRIBUTES%';
+
+            for (var i = 0; i < len; i++) {
+                var element = all[i];
+
+                /* inject into form */
+                if (element.tagName.toLowerCase() === 'form') {
+                    if (injectForms) {
+                        injectTokenForm(element, tokenName, tokenValue, pageTokens, injectGetForms);
+
+                        /* adjust array length after addition of new element */
+                        len = all.length;
+                    }
+                    if (injectFormAttributes) {
+                        injectTokenAttribute(element, 'action', tokenName, tokenValue, pageTokens);
+                    }
+                    /* inject into attribute */
+                } else if (injectAttributes) {
+                    injectTokenAttribute(element, 'src', tokenName, tokenValue, pageTokens);
+                    injectTokenAttribute(element, 'href', tokenName, tokenValue, pageTokens);
+                }
+            }
+        }
+
+        function parsePageTokens(response) {
+            var name = '';
+            var value = '';
+            var nameContext = true;
+
+            let pageTokens = {};
+            for (var i = 0; i < response.length; i++) {
+                var character = response.charAt(i);
+
+                if (character === ':') {
+                    nameContext = false;
+                } else if (character !== ',') {
+                    if (nameContext === true) {
+                        name += character;
+                    } else {
+                        value += character;
+                    }
+                }
+
+                if (character === ',' || (i + 1) >= response.length) {
+                    pageTokens[name] = value;
+                    name = '';
+                    value = '';
+                    nameContext = true;
+                }
+            }
+
+            return pageTokens;
+        }
+
+        /**
+         *  obtain array of page specific tokens
+         */
+        function requestPageTokens(tokenName, tokenValue, callback) {
+            var xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject('Microsoft.XMLHTTP');
+
+            xhr.open('POST', '%SERVLET_PATH%', true);
+            if ('%INJECT_XHR%' !== true) {
+                if (tokenName !== undefined && tokenValue !== undefined) {
+                    xhr.setRequestHeader(tokenName, tokenValue);
+                }
+            }
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        let pageTokens = parsePageTokens(xhr.responseText);
+                        callback.call(this, pageTokens);
+                    } else {
+                        alert(xhr.status + ': failed csrf check');
+                    }
+                }
+            };
+
+            xhr.send(null);
+        }
+
+        /*
+             * Only inject the tokens if the JavaScript was referenced from HTML that
+             * was served by us. Otherwise, the code was referenced from malicious HTML
+             * which may be trying to steal tokens using JavaScript hijacking techniques.
+             * The token is now removed and fetched using another POST request to solve,
+             * the token hijacking problem.
+             */
+        if (isValidDomain(document.domain, '%DOMAIN_ORIGIN%')) {
+            var masterTokenName = '%TOKEN_NAME%';
+            var masterTokenValue = '%TOKEN_VALUE%';
+
+            var isLoadedWrapper = {isDomContentLoaded: false};
+
+            var pageTokenWrapper = {pageTokens: {}};
+
+            addEvent(window, 'unload', EventCache.flush);
+
+            addEvent(window, 'DOMContentLoaded', function () {
+                isLoadedWrapper.isDomContentLoaded = true;
+
+                if (pageTokenWrapper.pageTokensLoaded) {
+                    injectTokens(masterTokenName, masterTokenValue, pageTokenWrapper.pageTokens);
+                }
+            });
+
+            /* optionally include Ajax support */
+            if ('%INJECT_XHR%') {
+                if (navigator.appName === 'Microsoft Internet Explorer') {
+                    hijackExplorer();
+                } else {
+                    hijackStandard();
+                }
+
+                XMLHttpRequest.prototype.onsend = function (data) {
+                    if (isValidUrl(this.url)) {
+                        this.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+                        let modifiedUrl = this.url.startsWith('/') ? this.url : '/' + this.url;
+
+                        if (pageTokenWrapper.pageTokens !== null && pageTokenWrapper.pageTokens[modifiedUrl] !== undefined) {
+                            this.setRequestHeader(masterTokenName, pageTokenWrapper.pageTokens[modifiedUrl]);
+                        } else {
+                            this.setRequestHeader(masterTokenName, masterTokenValue);
+                        }
+                    }
+                };
+            }
+
+            let pageTokenRequestCallback = function (receivedPageTokens) {
+                pageTokenWrapper.pageTokens = receivedPageTokens;
+
+                pageTokenWrapper.pageTokensLoaded = true;
+
+                if (isLoadedWrapper.isDomContentLoaded) {
+                    injectTokens(masterTokenName, masterTokenValue, receivedPageTokens);
+                }
+            };
+
+            if ('%TOKENS_PER_PAGE%') {
+                requestPageTokens(masterTokenName, masterTokenValue, pageTokenRequestCallback);
+            } else {
+                /* update nodes in DOM after load */
+                addEvent(window, 'DOMContentLoaded', function () {
+                    injectTokens(masterTokenName, masterTokenValue, {});
+                });
+            }
+        } else {
+            alert('OWASP CSRFGuard JavaScript was included from within an unauthorized domain!');
+        }
+    })();
 }
