@@ -36,93 +36,103 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
+ * Interface used for storing and manipulating tokens across the solution.
+ *
  * Methods of this class should only be used through the {@link TokenService} and its relevant subclass(es)
- * TODO document
  */
 public interface TokenHolder {
 
     /**
      * Sets or overwrites the master token bound to a specific session key.
      * It does not overwrite the session key associated page tokens.
-     * @param sessionKey
-     * @param value
+     *
+     * @param sessionKey identifies the current logical session uniquely
+     * @param value the value to be used as master token
      */
     void setMasterToken(final String sessionKey, final String value);
 
     /**
-     * TODO document
-     * @param sessionKey
-     * @param valueSupplier
-     * @return
+     * Creates and returns a new master token bound to the provided session key if there wasn't any or returns the existing value.
+     *
+     * @param sessionKey    identifies the current logical session uniquely
+     * @param valueSupplier produces a new master token value lazily/on demand
+     * @return the created master token
      */
     String createMasterTokenIfAbsent(final String sessionKey, final Supplier<String> valueSupplier);
 
     /**
-     * TODO document
-     * @param sessionKey
-     * @param resourceUri
-     * @param valueSupplier
-     * @return
+     * Creates and returns a new page token bound to the provided resource URI and mapped to the session key if there wasn't any or returns the existing value.
+     *
+     * If there are no tokens associated to the session key it also creates a new master token.
+     *
+     * @param sessionKey    identifies the current logical session uniquely
+     * @param resourceUri   the URI of the desired HTTP resource
+     * @param valueSupplier produces a new page token value lazily/on demand
+     * @return the existing or newly created page token
      */
     String createPageTokenIfAbsent(String sessionKey, String resourceUri, Supplier<String> valueSupplier);
 
     /**
-     * Note: this method returns a copy of the tokens in order to prevent outside modification.
-     * TODO document
-     * @return
-     */
-    Map<String, Token> getTokens();
-
-    /**
-     * TODO document
-     * @return
+     * Returns the master and page tokens associated to a logical session key
+     *
+     * @param sessionKey identifies the current logical session uniquely
+     * @return a token object containing the master and page tokens
      */
     Token getToken(final String sessionKey);
 
     /**
-     * TODO document
-     * @param sessionKey
-     * @param resourceUri
-     * @return
+     * Returns the page token based on the desired HTTP resource URI and logical session key
+     *
+     * @param sessionKey  identifies the current logical session uniquely
+     * @param resourceUri the URI of the desired HTTP resource
+     * @return a page token bound to a resource URI and associated to a logical session key
      */
     String getPageToken(String sessionKey, String resourceUri);
 
     /**
-     * TODO document
-     * @param sessionKey
-     * @param resourceUri
-     * @param value
+     * Sets the value of a page token based on the desired HTTP resource URI and logical session key
+     *
+     * @param sessionKey  identifies the current logical session uniquely
+     * @param resourceUri the URI of the desired HTTP resource
+     * @param value the value to be used as token for the page
      */
     void setPageToken(String sessionKey, String resourceUri, String value);
 
     /**
-     * @param sessionKey
-     * @param pageTokens
+     * Sets/overwrites the page tokens with the provided values
+     *
+     * @param sessionKey identifies the current logical session uniquely
+     * @param pageTokens page tokens mapped to their resource URIs
      */
     void setPageTokens(final String sessionKey, final Map<String, String> pageTokens);
 
     /**
-     * Note: this method returns a copy of the page tokens in order to prevent outside modification.
-     * TODO document
-     * @return
+     * Returns all page tokens associated to the provided logical session key
+     *
+     * @param sessionKey identifies the current logical session uniquely
+     * @return page tokens mapped to their resource URIs
      */
     Map<String, String> getPageTokens(String sessionKey);
 
     /**
-     * TODO document
-     * @param sessionKey
+     * Removes all tokens related to a specific logical session key
+     *
+     * @param sessionKey identifies the current logical session uniquely
      */
     void remove(String sessionKey);
 
     /**
-     * TODO document
+     * Re-generates all existing tokens associated to the provided logical session key
+     *
+     * @param sessionKey identifies the current logical session uniquely
      */
     void rotateAllPageTokens(final String sessionKey);
 
     /**
-     * TODO document
-     * @param sessionKey
-     * @param tokenFromRequest
+     * Re-generates the value of a used page token
+     *
+     * @param sessionKey       identifies the current logical session uniquely
+     * @param tokenFromRequest the token extracted from the request
      */
     void regenerateUsedPageToken(final String sessionKey, final String tokenFromRequest);
 }

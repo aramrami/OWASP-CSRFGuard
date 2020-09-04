@@ -36,9 +36,6 @@ import java.util.Properties;
  */
 public class NullConfigurationProviderFactory implements ConfigurationProviderFactory {
 
-	/**
-	 * TODO document
-	 */
 	public NullConfigurationProviderFactory() {}
 
 	/**

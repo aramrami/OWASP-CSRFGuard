@@ -43,9 +43,9 @@ public class ConsoleLogger implements ILogger {
 	@Override
 	public void log(final LogLevel level, final String msg) {
 		if (LogLevel.Error.equals(level)) {
-			System.err.println(String.format("[%s] [%s] %s", new Date(), level, msg));
+			System.err.printf("[%s] [%s] %s%n", new Date(), level, msg);
 		} else {
-			System.out.println(String.format("[%s] [%s] %s", new Date(), level, msg));
+			System.out.printf("[%s] [%s] %s%n", new Date(), level, msg);
 		}
 	}
 
@@ -57,9 +57,9 @@ public class ConsoleLogger implements ILogger {
 	@Override
 	public void log(final LogLevel level, final Exception exception) {
 		if (LogLevel.Error.equals(level)) {
-			System.err.println(String.format("[%s] [%s] %s", new Date(), level, exception));
+			System.err.printf("[%s] [%s] %s%n", new Date(), level, exception);
 		} else {
-			System.out.println(String.format("[%s] [%s] %s", new Date(), level, exception));
+			System.out.printf("[%s] [%s] %s%n", new Date(), level, exception);
 		}
 	}
 }

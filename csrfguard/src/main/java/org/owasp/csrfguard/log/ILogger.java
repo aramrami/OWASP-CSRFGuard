@@ -32,7 +32,7 @@ package org.owasp.csrfguard.log;
 import java.io.Serializable;
 
 /**
- * TODO document
+ * TODO use slf4j instead
  */
 public interface ILogger extends Serializable {
 

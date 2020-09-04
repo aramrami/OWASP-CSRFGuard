@@ -82,11 +82,6 @@ public class InMemoryTokenHolder implements TokenHolder {
     }
 
     @Override
-    public Map<String, Token> getTokens() {
-        return TOKENS;
-    }
-
-    @Override
     public Token getToken(final String sessionKey) {
         return TOKENS.get(sessionKey);
     }

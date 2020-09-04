@@ -66,12 +66,12 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 
 			final StringBuilder stringBuilder = new StringBuilder();
 
-			if (!sanitizedLocation.startsWith("/")) {
-				stringBuilder.append(this.request.getContextPath()).append('/').append(sanitizedLocation);
-			} else {
+			if (sanitizedLocation.startsWith("/")) {
 				stringBuilder.append(sanitizedLocation);
+			} else {
+				stringBuilder.append(this.request.getContextPath()).append('/').append(sanitizedLocation);
 			}
-			
+
 			if (sanitizedLocation.contains("?")) {
 				stringBuilder.append('&');
 			} else {

@@ -58,7 +58,7 @@ public final class TokenUtils {
     /**
      * TODO is it worth the added performance penalty in case of a large application with a lot of pages? What would be the risk if this would be contextual to the assigned resource?
      * TODO do not modify tokens outside their helper classes/services because it's hard to follow/debug
-     * Disposes the current token from all the stored valid page tokens, disregarding to which resource it was assigned.
+     * Disposes the current token from all the stored valid page tokens, disregarding to which resource it was assigned and replaces with a newly generated one.
      *
      * @param pageTokens the currently stored, valid page tokens
      * @param tokenFromRequest the token received with the request
