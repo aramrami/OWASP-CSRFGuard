@@ -329,7 +329,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 
             if (action !== null && isValidUrl(action)) {
                 var uri = parseUri(action);
-                value = pageTokens[uri] !== null ? pageTokens[uri] : tokenValue;
+                value = pageTokens[uri] != null ? pageTokens[uri] : tokenValue;
             }
 
             var hidden = document.createElement('input');
@@ -349,7 +349,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 
             if (location !== null && isValidUrl(location) && !isUnprotectedExtension(location)) {
                 var uri = parseUri(location);
-                var value = (pageTokens[uri] !== null ? pageTokens[uri] : tokenValue);
+                var value = (pageTokens[uri] != null ? pageTokens[uri] : tokenValue);
 
                 if (location.indexOf('?') !== -1) {
                     location = location + '&' + tokenName + '=' + value;
@@ -497,7 +497,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                         let pageTokens = parsePageTokens(xhr.responseText);
                         callback.call(this, pageTokens);
                     } else {
-                        alert(xhr.status + ': failed csrf check');
+                        alert(xhr.status + ': CSRF check failed');
                     }
                 }
             };
@@ -539,15 +539,63 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 }
 
                 XMLHttpRequest.prototype.onsend = function (data) {
+                    var computePageToken = function(modifiedUrl) {
+                        let result = null;
+
+                        let pathWithoutLeadingSlash = window.location.pathname.substring(1); // e.g. deploymentName/service/endpoint
+                        let pathArray = pathWithoutLeadingSlash.split('/');
+
+                        let builtPath = '';
+                        for (let i = 0; i < pathArray.length - 1; i++) { // the last part of the URL (endpoint) is disregarded because the modifiedUrl parameter is used instead
+                            builtPath += '/' + pathArray[i];
+                            let pageTokenValue = pageTokenWrapper.pageTokens[builtPath + modifiedUrl];
+                            if (pageTokenValue != undefined) {
+                                result = pageTokenValue;
+                                break;
+                            }
+                        }
+
+                        return result;
+                    };
+
+                    /**
+                     * For the library to function correctly, all the URLs must start with a forward slash (/)
+                     * Parameters must be removed from the URL
+                     */
+                    var normalizeUrl = function(url) {
+                        var removeParameters = function(currentUrl, symbol) {
+                            let index = currentUrl.indexOf(symbol);
+                            return index > 0 ? currentUrl.substring(0, index) : currentUrl;
+                        }
+
+                        let normalizedUrl = url.startsWith('/') ? url : '/' + url;
+
+                        normalizedUrl = removeParameters(normalizedUrl, '?');
+                        normalizedUrl = removeParameters(normalizedUrl, '#');
+
+                        return normalizedUrl;
+                    }
+
                     if (isValidUrl(this.url)) {
                         this.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
-                        let modifiedUrl = this.url.startsWith('/') ? this.url : '/' + this.url;
+                        let normalizedUrl = normalizeUrl(this.url);
 
-                        if (pageTokenWrapper.pageTokens !== null && pageTokenWrapper.pageTokens[modifiedUrl] !== undefined) {
-                            this.setRequestHeader(masterTokenName, pageTokenWrapper.pageTokens[modifiedUrl]);
-                        } else {
+                        if (pageTokenWrapper.pageTokens === null) {
                             this.setRequestHeader(masterTokenName, masterTokenValue);
+                        } else {
+                            let pageToken = pageTokenWrapper.pageTokens[normalizedUrl];
+                            if (pageToken == undefined) {
+                                let computedPageToken = computePageToken(normalizedUrl);
+
+                                if (computedPageToken === null) {
+                                    this.setRequestHeader(masterTokenName, masterTokenValue);
+                                } else {
+                                    this.setRequestHeader(masterTokenName, computedPageToken);
+                                }
+                            } else {
+                                this.setRequestHeader(masterTokenName, pageToken);
+                            }
                         }
                     }
                 };
