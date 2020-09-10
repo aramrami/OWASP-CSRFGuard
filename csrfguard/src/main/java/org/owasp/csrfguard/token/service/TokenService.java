@@ -97,19 +97,25 @@ public class TokenService {
         return new HashMap<>(tokenHolder.getPageTokens(logicalSessionKey));
     }
 
-    /**
+   /**
      * Generates master token and page token for the current resource if the token-per-page configuration is enabled
      * <p>
      *
      * @param logicalSessionKey identifies the current logical session uniquely
-     * @param requestURI        the URI of the desired HTTP resource
+     * @param httpMethod the current HTTP method used to request the resource
+     * @param requestURI the URI of the desired HTTP resource
      * @return returns the generated page or master token
      */
-    public String generateTokensIfAbsent(final String logicalSessionKey, final String requestURI) {
+    public String generateTokensIfAbsent(final String logicalSessionKey, final String httpMethod, final String requestURI) {
         final TokenHolder tokenHolder = this.csrfGuard.getTokenHolder();
 
-        return this.csrfGuard.isTokenPerPageEnabled() ? tokenHolder.createPageTokenIfAbsent(logicalSessionKey, CsrfGuardUtils.normalizeResourceURI(requestURI), TokenUtils::generateRandomToken)
-                                                      : tokenHolder.createMasterTokenIfAbsent(logicalSessionKey, TokenUtils::generateRandomToken);
+        if (this.csrfGuard.isTokenPerPageEnabled()) {
+            if (this.csrfGuard.isProtectedPageAndMethod(requestURI, httpMethod)) {
+                return tokenHolder.createPageTokenIfAbsent(logicalSessionKey, CsrfGuardUtils.normalizeResourceURI(requestURI), TokenUtils::generateRandomToken);
+            }
+        }
+
+        return tokenHolder.createMasterTokenIfAbsent(logicalSessionKey, TokenUtils::generateRandomToken);
     }
 
     /**

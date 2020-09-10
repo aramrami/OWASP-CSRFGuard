@@ -278,7 +278,7 @@ public final class CsrfGuard {
     }
 
     /**
-     * Method to be called by a logical session implementation when a session is destoryed. <br>
+     * Method to be called by a logical session implementation when a session is destroyed. <br>
      *
      * Example: {@link javax.servlet.http.HttpSessionListener#sessionDestroyed(javax.servlet.http.HttpSessionEvent)}
      *

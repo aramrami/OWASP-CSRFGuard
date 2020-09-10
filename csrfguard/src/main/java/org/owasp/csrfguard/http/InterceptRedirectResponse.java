@@ -101,6 +101,6 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
 
 		final LogicalSession logicalSession = this.csrfGuard.getLogicalSessionExtractor().extract(this.request);
 
-		return Objects.nonNull(logicalSession) ? tokenService.generateTokensIfAbsent(logicalSession.getKey(), locationUri) : null;
+		return Objects.nonNull(logicalSession) ? tokenService.generateTokensIfAbsent(logicalSession.getKey(), "GET", locationUri) : null;
 	}
 }

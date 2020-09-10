@@ -48,6 +48,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * {@link ConfigurationProvider} based on a {@link java.util.Properties} object.
@@ -336,7 +337,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	@Override
 	public boolean isJavascriptInjectGetForms() {
 		this.javascriptInitParamsIfNeeded();
-		return this.javascriptInjectGetForms;
+
+		return this.javascriptInjectGetForms && getUnprotectedMethods().stream().noneMatch(unProtectedMethod -> unProtectedMethod.equalsIgnoreCase("GET"));
 	}
 
 	@Override
@@ -387,8 +389,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	}
 
 	private void initializeMethodProtection(final Properties properties) {
-		initializeMethodProtection(properties, ConfigParameters.PROTECTED_METHODS, this.protectedMethods);
-		initializeMethodProtection(properties, ConfigParameters.UNPROTECTED_METHODS, this.unprotectedMethods);
+		this.protectedMethods.addAll(initializeMethodProtection(properties, ConfigParameters.PROTECTED_METHODS));
+		this.unprotectedMethods.addAll(initializeMethodProtection(properties, ConfigParameters.UNPROTECTED_METHODS));
 
 		final HashSet<String> intersection = new HashSet<>(this.protectedMethods);
 		intersection.retainAll(this.unprotectedMethods);
@@ -398,13 +400,11 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		}
 	}
 
-	private static void initializeMethodProtection(final Properties properties, final String protectedMethods, final Set<String> protectedMethods2) {
-		final String protectedMethodList = PropertyUtils.getProperty(properties, protectedMethods);
-		if (StringUtils.isNotBlank(protectedMethodList)) {
-			for (final String method : protectedMethodList.split(",")) {
-				protectedMethods2.add(method.trim());
-			}
-		}
+	private static Set<String> initializeMethodProtection(final Properties properties, final String configParameterName) {
+		final String methodProtectionValue = PropertyUtils.getProperty(properties, configParameterName);
+		// TODO create HTTP method enum and (ignore-case) validate the provided values against it
+		return StringUtils.isNotBlank(methodProtectionValue) ? Arrays.stream(methodProtectionValue.split(",")).map(String::trim).collect(Collectors.toSet())
+															 : Collections.emptySet();
 	}
 
 	private void initializePageProtection(final Properties properties) {

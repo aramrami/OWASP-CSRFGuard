@@ -89,8 +89,7 @@ public final class CsrfGuardFilter implements Filter {
             logInvalidRequest(httpServletRequest, csrfGuard);
         }
 
-        // FIXME who and when is going to send this back to the UI?
-        csrfGuard.getTokenService().generateTokensIfAbsent(logicalSessionKey, httpServletRequest.getRequestURI());
+        csrfGuard.getTokenService().generateTokensIfAbsent(logicalSessionKey, httpServletRequest.getMethod(), httpServletRequest.getRequestURI());
     }
 
     private void handleNoSession(final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final InterceptRedirectResponse interceptRedirectResponse, final FilterChain filterChain, final CsrfGuard csrfGuard) throws IOException, ServletException {
@@ -122,6 +121,6 @@ public final class CsrfGuardFilter implements Filter {
         final String requestURI = httpRequest.getRequestURI();
         final String remoteAddress = httpRequest.getRemoteAddr();
 
-        csrfGuard.getLogger().log(LogLevel.Warning, String.format("Invalid request: \r\nURI:\r\n%s\r\nRemote Address:%s", requestURI, remoteAddress));
+        csrfGuard.getLogger().log(LogLevel.Warning, String.format("Invalid request: \r\nURI: \r\n%s\r\n Remote Address: %s", requestURI, remoteAddress));
     }
 }
