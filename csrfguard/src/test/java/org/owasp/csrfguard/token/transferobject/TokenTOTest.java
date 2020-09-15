@@ -26,63 +26,52 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.owasp.csrfguard.token.storage.impl;
 
-import org.apache.commons.lang3.tuple.Pair;
+package org.owasp.csrfguard.token.transferobject;
+
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
 
-public class Token {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    private String masterToken;
-    private Map<String, String> pageTokens;
+public class TokenTOTest {
 
-    public Token(final String masterToken) {
-        this(masterToken, new HashMap<>());
+    @Test
+    void testMasterTokenToJson() {
+        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD");
+
+        assertEquals(tokenTO.toString(), "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\",\"pageTokens\":{}}");
     }
 
-    public Token(final String masterToken, final Pair<String, String> pageToken) {
-        this(masterToken, toMap(pageToken));
+    @Test
+    void testEmptyTokenToJson() {
+        final TokenTO tokenTO = new TokenTO(null, null);
+        assertEquals(tokenTO.toString(), "{}");
     }
 
-    public Token(final String masterToken, final Map<String, String> pageTokens) {
-        this.masterToken = masterToken;
-        this.pageTokens = pageTokens;
-    }
-
-    public String getMasterToken() {
-        return this.masterToken;
-    }
-
-    public void setMasterToken(final String masterToken) {
-        this.masterToken = masterToken;
-    }
-
-    public Map<String, String> getPageTokens() {
-        return this.pageTokens;
-    }
-
-    public void setPageTokens(final Map<String, String> pageTokens) {
-        this.pageTokens = pageTokens;
-    }
-
-    public String getPageToken(final String uri) {
-        return this.pageTokens.get(uri);
-    }
-
-    public String setPageTokenIfAbsent(final String uri, final Supplier<String> valueSupplier) {
-        return this.pageTokens.computeIfAbsent(uri, k -> valueSupplier.get());
-    }
-
-    public void setPageToken(final String uri, final String value) {
-        this.pageTokens.put(uri, value);
-    }
-
-    private static Map<String, String> toMap(final Pair<String, String> pageToken) {
+    @Test
+    void testPageTokensToJson() {
         final HashMap<String, String> pageTokens = new HashMap<>();
-        pageTokens.put(pageToken.getKey(), pageToken.getValue());
-        return pageTokens;
+
+        pageTokens.put("/start", "start-Page-Token-Value");
+        pageTokens.put("/index.html", "index-Page-Token-Value");
+
+        final TokenTO tokenTO = new TokenTO(pageTokens);
+        assertEquals(tokenTO.toString(), "{\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\",\"/start\":\"start-Page-Token-Value\"}}");
+    }
+
+    @Test
+    void testMasterTokenPageTokensToJson() {
+        final HashMap<String, String> pageTokens = new HashMap<>();
+
+        pageTokens.put("/start", "start-Page-Token-Value");
+        pageTokens.put("/index.html", "index-Page-Token-Value");
+
+        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD", pageTokens);
+        final String expectedResult = "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\"," +
+                                      "\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\"," +
+                                      "\"/start\":\"start-Page-Token-Value\"}}";
+        assertEquals(tokenTO.toString(), expectedResult);
     }
 }

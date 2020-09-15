@@ -40,9 +40,12 @@ import org.owasp.csrfguard.log.ILogger;
 import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.servlet.JavaScriptServlet;
 import org.owasp.csrfguard.session.LogicalSession;
+import org.owasp.csrfguard.token.businessobject.TokenBO;
+import org.owasp.csrfguard.token.mapper.TokenMapper;
 import org.owasp.csrfguard.token.service.TokenService;
 import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
+import org.owasp.csrfguard.token.transferobject.TokenTO;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 import org.owasp.csrfguard.util.MessageConstants;
 import org.owasp.csrfguard.util.RegexValidationUtil;
@@ -257,7 +260,7 @@ public final class CsrfGuard {
 
     /**
      * Method to be called by a logical session implementation when a new session is created. <br>
-     *
+     * <p>
      * Example: {@link javax.servlet.http.HttpSessionListener#sessionCreated(javax.servlet.http.HttpSessionEvent)}
      *
      * @param logicalSession a logical session implementation
@@ -279,7 +282,7 @@ public final class CsrfGuard {
 
     /**
      * Method to be called by a logical session implementation when a session is destroyed. <br>
-     *
+     * <p>
      * Example: {@link javax.servlet.http.HttpSessionListener#sessionDestroyed(javax.servlet.http.HttpSessionEvent)}
      *
      * @param logicalSession a logical session implementation
@@ -390,10 +393,6 @@ public final class CsrfGuard {
         return sb.toString();
     }
 
-    private static final class SingletonHolder {
-        public static final CsrfGuard instance = new CsrfGuard();
-    }
-
     private static boolean isUriPathMatch(final String testPath, final String requestPath) {
         return testPath.equals("/*") || (testPath.endsWith("/*")
                                          && (testPath.regionMatches(0, requestPath, 0, testPath.length() - 2)
@@ -403,7 +402,8 @@ public final class CsrfGuard {
     private boolean isTokenValidInRequest(final HttpServletRequest request, final HttpServletResponse response) {
         boolean isValid = false;
 
-        final LogicalSession logicalSession = CsrfGuard.getInstance().getLogicalSessionExtractor().extract(request);
+        final CsrfGuard csrfGuard = CsrfGuard.getInstance();
+        final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);
 
         if (Objects.nonNull(logicalSession)) {
             final TokenService tokenService = getTokenService();
@@ -412,11 +412,12 @@ public final class CsrfGuard {
 
             if (Objects.nonNull(masterToken)) {
                 try {
-                    final String usedValidToken = tokenService.verifyToken(request, logicalSessionKey, masterToken);
+                    final TokenBO tokenBO = tokenService.verifyToken(request, logicalSessionKey, masterToken);
 
-                    if (!CsrfGuardUtils.isAjaxRequest(request) && isRotateEnabled()) {
-                        tokenService.rotateUsedToken(logicalSessionKey, request.getRequestURI(), usedValidToken);
-                    }
+                    final TokenTO tokenTO = isRotateEnabled() ? tokenService.rotateUsedToken(logicalSessionKey, request.getRequestURI(), tokenBO)
+                                                              : TokenMapper.toTransferObject(tokenBO);
+
+                    CsrfGuardUtils.addResponseTokenHeader(csrfGuard, request, response, tokenTO);
 
                     isValid = true;
                 } catch (final CsrfGuardException csrfe) {
@@ -570,5 +571,9 @@ public final class CsrfGuard {
                 getLogger().log(LogLevel.Error, exception);
             }
         }
+    }
+
+    private static final class SingletonHolder {
+        public static final CsrfGuard instance = new CsrfGuard();
     }
 }

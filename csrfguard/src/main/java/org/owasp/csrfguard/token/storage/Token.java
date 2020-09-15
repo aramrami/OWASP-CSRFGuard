@@ -26,30 +26,71 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.token.storage;
 
-package org.owasp.csrfguard.token;
+import java.util.Map;
+import java.util.function.Supplier;
 
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.exception.CSRFGuardTokenException;
-import org.owasp.csrfguard.util.MessageConstants;
-import org.owasp.csrfguard.util.RandomGenerator;
-
-public final class TokenUtils {
-
-    private TokenUtils() {}
+/**
+ * TODO
+ */
+public interface Token {
 
     /**
-     * Create a random token according with configuration.
-     *
-     * @return a random token
+     * TODO
+     * @return
      */
-    public static String generateRandomToken() {
-        try {
-            final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-            return RandomGenerator.generateRandomId(csrfGuard.getPrng(), csrfGuard.getTokenLength());
-        } catch (final Exception e) {
-            final String errorLiteral = MessageConstants.RANDOM_TOKEN_FAILURE_MSG + " - " + "%s";
-            throw new CSRFGuardTokenException(String.format(errorLiteral, e.getLocalizedMessage()), e);
-        }
-    }
+    String getMasterToken();
+
+    /**
+     * TODO
+     * @param masterToken
+     */
+    void setMasterToken(final String masterToken);
+
+    /**
+     * TODO
+     * @param uri
+     * @return
+     */
+    String getPageToken(final String uri);
+
+    /**
+     * TODO
+     * @param uri
+     * @param pageToken
+     */
+    void setPageToken(final String uri, final String pageToken);
+
+    /**
+     * TODO
+     * @param uri
+     * @param valueSupplier
+     * @return
+     */
+    String setPageTokenIfAbsent(final String uri, final Supplier<String> valueSupplier);
+
+    /**
+     * TODO
+     * @return
+     */
+    Map<String, String> getPageTokens();
+
+    /**
+     * TODO
+     * @param pageTokens
+     */
+    void setPageTokens(final Map<String, String> pageTokens);
+
+    /**
+     * TODO
+     * @param tokenValueSupplier
+     */
+    void rotateAllPageTokens(final Supplier<String> tokenValueSupplier);
+
+    /**
+     * TODO is it worth the added performance penalty in case of a large application with a lot of pages? What would be the risk if this would be contextual to the assigned resource?
+     * Disposes the current token from all the stored valid page tokens, disregarding to which resource it was assigned and replaces with a newly generated one.
+     */
+    void regenerateUsedPageToken(final String tokenFromRequest, final Supplier<String> tokenValueSupplier);
 }

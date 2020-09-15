@@ -26,30 +26,39 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.token.transferobject;
 
-package org.owasp.csrfguard.token;
+import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.exception.CSRFGuardTokenException;
-import org.owasp.csrfguard.util.MessageConstants;
-import org.owasp.csrfguard.util.RandomGenerator;
+import java.util.Collections;
+import java.util.Map;
 
-public final class TokenUtils {
+public class TokenTO {
 
-    private TokenUtils() {}
+    private final String masterToken;
 
-    /**
-     * Create a random token according with configuration.
-     *
-     * @return a random token
-     */
-    public static String generateRandomToken() {
-        try {
-            final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-            return RandomGenerator.generateRandomId(csrfGuard.getPrng(), csrfGuard.getTokenLength());
-        } catch (final Exception e) {
-            final String errorLiteral = MessageConstants.RANDOM_TOKEN_FAILURE_MSG + " - " + "%s";
-            throw new CSRFGuardTokenException(String.format(errorLiteral, e.getLocalizedMessage()), e);
-        }
+    private final Map<String, String> pageTokens;
+
+    public TokenTO(final String masterToken) {
+        this(masterToken, Collections.emptyMap());
+    }
+
+    public TokenTO(final Map<String, String> pageTokens) {
+        this(null, pageTokens);
+    }
+
+    public TokenTO(final String masterToken, final Map<String, String> pageTokens) {
+        this.masterToken = masterToken;
+        this.pageTokens = pageTokens;
+    }
+
+    public boolean isEmpty() {
+        return StringUtils.isBlank(this.masterToken) && this.pageTokens.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return new Gson().toJson(this);
     }
 }

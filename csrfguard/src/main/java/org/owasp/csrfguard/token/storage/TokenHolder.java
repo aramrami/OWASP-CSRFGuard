@@ -30,7 +30,6 @@
 package org.owasp.csrfguard.token.storage;
 
 import org.owasp.csrfguard.token.service.TokenService;
-import org.owasp.csrfguard.token.storage.impl.Token;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -86,6 +85,7 @@ public interface TokenHolder {
      * @param sessionKey  identifies the current logical session uniquely
      * @param resourceUri the URI of the desired HTTP resource
      * @return a page token bound to a resource URI and associated to a logical session key
+     * or NULL if there is no token with identified by the session key
      */
     String getPageToken(String sessionKey, String resourceUri);
 
@@ -125,14 +125,16 @@ public interface TokenHolder {
      * Re-generates all existing tokens associated to the provided logical session key
      *
      * @param sessionKey identifies the current logical session uniquely
+     * @param tokenValueSupplier produces a new page token value lazily/on demand
      */
-    void rotateAllPageTokens(final String sessionKey);
+    void rotateAllPageTokens(final String sessionKey, final Supplier<String> tokenValueSupplier);
 
     /**
      * Re-generates the value of a used page token
      *
      * @param sessionKey       identifies the current logical session uniquely
      * @param tokenFromRequest the token extracted from the request
+     * @param tokenValueSupplier produces a new page token value lazily/on demand
      */
-    void regenerateUsedPageToken(final String sessionKey, final String tokenFromRequest);
+    void regenerateUsedPageToken(final String sessionKey, final String tokenFromRequest, final Supplier<String> tokenValueSupplier);
 }

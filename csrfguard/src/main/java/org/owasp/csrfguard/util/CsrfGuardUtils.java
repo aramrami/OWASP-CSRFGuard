@@ -31,13 +31,20 @@ package org.owasp.csrfguard.util;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.config.overlay.ConfigPropertiesCascadeCommonUtils;
+import org.owasp.csrfguard.token.transferobject.TokenTO;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Objects;
 
 /**
  * Various utility methods/helpers.
@@ -130,18 +137,20 @@ public final class CsrfGuardUtils {
         return result;
     }
 
-    public static boolean isAjaxRequest(final HttpServletRequest request) {
-        final String header = request.getHeader("X-Requested-With");
-        if (header == null) {
-            return false;
-        }
-        final String[] headers = header.split(",");
-        for (final String requestedWithHeader : headers) {
-            if ("XMLHttpRequest".equals(requestedWithHeader.trim())) {
-                return true;
+    public static void addResponseTokenHeader(final CsrfGuard csrfGuard, final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final TokenTO tokenTO) {
+        if (csrfGuard.isAjaxEnabled() && CsrfGuardUtils.isAjaxRequest(httpServletRequest)) {
+            if (!tokenTO.isEmpty()) {
+                httpServletResponse.setHeader(csrfGuard.getTokenName(), tokenTO.toString());
             }
         }
-        return false;
+    }
+
+    public static boolean isAjaxRequest(final HttpServletRequest request) {
+        final Enumeration<String> headers = request.getHeaders("X-Requested-With");
+        return Objects.nonNull(headers) && Collections.list(headers).stream()
+                                                      .flatMap(headerValue -> Arrays.stream(headerValue.split(",")))
+                                                      .map(String::trim)
+                                                      .anyMatch("XMLHttpRequest"::equals);
     }
 
     public static String normalizeResourceURI(final HttpServletRequest httpServletRequest) {

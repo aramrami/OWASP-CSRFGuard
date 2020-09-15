@@ -332,13 +332,19 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 value = pageTokens[uri] != null ? pageTokens[uri] : tokenValue;
             }
 
-            var hidden = document.createElement('input');
+            let hiddenTokenFields = Object.keys(form.elements).filter(i => form.elements[i].name === tokenName);
 
-            hidden.setAttribute('type', 'hidden');
-            hidden.setAttribute('name', tokenName);
-            hidden.setAttribute('value', value);
+            if (hiddenTokenFields.length === 0) {
+                var hidden = document.createElement('input');
 
-            form.appendChild(hidden);
+                hidden.setAttribute('type', 'hidden');
+                hidden.setAttribute('name', tokenName);
+                hidden.setAttribute('value', value);
+
+                form.appendChild(hidden);
+            } else {
+                hiddenTokenFields.forEach(i => form.elements[i].value = value);
+            }
         }
 
         /**
@@ -351,16 +357,26 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 var uri = parseUri(location);
                 var value = (pageTokens[uri] != null ? pageTokens[uri] : tokenValue);
 
-                if (location.indexOf('?') !== -1) {
-                    location = location + '&' + tokenName + '=' + value;
-                } else {
-                    location = location + '?' + tokenName + '=' + value;
-                }
+                let tokenValueMatcher = new RegExp('(?:' + tokenName + '=)([^?|#|&]+)', 'gi');
+                let tokenMatches = tokenValueMatcher.exec(location);
 
-                try {
-                    element.setAttribute(attr, location);
-                } catch (e) {
-                    // attempted to set/update unsupported attribute
+                if (tokenMatches === null || tokenMatches.length === 0) {
+                    if (location.indexOf('?') === -1) {
+                        location = location + '?' + tokenName + '=' + value;
+                    } else {
+                        location = location + '&' + tokenName + '=' + value;
+                    }
+
+                    try {
+                        element.setAttribute(attr, location);
+                    } catch (e) {
+                        // attempted to set/update unsupported attribute
+                    }
+                } else {
+                    let newLocation = location;
+                    tokenMatches.slice(1).forEach(match => newLocation = newLocation.replace(match, value));
+
+                    element.setAttribute(attr, newLocation);
                 }
             }
         }
@@ -513,7 +529,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
              * the token hijacking problem.
              */
         if (isValidDomain(document.domain, '%DOMAIN_ORIGIN%')) {
-            var masterTokenName = '%TOKEN_NAME%';
+            var tokenName = '%TOKEN_NAME%';
             var masterTokenValue = '%TOKEN_VALUE%';
 
             var isLoadedWrapper = {isDomContentLoaded: false};
@@ -526,7 +542,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 isLoadedWrapper.isDomContentLoaded = true;
 
                 if (pageTokenWrapper.pageTokensLoaded) {
-                    injectTokens(masterTokenName, masterTokenValue, pageTokenWrapper.pageTokens);
+                    injectTokens(tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
                 }
             });
 
@@ -538,7 +554,35 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                     hijackStandard();
                 }
 
+
                 XMLHttpRequest.prototype.onsend = function (data) {
+                    if ('%INJECT_XHR%') {
+                        this.addEventListener('readystatechange', function () {
+                            if (this.readyState === 4) {
+                                let tokenResponseHeader = this.getResponseHeader(tokenName);
+                                if (tokenResponseHeader != undefined) {
+                                    try {
+                                        let tokenTO = window.JSON.parse(tokenResponseHeader)
+
+                                        let newMasterToken = tokenTO['masterToken'];
+                                        if (newMasterToken !== undefined) {
+                                            masterTokenValue = newMasterToken;
+                                        }
+
+                                        let newPageTokens = tokenTO['pageTokens'];
+                                        if (newPageTokens !== undefined) {
+                                            Object.keys(newPageTokens).forEach(key => pageTokenWrapper.pageTokens[key] = newPageTokens[key])
+                                        }
+
+                                        injectTokens(tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
+                                    } catch (e) {
+                                        console.error("Error while updating tokens from response header.")
+                                    }
+                                }
+                            }
+                        }, false)
+                    }
+
                     var computePageToken = function(modifiedUrl) {
                         let result = null;
 
@@ -582,19 +626,19 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                         let normalizedUrl = normalizeUrl(this.url);
 
                         if (pageTokenWrapper.pageTokens === null) {
-                            this.setRequestHeader(masterTokenName, masterTokenValue);
+                            this.setRequestHeader(tokenName, masterTokenValue);
                         } else {
                             let pageToken = pageTokenWrapper.pageTokens[normalizedUrl];
                             if (pageToken == undefined) {
                                 let computedPageToken = computePageToken(normalizedUrl);
 
                                 if (computedPageToken === null) {
-                                    this.setRequestHeader(masterTokenName, masterTokenValue);
+                                    this.setRequestHeader(tokenName, masterTokenValue);
                                 } else {
-                                    this.setRequestHeader(masterTokenName, computedPageToken);
+                                    this.setRequestHeader(tokenName, computedPageToken);
                                 }
                             } else {
-                                this.setRequestHeader(masterTokenName, pageToken);
+                                this.setRequestHeader(tokenName, pageToken);
                             }
                         }
                     }
@@ -607,16 +651,16 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 pageTokenWrapper.pageTokensLoaded = true;
 
                 if (isLoadedWrapper.isDomContentLoaded) {
-                    injectTokens(masterTokenName, masterTokenValue, receivedPageTokens);
+                    injectTokens(tokenName, masterTokenValue, receivedPageTokens);
                 }
             };
 
             if ('%TOKENS_PER_PAGE%') {
-                requestPageTokens(masterTokenName, masterTokenValue, pageTokenRequestCallback);
+                requestPageTokens(tokenName, masterTokenValue, pageTokenRequestCallback);
             } else {
                 /* update nodes in DOM after load */
                 addEvent(window, 'DOMContentLoaded', function () {
-                    injectTokens(masterTokenName, masterTokenValue, {});
+                    injectTokens(tokenName, masterTokenValue, {});
                 });
             }
         } else {

@@ -30,7 +30,7 @@
 package org.owasp.csrfguard.token.storage.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.owasp.csrfguard.token.TokenUtils;
+import org.owasp.csrfguard.token.storage.Token;
 import org.owasp.csrfguard.token.storage.TokenHolder;
 
 import java.util.Map;
@@ -38,23 +38,18 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-// TODO make thread safe
 public class InMemoryTokenHolder implements TokenHolder {
 
     private static final Map<String, Token> TOKENS = new ConcurrentHashMap<>();
 
     public InMemoryTokenHolder() {}
 
-    public InMemoryTokenHolder(final String sessionKey, final Token token) {
-        TOKENS.put(sessionKey, token);
-    }
-
     @Override
     public void setMasterToken(final String sessionKey, final String value) {
         TOKENS.compute(sessionKey, (k, v) -> {
             final Token result;
             if (Objects.isNull(v)) {
-                result = new Token(value);
+                result = new InMemoryToken(value);
             } else {
                 v.setMasterToken(value);
                 result = v;
@@ -65,7 +60,7 @@ public class InMemoryTokenHolder implements TokenHolder {
 
     @Override
     public String createMasterTokenIfAbsent(final String sessionKey, final Supplier<String> valueSupplier) {
-        final Token token = TOKENS.computeIfAbsent(sessionKey, k -> new Token(valueSupplier.get()));
+        final Token token = TOKENS.computeIfAbsent(sessionKey, k -> new InMemoryToken(valueSupplier.get()));
         return token.getMasterToken();
     }
 
@@ -74,7 +69,7 @@ public class InMemoryTokenHolder implements TokenHolder {
         final Token token = TOKENS.get(sessionKey);
         if (Objects.isNull(token)) {
             final String newPageToken = valueSupplier.get();
-            TOKENS.computeIfAbsent(sessionKey, k -> new Token(valueSupplier.get(), Pair.of(resourceUri, newPageToken)));
+            TOKENS.computeIfAbsent(sessionKey, k -> new InMemoryToken(valueSupplier.get(), Pair.of(resourceUri, newPageToken)));
             return newPageToken;
         } else {
             return token.setPageTokenIfAbsent(resourceUri, valueSupplier);
@@ -95,12 +90,12 @@ public class InMemoryTokenHolder implements TokenHolder {
 
     @Override
     public void setPageToken(final String sessionKey, final String resourceUri, final String value) {
-        getTokenOrException(sessionKey).getPageTokens().put(resourceUri, value);
+        getTokenOrException(sessionKey).setPageToken(resourceUri, value);
     }
 
     @Override
     public void setPageTokens(final String sessionKey, final Map<String, String> pageTokens) {
-        getTokenOrException(sessionKey).getPageTokens().putAll(pageTokens);
+        getTokenOrException(sessionKey).setPageTokens(pageTokens);
     }
 
     @Override
@@ -114,15 +109,15 @@ public class InMemoryTokenHolder implements TokenHolder {
     }
 
     @Override
-    public void rotateAllPageTokens(final String sessionKey) {
-        final Map<String, String> pageTokens = getPageTokens(sessionKey);
-        TokenUtils.rotateAllPageTokens(pageTokens);
+    public void rotateAllPageTokens(final String sessionKey, final Supplier<String> tokenValueSupplier) {
+        final Token token = getTokenOrException(sessionKey);
+        token.rotateAllPageTokens(tokenValueSupplier);
     }
 
     @Override
-    public void regenerateUsedPageToken(final String sessionKey, final String tokenFromRequest) {
-        final Map<String, String> pageTokens = getPageTokens(sessionKey);
-        TokenUtils.regenerateUsedPageToken(pageTokens, tokenFromRequest);
+    public void regenerateUsedPageToken(final String sessionKey, final String tokenFromRequest, final Supplier<String> tokenValueSupplier) {
+        final Token token = getTokenOrException(sessionKey);
+        token.regenerateUsedPageToken(tokenFromRequest, tokenValueSupplier);
     }
 
     private Token getTokenOrException(final String sessionKey) {

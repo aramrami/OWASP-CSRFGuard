@@ -33,11 +33,14 @@ import org.owasp.csrfguard.http.InterceptRedirectResponse;
 import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.session.LogicalSession;
 import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
+import org.owasp.csrfguard.token.transferobject.TokenTO;
+import org.owasp.csrfguard.util.CsrfGuardUtils;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Objects;
 
 public final class CsrfGuardFilter implements Filter {
@@ -64,6 +67,11 @@ public final class CsrfGuardFilter implements Filter {
         }
     }
 
+    @Override
+    public void destroy() {
+        this.filterConfig = null;
+    }
+
     private void doFilter(final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final FilterChain filterChain, final CsrfGuard csrfGuard) throws IOException, ServletException {
         final InterceptRedirectResponse interceptRedirectResponse = new InterceptRedirectResponse(httpServletResponse, httpServletRequest, csrfGuard);
 
@@ -79,6 +87,7 @@ public final class CsrfGuardFilter implements Filter {
 
     private void handleSession(final HttpServletRequest httpServletRequest, final InterceptRedirectResponse interceptRedirectResponse, final FilterChain filterChain,
                                final LogicalSession logicalSession, final CsrfGuard csrfGuard) throws IOException, ServletException {
+
         final String logicalSessionKey = logicalSession.getKey();
 
         if (logicalSession.isNew() && csrfGuard.isUseNewTokenLandingPage()) {
@@ -89,10 +98,14 @@ public final class CsrfGuardFilter implements Filter {
             logInvalidRequest(httpServletRequest, csrfGuard);
         }
 
-        csrfGuard.getTokenService().generateTokensIfAbsent(logicalSessionKey, httpServletRequest.getMethod(), httpServletRequest.getRequestURI());
+        final String requestURI = httpServletRequest.getRequestURI();
+        final String generatedToken = csrfGuard.getTokenService().generateTokensIfAbsent(logicalSessionKey, httpServletRequest.getMethod(), requestURI);
+
+        CsrfGuardUtils.addResponseTokenHeader(csrfGuard, httpServletRequest, interceptRedirectResponse, new TokenTO(Collections.singletonMap(requestURI, generatedToken)));
     }
 
-    private void handleNoSession(final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final InterceptRedirectResponse interceptRedirectResponse, final FilterChain filterChain, final CsrfGuard csrfGuard) throws IOException, ServletException {
+    private void handleNoSession(final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final InterceptRedirectResponse interceptRedirectResponse, final FilterChain filterChain,
+                                 final CsrfGuard csrfGuard) throws IOException, ServletException {
         if (csrfGuard.isValidateWhenNoSessionExists()) {
             if (csrfGuard.isValidRequest(httpServletRequest, interceptRedirectResponse)) {
                 filterChain.doFilter(httpServletRequest, interceptRedirectResponse);
@@ -102,11 +115,6 @@ public final class CsrfGuardFilter implements Filter {
         } else {
             filterChain.doFilter(httpServletRequest, httpServletResponse);
         }
-    }
-
-    @Override
-    public void destroy() {
-        this.filterConfig = null;
     }
 
     private void handleNonHttpServletMessages(final ServletRequest request, final ServletResponse response, final FilterChain filterChain, final CsrfGuard csrfGuard) throws IOException, ServletException {

@@ -32,8 +32,11 @@ import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardException;
 import org.owasp.csrfguard.session.LogicalSession;
 import org.owasp.csrfguard.token.TokenUtils;
+import org.owasp.csrfguard.token.businessobject.TokenBO;
+import org.owasp.csrfguard.token.mapper.TokenMapper;
+import org.owasp.csrfguard.token.storage.Token;
 import org.owasp.csrfguard.token.storage.TokenHolder;
-import org.owasp.csrfguard.token.storage.impl.Token;
+import org.owasp.csrfguard.token.transferobject.TokenTO;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 import org.owasp.csrfguard.util.MessageConstants;
 
@@ -97,13 +100,13 @@ public class TokenService {
         return new HashMap<>(tokenHolder.getPageTokens(logicalSessionKey));
     }
 
-   /**
+    /**
      * Generates master token and page token for the current resource if the token-per-page configuration is enabled
      * <p>
      *
      * @param logicalSessionKey identifies the current logical session uniquely
-     * @param httpMethod the current HTTP method used to request the resource
-     * @param requestURI the URI of the desired HTTP resource
+     * @param httpMethod        the current HTTP method used to request the resource
+     * @param requestURI        the URI of the desired HTTP resource
      * @return returns the generated page or master token
      */
     public String generateTokensIfAbsent(final String logicalSessionKey, final String httpMethod, final String requestURI) {
@@ -153,26 +156,23 @@ public class TokenService {
      * @param logicalSessionKey identifies the current logical session uniquely
      * @param requestURI        the URI of the desired HTTP resource
      * @param usedValidToken    a verified token that has validated the current request
+     * @return a TokenTO transfer object containing the updated token values that will be sent back to the client
      */
-    public void rotateUsedToken(final String logicalSessionKey, final String requestURI, final String usedValidToken) {
+    public TokenTO rotateUsedToken(final String logicalSessionKey, final String requestURI, final TokenBO usedValidToken) {
         final String normalizedResourceURI = CsrfGuardUtils.normalizeResourceURI(requestURI);
         final TokenHolder tokenHolder = this.csrfGuard.getTokenHolder();
 
-        final String masterToken = getMasterToken(tokenHolder, logicalSessionKey);
+        final String newTokenValue = TokenUtils.generateRandomToken();
 
-        if (Objects.nonNull(masterToken) && masterToken.equals(usedValidToken)) {
-            tokenHolder.setMasterToken(logicalSessionKey, TokenUtils.generateRandomToken());
+        if (usedValidToken.isUsedMasterToken()) {
+            tokenHolder.setMasterToken(logicalSessionKey, newTokenValue);
+            usedValidToken.setUpdatedMasterToken(newTokenValue);
         } else {
-            if (this.csrfGuard.isTokenPerPageEnabled()) {
-                if (usedValidToken.equals(tokenHolder.getPageToken(logicalSessionKey, normalizedResourceURI))) {
-                    tokenHolder.setPageToken(logicalSessionKey, normalizedResourceURI, TokenUtils.generateRandomToken());
-                } else {
-                    throw new IllegalStateException("The verified token was not associated to the current resource.");
-                }
-            } else {
-                throw new IllegalStateException("Token-per-page is not enabled and the verified token is not the master token.");
-            }
+            tokenHolder.setPageToken(logicalSessionKey, normalizedResourceURI, newTokenValue);
+            usedValidToken.setUpdatedPageToken(normalizedResourceURI, newTokenValue);
         }
+
+        return TokenMapper.toTransferObject(usedValidToken);
     }
 
     /**
@@ -185,7 +185,7 @@ public class TokenService {
 
         tokenHolder.setMasterToken(logicalSessionKey, TokenUtils.generateRandomToken());
 
-        tokenHolder.rotateAllPageTokens(logicalSessionKey);
+        tokenHolder.rotateAllPageTokens(logicalSessionKey, TokenUtils::generateRandomToken);
     }
 
     /**
@@ -214,23 +214,23 @@ public class TokenService {
      * @param request           current HTTP Servlet Request
      * @param logicalSessionKey identifies the current logical session uniquely
      * @param masterToken       the master token
-     * @return The token used to validate the current request
+     * @return The TokenBO business object that contains the updated tokens and the token used to validate the current request
      * @throws CsrfGuardException if the request does not have a valid token associated
      */
-    public String verifyToken(final HttpServletRequest request, final String logicalSessionKey, final String masterToken) throws CsrfGuardException {
+    public TokenBO verifyToken(final HttpServletRequest request, final String logicalSessionKey, final String masterToken) throws CsrfGuardException {
         final String tokenName = this.csrfGuard.getTokenName();
 
         final String tokenFromRequest = this.csrfGuard.isAjaxEnabled() && CsrfGuardUtils.isAjaxRequest(request) ? request.getHeader(tokenName)
                                                                                                                 : request.getParameter(tokenName);
-        final String usedValidToken;
+        final TokenBO tokenBO;
         if (Objects.isNull(tokenFromRequest)) {
             throw new CsrfGuardException(MessageConstants.REQUEST_MISSING_TOKEN_MSG);
         } else {
-            usedValidToken = this.csrfGuard.isTokenPerPageEnabled() ? verifyPageToken(masterToken, tokenFromRequest, logicalSessionKey, CsrfGuardUtils.normalizeResourceURI(request))
-                                                                    : verifyMasterToken(masterToken, tokenFromRequest);
+            tokenBO = this.csrfGuard.isTokenPerPageEnabled() ? verifyPageToken(masterToken, tokenFromRequest, logicalSessionKey, CsrfGuardUtils.normalizeResourceURI(request))
+                                                             : verifyMasterToken(masterToken, tokenFromRequest);
         }
 
-        return usedValidToken;
+        return tokenBO;
     }
 
     private String getMasterToken(final TokenHolder tokenHolder, final String tokenKey) {
@@ -238,39 +238,39 @@ public class TokenService {
         return Objects.nonNull(token) ? token.getMasterToken() : null;
     }
 
-    private String verifyPageToken(final String masterToken, final String tokenFromRequest, final String logicalSessionKey, final String requestURI) throws CsrfGuardException {
+    private TokenBO verifyPageToken(final String masterToken, final String tokenFromRequest, final String logicalSessionKey, final String requestURI) throws CsrfGuardException {
         final TokenHolder tokenHolder = this.csrfGuard.getTokenHolder();
 
         final Token token = tokenHolder.getToken(logicalSessionKey);
         final String pageToken = token.getPageToken(requestURI);
 
-        final String usedValidToken;
-
+        final TokenBO tokenBO;
         if (pageToken == null) {
             /* if there is no token for the current resource, create it and the rely on the master token for validation */
-            tokenHolder.setPageToken(logicalSessionKey, requestURI, TokenUtils.generateRandomToken()); // TODO how this token will get back to the client?
+            final String newPageToken = TokenUtils.generateRandomToken();
+            tokenHolder.setPageToken(logicalSessionKey, requestURI, newPageToken);
 
-            usedValidToken = verifyMasterToken(masterToken, tokenFromRequest);
+            tokenBO = verifyMasterToken(masterToken, tokenFromRequest).setUpdatedPageToken(requestURI, newPageToken);
         } else {
             if (pageToken.equals(tokenFromRequest)) {
-                usedValidToken = tokenFromRequest;
+                tokenBO = new TokenBO().setUsedPageToken(tokenFromRequest);
             } else {
                 /* TODO Is this necessary? If the Rotate action is registered, the exception handler will call it and re-generate the tokens */
                 if (masterToken.equals(pageToken)) {
                     tokenHolder.setMasterToken(logicalSessionKey, TokenUtils.generateRandomToken());
                 }
 
-                tokenHolder.regenerateUsedPageToken(logicalSessionKey, tokenFromRequest);
+                tokenHolder.regenerateUsedPageToken(logicalSessionKey, tokenFromRequest, TokenUtils::generateRandomToken);
 
                 throw new CsrfGuardException(MessageConstants.MISMATCH_PAGE_TOKEN_MSG);
             }
         }
-        return usedValidToken;
+        return tokenBO;
     }
 
-    private String verifyMasterToken(final String storedToken, final String tokenFromRequest) throws CsrfGuardException {
+    private TokenBO verifyMasterToken(final String storedToken, final String tokenFromRequest) throws CsrfGuardException {
         if (storedToken.equals(tokenFromRequest)) {
-            return tokenFromRequest;
+            return new TokenBO().setUsedMasterToken(tokenFromRequest);
         } else {
             throw new CsrfGuardException(MessageConstants.MISMATCH_MASTER_TOKEN_MSG);
         }

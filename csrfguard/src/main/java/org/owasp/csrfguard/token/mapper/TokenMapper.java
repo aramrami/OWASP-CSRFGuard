@@ -26,30 +26,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.token.mapper;
 
-package org.owasp.csrfguard.token;
+import org.owasp.csrfguard.token.businessobject.TokenBO;
+import org.owasp.csrfguard.token.transferobject.TokenTO;
 
-import org.owasp.csrfguard.CsrfGuard;
-import org.owasp.csrfguard.exception.CSRFGuardTokenException;
-import org.owasp.csrfguard.util.MessageConstants;
-import org.owasp.csrfguard.util.RandomGenerator;
+public final class TokenMapper {
 
-public final class TokenUtils {
+    private TokenMapper() {}
 
-    private TokenUtils() {}
-
-    /**
-     * Create a random token according with configuration.
-     *
-     * @return a random token
-     */
-    public static String generateRandomToken() {
-        try {
-            final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-            return RandomGenerator.generateRandomId(csrfGuard.getPrng(), csrfGuard.getTokenLength());
-        } catch (final Exception e) {
-            final String errorLiteral = MessageConstants.RANDOM_TOKEN_FAILURE_MSG + " - " + "%s";
-            throw new CSRFGuardTokenException(String.format(errorLiteral, e.getLocalizedMessage()), e);
-        }
+    public static TokenTO toTransferObject(final TokenBO tokenBO) {
+        return new TokenTO(tokenBO.getUpdatedMasterToken(), tokenBO.getUpdatedPageTokens());
     }
 }
