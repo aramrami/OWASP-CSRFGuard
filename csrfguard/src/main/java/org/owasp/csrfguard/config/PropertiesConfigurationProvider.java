@@ -45,6 +45,7 @@ import org.owasp.csrfguard.util.CsrfGuardUtils;
 import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
@@ -129,6 +130,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private TokenHolder tokenHolder;
 
+	private TemporalAmount pageTokenSynchronizationTolerance;
+
 	public PropertiesConfigurationProvider(final Properties properties) {
 		try {
 			this.propertiesCache = properties;
@@ -161,6 +164,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 			this.useNewTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.getUseNewTokenLandingPage(this.newTokenLandingPage));
 
 			this.ajax = PropertyUtils.getProperty(properties, ConfigParameters.AJAX_ENABLED);
+
+			this.pageTokenSynchronizationTolerance = PropertyUtils.getProperty(properties, ConfigParameters.PAGE_TOKEN_SYNCHRONIZATION_TOLERANCE);
 
 			initializeTokenPersistenceConfigurations(properties);
 
@@ -368,7 +373,12 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		return this.logicalSessionExtractor;
 	}
 
-	private Map<String, IAction> instantiateActions(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    @Override
+    public TemporalAmount getPageTokenSynchronizationTolerance() {
+        return this.pageTokenSynchronizationTolerance;
+    }
+
+    private Map<String, IAction> instantiateActions(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		final Map<String, IAction> actionsMap = new HashMap<>();
 
 		for (final Object obj : properties.keySet()) {

@@ -26,26 +26,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.token.storage.impl;
 
-package org.owasp.csrfguard.config.properties;
+import java.time.LocalDateTime;
 
-public class SimpleIntConfigParameter implements SimpleConfigParameter<String, Integer> {
+public final class PageTokenValue {
 
-    private final String propertyName;
-    private final int propertyValue;
+    private final String pageTokenValue;
+    private final LocalDateTime localDateTime;
 
-    public SimpleIntConfigParameter(final String propertyName, final int propertyValue) {
-        this.propertyName = propertyName;
-        this.propertyValue = propertyValue;
+    private PageTokenValue(final String pageTokenValue) {
+        this(pageTokenValue, LocalDateTime.now());
     }
 
-    @Override
-    public String getName() {
-        return this.propertyName;
+    private PageTokenValue(final String pageTokenValue, final LocalDateTime localDateTime) {
+        this.pageTokenValue = pageTokenValue;
+        this.localDateTime = localDateTime;
     }
 
-    @Override
-    public Integer getDefaultValue() {
-        return this.propertyValue;
+    public static PageTokenValue from(final String pageTokenValue) {
+        return new PageTokenValue(pageTokenValue);
+    }
+
+    public static PageTokenValue from(final String pageTokenValue, final LocalDateTime localDateTime) {
+        return new PageTokenValue(pageTokenValue, localDateTime);
+    }
+
+    public String getValue() {
+        return this.pageTokenValue;
+    }
+
+    public LocalDateTime getCreationTime() {
+        return this.localDateTime;
     }
 }

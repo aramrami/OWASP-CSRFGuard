@@ -54,6 +54,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -360,6 +361,10 @@ public final class CsrfGuard {
         return config().getDomainOrigin();
     }
 
+    public TemporalAmount getPageTokenSynchronizationTolerance() {
+        return config().getPageTokenSynchronizationTolerance();
+    }
+
     /**
      * if there are methods specified, then they (e.g. GET) are unprotected, and all others are protected
      *
@@ -414,8 +419,8 @@ public final class CsrfGuard {
                 try {
                     final TokenBO tokenBO = tokenService.verifyToken(request, logicalSessionKey, masterToken);
 
-                    final TokenTO tokenTO = isRotateEnabled() ? tokenService.rotateUsedToken(logicalSessionKey, request.getRequestURI(), tokenBO)
-                                                              : TokenMapper.toTransferObject(tokenBO);
+                    final TokenTO tokenTO = isRotateEnabled(request) ? tokenService.rotateUsedToken(logicalSessionKey, request.getRequestURI(), tokenBO)
+                                                                     : TokenMapper.toTransferObject(tokenBO);
 
                     CsrfGuardUtils.addResponseTokenHeader(csrfGuard, request, response, tokenTO);
 
@@ -431,6 +436,20 @@ public final class CsrfGuard {
         }
 
         return isValid;
+    }
+
+    /**
+     * Rotation in case of AJAX requests is not currently not supported because of the possible race conditions.
+     *
+     * A Single Page Application can fire multiple simultaneous requests.
+     * If rotation is enabled, the first request might trigger a token change before the validation of the second request with the same token, causing
+     * false-positive CSRF intrusion exceptions.
+     *
+     * @param request the current request
+     * @return True if rotation is enabled and possible
+     */
+    private boolean isRotateEnabled(final HttpServletRequest request) {
+        return isRotateEnabled() && !CsrfGuardUtils.isAjaxRequest(request);
     }
 
     private boolean isProtectedPage(final String normalizedResourceUri) {

@@ -31,6 +31,9 @@ package org.owasp.csrfguard.config.properties;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 public final class ConfigParameters {
 
     public static final SimpleBooleanConfigParameter ROTATE = new SimpleBooleanConfigParameter("org.owasp.csrfguard.Rotate", false);
@@ -43,13 +46,15 @@ public final class ConfigParameters {
     public static final SimpleBooleanConfigParameter CSRFGUARD_PROTECT = new SimpleBooleanConfigParameter("org.owasp.csrfguard.Protect", false);
 
     public static final SimpleIntConfigParameter TOKEN_LENGTH = new SimpleIntConfigParameter("org.owasp.csrfguard.TokenLength", 32);
-    public static final Pair<String, String> TOKEN_NAME = Pair.of( "org.owasp.csrfguard.TokenName", "OWASP-CSRFGUARD");
-    public static final Pair<String, String> LOGGER = Pair.of( "org.owasp.csrfguard.Logger", "org.owasp.csrfguard.log.ConsoleLogger");
-    public static final Pair<String, String> DOMAIN_ORIGIN = Pair.of( "org.owasp.csrfguard.domainOrigin", null);
+    public static final SimpleTemporalAmountParameter PAGE_TOKEN_SYNCHRONIZATION_TOLERANCE = new SimpleTemporalAmountParameter("org.owasp.csrfguard.PageTokenSynchronizationTolerance", Duration.of(2, ChronoUnit.SECONDS));
+
+    public static final Pair<String, String> TOKEN_NAME = Pair.of("org.owasp.csrfguard.TokenName", "OWASP-CSRFGUARD");
+    public static final Pair<String, String> LOGGER = Pair.of("org.owasp.csrfguard.Logger", "org.owasp.csrfguard.log.ConsoleLogger");
+    public static final Pair<String, String> DOMAIN_ORIGIN = Pair.of("org.owasp.csrfguard.domainOrigin", null);
     public static final Pair<String, String> DEFAULT_PRNG = Pair.of("SUN", "SHA1PRNG");
     public static final Pair<String, String> PRNG = Pair.of("org.owasp.csrfguard.PRNG", DEFAULT_PRNG.getValue());
-    public static final Pair<String, String> PRNG_PROVIDER = Pair.of( "org.owasp.csrfguard.PRNG.Provider", DEFAULT_PRNG.getKey());
-    public static final Pair<String, String> TOKEN_HOLDER = Pair.of( "org.owasp.csrfguard.TokenHolder", "org.owasp.csrfguard.token.storage.impl.InMemoryTokenHolder");
+    public static final Pair<String, String> PRNG_PROVIDER = Pair.of("org.owasp.csrfguard.PRNG.Provider", DEFAULT_PRNG.getKey());
+    public static final Pair<String, String> TOKEN_HOLDER = Pair.of("org.owasp.csrfguard.TokenHolder", "org.owasp.csrfguard.token.storage.impl.InMemoryTokenHolder");
 
     public static final String LOGICAL_SESSION_EXTRACTOR_NAME = "org.owasp.csrfguard.LogicalSessionExtractor";
 

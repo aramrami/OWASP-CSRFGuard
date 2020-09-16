@@ -26,26 +26,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.owasp.csrfguard.config.properties;
 
-public class SimpleIntConfigParameter implements SimpleConfigParameter<String, Integer> {
+import java.time.Duration;
+import java.time.temporal.TemporalAmount;
 
-    private final String propertyName;
-    private final int propertyValue;
+public class SimpleTemporalAmountParameter implements SimpleConfigParameter<String, TemporalAmount> {
 
-    public SimpleIntConfigParameter(final String propertyName, final int propertyValue) {
-        this.propertyName = propertyName;
-        this.propertyValue = propertyValue;
+    private final String name;
+    private final Duration defaultDuration;
+
+    public SimpleTemporalAmountParameter(final String name, final Duration defaultDuration) {
+        this.name = name;
+        this.defaultDuration = defaultDuration;
     }
 
     @Override
     public String getName() {
-        return this.propertyName;
+        return this.name;
     }
 
     @Override
-    public Integer getDefaultValue() {
-        return this.propertyValue;
+    public TemporalAmount getDefaultValue() {
+        return this.defaultDuration;
     }
 }

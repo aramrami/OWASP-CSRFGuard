@@ -36,11 +36,13 @@ import org.owasp.csrfguard.token.businessobject.TokenBO;
 import org.owasp.csrfguard.token.mapper.TokenMapper;
 import org.owasp.csrfguard.token.storage.Token;
 import org.owasp.csrfguard.token.storage.TokenHolder;
+import org.owasp.csrfguard.token.storage.impl.PageTokenValue;
 import org.owasp.csrfguard.token.transferobject.TokenTO;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 import org.owasp.csrfguard.util.MessageConstants;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -220,13 +222,13 @@ public class TokenService {
     public TokenBO verifyToken(final HttpServletRequest request, final String logicalSessionKey, final String masterToken) throws CsrfGuardException {
         final String tokenName = this.csrfGuard.getTokenName();
 
-        final String tokenFromRequest = this.csrfGuard.isAjaxEnabled() && CsrfGuardUtils.isAjaxRequest(request) ? request.getHeader(tokenName)
-                                                                                                                : request.getParameter(tokenName);
+        final boolean isAjaxRequest = this.csrfGuard.isAjaxEnabled() && CsrfGuardUtils.isAjaxRequest(request);
+        final String tokenFromRequest = isAjaxRequest ? request.getHeader(tokenName) : request.getParameter(tokenName);
         final TokenBO tokenBO;
         if (Objects.isNull(tokenFromRequest)) {
             throw new CsrfGuardException(MessageConstants.REQUEST_MISSING_TOKEN_MSG);
         } else {
-            tokenBO = this.csrfGuard.isTokenPerPageEnabled() ? verifyPageToken(masterToken, tokenFromRequest, logicalSessionKey, CsrfGuardUtils.normalizeResourceURI(request))
+            tokenBO = this.csrfGuard.isTokenPerPageEnabled() ? verifyPageToken(logicalSessionKey, masterToken, tokenFromRequest, CsrfGuardUtils.normalizeResourceURI(request), isAjaxRequest)
                                                              : verifyMasterToken(masterToken, tokenFromRequest);
         }
 
@@ -238,22 +240,25 @@ public class TokenService {
         return Objects.nonNull(token) ? token.getMasterToken() : null;
     }
 
-    private TokenBO verifyPageToken(final String masterToken, final String tokenFromRequest, final String logicalSessionKey, final String requestURI) throws CsrfGuardException {
+    private TokenBO verifyPageToken(final String logicalSessionKey, final String masterToken, final String tokenFromRequest, final String requestURI, final boolean isAjaxRequest) throws CsrfGuardException {
         final TokenHolder tokenHolder = this.csrfGuard.getTokenHolder();
 
         final Token token = tokenHolder.getToken(logicalSessionKey);
-        final String pageToken = token.getPageToken(requestURI);
+        final PageTokenValue timedPageToken = token.getTimedPageToken(requestURI);
 
         final TokenBO tokenBO;
-        if (pageToken == null) {
+        if (timedPageToken == null) {
             /* if there is no token for the current resource, create it and the rely on the master token for validation */
             final String newPageToken = TokenUtils.generateRandomToken();
             tokenHolder.setPageToken(logicalSessionKey, requestURI, newPageToken);
 
             tokenBO = verifyMasterToken(masterToken, tokenFromRequest).setUpdatedPageToken(requestURI, newPageToken);
         } else {
+            final String pageToken = timedPageToken.getValue();
             if (pageToken.equals(tokenFromRequest)) {
                 tokenBO = new TokenBO().setUsedPageToken(tokenFromRequest);
+            } else if (initIsWithinTimeTolerance(this.csrfGuard, isAjaxRequest, timedPageToken)) {
+                tokenBO = verifyMasterToken(masterToken, tokenFromRequest).setUpdatedPageToken(requestURI, pageToken);
             } else {
                 /* TODO Is this necessary? If the Rotate action is registered, the exception handler will call it and re-generate the tokens */
                 if (masterToken.equals(pageToken)) {
@@ -266,6 +271,17 @@ public class TokenService {
             }
         }
         return tokenBO;
+    }
+
+    /**
+     * The race condition only happens in case of AJAX requests when the token pre-creation is not enabled.
+     * NOTE: If the combination of the Token Rotation and AJAX support will be implemented, this logic must also be adjusted.
+     * @return true if the page token creation is within the configured time tolerance and the application should also accept the master token for validation
+     */
+    private boolean initIsWithinTimeTolerance(final CsrfGuard csrfGuard, final boolean isAjaxRequest, final PageTokenValue tokenTimedPageToken) {
+        return isAjaxRequest
+               && !csrfGuard.isTokenPerPagePrecreate()
+               && tokenTimedPageToken.getCreationTime().plus(this.csrfGuard.getPageTokenSynchronizationTolerance()).isBefore(LocalDateTime.now());
     }
 
     private TokenBO verifyMasterToken(final String storedToken, final String tokenFromRequest) throws CsrfGuardException {

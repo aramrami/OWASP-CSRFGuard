@@ -33,6 +33,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 
+import java.time.Duration;
+import java.time.temporal.TemporalAmount;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Function;
@@ -53,24 +55,24 @@ public final class PropertyUtils {
         return getProperty(properties, propertyName, null);
     }
 
+    public static String getProperty(final Properties properties, final Pair<String, String> propertyWithDefaultValue) {
+        return getProperty(properties, propertyWithDefaultValue.getKey(), propertyWithDefaultValue.getValue());
+    }
+
     public static int getProperty(final Properties properties, final SimpleIntConfigParameter configParameter) {
-        return getProperty(properties, configParameter.getName(), configParameter.getDefaultValue());
+        return getProperty(properties, configParameter, Integer::parseInt);
     }
 
     public static boolean getProperty(final Properties properties, final SimpleBooleanConfigParameter configParameter) {
-        return getProperty(properties, configParameter.getName(), configParameter.getDefaultValue());
+        return getProperty(properties, configParameter, Boolean::parseBoolean);
     }
 
-    public static boolean getProperty(final Properties properties, final String propertyName, final boolean defaultValue) {
-        return getProperty(properties, propertyName, defaultValue, Boolean::parseBoolean);
+    public static <T> T getProperty(final Properties properties, final SimpleConfigParameter<String, T> configParameter, final Function<String, T> function) {
+        return getProperty(properties, configParameter.getName(), configParameter.getDefaultValue(), function);
     }
 
-    public static int getProperty(final Properties properties, final String propertyName, final int defaultValue) {
-        return getProperty(properties, propertyName, defaultValue, Integer::parseInt);
-    }
-
-    public static String getProperty(final Properties properties, final Pair<String, String> propertyWithDefaultValue) {
-        return getProperty(properties, propertyWithDefaultValue.getKey(), propertyWithDefaultValue.getValue());
+    public static TemporalAmount getProperty(final Properties properties, final SimpleTemporalAmountParameter configParameter) {
+        return getProperty(properties, configParameter.getName(), configParameter.getDefaultValue(), Duration::parse);
     }
 
     public static <T> T getProperty(final Properties properties, final String propertyName, final T defaultValue, final Function<String, T> function) {
@@ -101,7 +103,7 @@ public final class PropertyUtils {
      * @param input A string with expressions that should be replaced
      * @return new string with "common" expressions replaced by configuration values
      */
-    public static String commonSubstitutions(String input) {
+    public static String commonSubstitutions(final String input) {
         if (!StringUtils.contains(input, "%")) {
             return input;
         }

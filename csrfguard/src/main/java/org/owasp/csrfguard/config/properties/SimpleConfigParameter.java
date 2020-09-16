@@ -26,80 +26,24 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.owasp.csrfguard.token.storage;
-
-import org.owasp.csrfguard.token.storage.impl.PageTokenValue;
-
-import java.util.Map;
-import java.util.function.Supplier;
+package org.owasp.csrfguard.config.properties;
 
 /**
  * TODO
+ * @param <K>
+ * @param <V>
  */
-public interface Token {
+public interface SimpleConfigParameter<K, V> {
 
     /**
      * TODO
      * @return
      */
-    String getMasterToken();
-
-    /**
-     * TODO
-     * @param masterToken
-     */
-    void setMasterToken(final String masterToken);
-
-    /**
-     * TODO
-     * @param uri
-     * @return
-     */
-    String getPageToken(final String uri);
-
-    /**
-     * TODO
-     * @param uri
-     * @return
-     */
-    PageTokenValue getTimedPageToken(final String uri);
-
-    /**
-     * TODO
-     * @param uri
-     * @param pageToken
-     */
-    void setPageToken(final String uri, final String pageToken);
-
-    /**
-     * TODO
-     * @param uri
-     * @param valueSupplier
-     * @return
-     */
-    String setPageTokenIfAbsent(final String uri, final Supplier<String> valueSupplier);
+    K getName();
 
     /**
      * TODO
      * @return
      */
-    Map<String, String> getPageTokens();
-
-    /**
-     * TODO
-     * @param pageTokens
-     */
-    void setPageTokens(final Map<String, String> pageTokens);
-
-    /**
-     * TODO
-     * @param tokenValueSupplier
-     */
-    void rotateAllPageTokens(final Supplier<String> tokenValueSupplier);
-
-    /**
-     * TODO is it worth the added performance penalty in case of a large application with a lot of pages? What would be the risk if this would be contextual to the assigned resource?
-     * Disposes the current token from all the stored valid page tokens, disregarding to which resource it was assigned and replaces with a newly generated one.
-     */
-    void regenerateUsedPageToken(final String tokenFromRequest, final Supplier<String> tokenValueSupplier);
+    V getDefaultValue();
 }
