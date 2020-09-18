@@ -91,14 +91,14 @@ public class InMemoryToken implements Token {
     @Override
     public Map<String, String> getPageTokens() {
         return this.pageTokens.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
-                                                                            v -> v.getValue().getValue()));
+                                                                            e -> e.getValue().getValue()));
     }
 
     @Override
     public void setPageTokens(final Map<String, String> pageTokens) {
         this.pageTokens = pageTokens.entrySet().stream()
                                     .collect(Collectors.toMap(Map.Entry::getKey,
-                                                              v -> PageTokenValue.from(v.getKey()),
+                                                              e -> PageTokenValue.from(e.getValue()),
                                                               (e1, e2) -> e2,
                                                               ConcurrentHashMap::new
                                                              ));
