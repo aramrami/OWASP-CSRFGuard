@@ -332,7 +332,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 value = pageTokens[uri] != null ? pageTokens[uri] : tokenValue;
             }
 
-            let hiddenTokenFields = Object.keys(form.elements).filter(i => form.elements[i].name === tokenName);
+            let hiddenTokenFields = Object.keys(form.elements).filter(i => form.elements[i].name === tokenName); // TODO do not use arrow functions because IE does not support it
 
             if (hiddenTokenFields.length === 0) {
                 var hidden = document.createElement('input');
@@ -342,8 +342,10 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 hidden.setAttribute('value', value);
 
                 form.appendChild(hidden);
+                console.debug('Hidden input element [', hidden, '] was added to the form: ', form);
             } else {
-                hiddenTokenFields.forEach(i => form.elements[i].value = value);
+                hiddenTokenFields.forEach(i => form.elements[i].value = value); // TODO do not use arrow functions because IE does not support it
+                console.debug('Hidden token fields [', hiddenTokenFields, '] of form [', form, '] were updated with new token value: ', value);
             }
         }
 
@@ -351,32 +353,51 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
          *  inject tokens as query string parameters into url
          */
         function injectTokenAttribute(element, attr, tokenName, tokenValue, pageTokens) {
-            var location = element.getAttribute(attr);
 
-            if (location !== null && isValidUrl(location) && !isUnprotectedExtension(location)) {
-                var uri = parseUri(location);
-                var value = (pageTokens[uri] != null ? pageTokens[uri] : tokenValue);
+            const addTokenToLocation = function(location, tokenName, value) {
+                let newLocation;
+                if (location.indexOf('?') === -1) {
+                    newLocation = location + '?' + tokenName + '=' + value;
+                } else {
+                    newLocation = location + '&' + tokenName + '=' + value;
+                }
+                return newLocation;
+            }
 
-                let tokenValueMatcher = new RegExp('(?:' + tokenName + '=)([^?|#|&]+)', 'gi');
-                let tokenMatches = tokenValueMatcher.exec(location);
+            const location = element.getAttribute && element.getAttribute(attr);
+
+            if (location != null && isValidUrl(location) && !isUnprotectedExtension(location)) {
+                const uri = parseUri(location);
+                const value = (pageTokens[uri] != null ? pageTokens[uri] : tokenValue);
+
+                const tokenValueMatcher = new RegExp('(?:' + tokenName + '=)([^?|#|&]+)', 'gi');
+                const tokenMatches = tokenValueMatcher.exec(location);
 
                 if (tokenMatches === null || tokenMatches.length === 0) {
-                    if (location.indexOf('?') === -1) {
-                        location = location + '?' + tokenName + '=' + value;
+                    let newLocation;
+
+                    const anchorIndex = location.indexOf('#');
+                    if (anchorIndex !== -1) {
+                        const baseLocation = location.split('#')[0];
+                        const anchor = location.substring(anchorIndex);
+
+                        newLocation = addTokenToLocation(baseLocation, tokenName, value) + anchor;
                     } else {
-                        location = location + '&' + tokenName + '=' + value;
+                        newLocation = addTokenToLocation(location, tokenName, value);
                     }
 
                     try {
-                        element.setAttribute(attr, location);
+                        element.setAttribute(attr, newLocation);
+                        console.debug('Attribute [', attr, '] with value [', newLocation, '] set for element: ', element);
                     } catch (e) {
                         // attempted to set/update unsupported attribute
                     }
                 } else {
                     let newLocation = location;
-                    tokenMatches.slice(1).forEach(match => newLocation = newLocation.replace(match, value));
+                    tokenMatches.slice(1).forEach(match => newLocation = newLocation.replace(match, value)); // TODO do not use arrow functions because IE does not support it
 
                     element.setAttribute(attr, newLocation);
+                    console.debug('Attribute [', attr, '] with value [', newLocation, '] set for element: ', element);
                 }
             }
         }
@@ -421,6 +442,35 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
             return isSupported;
         }
 
+        function injectToElements(domElements, tokenName, tokenValue, pageTokens) {
+            var len = domElements.length;
+
+            var injectForms = '%INJECT_FORMS%';
+            var injectGetForms = '%INJECT_GET_FORMS%';
+            var injectFormAttributes = '%INJECT_FORM_ATTRIBUTES%';
+            var injectAttributes = '%INJECT_ATTRIBUTES%';
+
+            for (let i = 0; i < len; i++) {
+                let element = domElements[i];
+
+                if (element.tagName && element.tagName.toLowerCase() === 'form') {
+                    if (injectForms) {
+                        injectTokenForm(element, tokenName, tokenValue, pageTokens, injectGetForms);
+
+                        /* adjust array length after addition of new element */
+                        len = domElements.length; // TODO review
+                    }
+                    if (injectFormAttributes) {
+                        injectTokenAttribute(element, 'action', tokenName, tokenValue, pageTokens);
+                    }
+                    /* inject into attribute */
+                } else if (injectAttributes) {
+                    injectTokenAttribute(element, 'src', tokenName, tokenValue, pageTokens);
+                    injectTokenAttribute(element, 'href', tokenName, tokenValue, pageTokens);
+                }
+            }
+        }
+
         /**
          *  inject csrf prevention tokens throughout dom
          */
@@ -434,34 +484,8 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 
             /* iterate over all elements and injection token */
             var all = document.all ? document.all : document.getElementsByTagName('*');
-            var len = all.length;
 
-            //these are read from the csrf guard config file(s)
-            var injectForms = '%INJECT_FORMS%';
-            var injectGetForms = '%INJECT_GET_FORMS%';
-            var injectFormAttributes = '%INJECT_FORM_ATTRIBUTES%';
-            var injectAttributes = '%INJECT_ATTRIBUTES%';
-
-            for (var i = 0; i < len; i++) {
-                var element = all[i];
-
-                /* inject into form */
-                if (element.tagName.toLowerCase() === 'form') {
-                    if (injectForms) {
-                        injectTokenForm(element, tokenName, tokenValue, pageTokens, injectGetForms);
-
-                        /* adjust array length after addition of new element */
-                        len = all.length;
-                    }
-                    if (injectFormAttributes) {
-                        injectTokenAttribute(element, 'action', tokenName, tokenValue, pageTokens);
-                    }
-                    /* inject into attribute */
-                } else if (injectAttributes) {
-                    injectTokenAttribute(element, 'src', tokenName, tokenValue, pageTokens);
-                    injectTokenAttribute(element, 'href', tokenName, tokenValue, pageTokens);
-                }
-            }
+            injectToElements(all, tokenName, tokenValue, pageTokens);
         }
 
         function parsePageTokens(response) {
@@ -500,7 +524,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
         function requestPageTokens(tokenName, tokenValue, callback) {
             var xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject('Microsoft.XMLHTTP');
 
-            xhr.open('POST', '%SERVLET_PATH%', true);
+            xhr.open('POST', '%SERVLET_PATH%');
             if ('%INJECT_XHR%' !== true) {
                 if (tokenName !== undefined && tokenValue !== undefined) {
                     xhr.setRequestHeader(tokenName, tokenValue);
@@ -521,13 +545,37 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
             xhr.send(null);
         }
 
+        function handleDynamicallyCreatedNodes() {
+            if (MutationObserver) {
+                const formMutationObserver = new MutationObserver(function (mutations, observer) {
+                    for (let i in mutations) {
+                        const mutation = mutations[i];
+                        const addedNodes = mutation.addedNodes;
+                        if (mutation.type === 'childList' && addedNodes.length && addedNodes.length > 0) {
+                            injectToElements(addedNodes, tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
+                        }
+                    }
+                });
+
+                formMutationObserver.observe(document, {attributes: false, childList: true, subtree: true});
+                addEvent(window, 'unload', formMutationObserver.disconnect);
+            } else {
+                addEvent(window, 'DOMNodeInserted', function (event) {
+                    const target = event.target || event.srcElement;
+                    if (event.type === 'DOMNodeInserted') {
+                        injectToElements(target, tokenName, masterTokenValue, pageTokenWrapper.pageTokens); // TODO review the target
+                    }
+                });
+            }
+        }
+
         /*
-             * Only inject the tokens if the JavaScript was referenced from HTML that
-             * was served by us. Otherwise, the code was referenced from malicious HTML
-             * which may be trying to steal tokens using JavaScript hijacking techniques.
-             * The token is now removed and fetched using another POST request to solve,
-             * the token hijacking problem.
-             */
+         * Only inject the tokens if the JavaScript was referenced from HTML that
+         * was served by us. Otherwise, the code was referenced from malicious HTML
+         * which may be trying to steal tokens using JavaScript hijacking techniques.
+         * The token is now removed and fetched using another POST request to solve,
+         * the token hijacking problem.
+         */
         if (isValidDomain(document.domain, '%DOMAIN_ORIGIN%')) {
             var tokenName = '%TOKEN_NAME%';
             var masterTokenValue = '%TOKEN_VALUE%';
@@ -546,6 +594,10 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 }
             });
 
+            if ('%INJECT_DYNAMIC_NODES%') { // TODO should it be invoked only after the DOMContentLoaded?
+                handleDynamicallyCreatedNodes();
+            }
+
             /* optionally include Ajax support */
             if ('%INJECT_XHR%') {
                 if (navigator.appName === 'Microsoft Internet Explorer') {
@@ -554,10 +606,9 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                     hijackStandard();
                 }
 
-
                 XMLHttpRequest.prototype.onsend = function (data) {
                     if ('%INJECT_XHR%') {
-                        this.addEventListener('readystatechange', function () {
+                        addEvent(this, 'readystatechange', function () {
                             if (this.readyState === 4) {
                                 let tokenResponseHeader = this.getResponseHeader(tokenName);
                                 if (tokenResponseHeader != undefined) {
@@ -571,7 +622,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 
                                         let newPageTokens = tokenTO['pageTokens'];
                                         if (newPageTokens !== undefined) {
-                                            Object.keys(newPageTokens).forEach(key => pageTokenWrapper.pageTokens[key] = newPageTokens[key])
+                                            Object.keys(newPageTokens).forEach(key => pageTokenWrapper.pageTokens[key] = newPageTokens[key]); // TODO do not use arrow functions because IE does not support it
                                         }
 
                                         injectTokens(tokenName, masterTokenValue, pageTokenWrapper.pageTokens);

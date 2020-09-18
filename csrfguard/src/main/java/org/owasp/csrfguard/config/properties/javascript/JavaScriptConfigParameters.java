@@ -35,6 +35,8 @@ public final class JavaScriptConfigParameters {
 
     private JavaScriptConfigParameters() {}
 
+    // TODO document the names of the configurations that can be used for overriding the values from the web.xml in the properties file
+
     public static final StringJsConfigParameter CACHE_CONTROL = new StringJsConfigParameter("cache-control", "org.owasp.csrfguard.JavascriptServlet.cacheControl", "private, max-age=28800");
     public static final StringJsConfigParameter REFERER_PATTERN  = new StringJsConfigParameter("referer-pattern", "org.owasp.csrfguard.JavascriptServlet.refererPattern", ".*");
     public static final StringJsConfigParameter UNPROTECTED_EXTENSIONS = new StringJsConfigParameter("unprotected-extensions", "org.owasp.csrfguard.JavascriptServlet.UnprotectedExtensions", StringUtils.EMPTY);
@@ -46,6 +48,7 @@ public final class JavaScriptConfigParameters {
     public static final BooleanJsConfigParameter INJECT_GET_FORMS = new BooleanJsConfigParameter("inject-get-forms", "org.owasp.csrfguard.JavascriptServlet.injectGetForms", true);
     public static final BooleanJsConfigParameter INJECT_FORM_ATTRIBUTES = new BooleanJsConfigParameter("inject-form-attributes", "org.owasp.csrfguard.JavascriptServlet.injectFormAttributes", true);
     public static final BooleanJsConfigParameter INJECT_INTO_FORMS = new BooleanJsConfigParameter("inject-into-forms", "org.owasp.csrfguard.JavascriptServlet.injectIntoForms", true);
+    public static final BooleanJsConfigParameter INJECT_INTO_DYNAMICALLY_CREATED_NODES = new BooleanJsConfigParameter("inject-into-dynamic", "org.owasp.csrfguard.JavascriptServlet.injectIntoDynamicNodes", false);
     public static final BooleanJsConfigParameter REFERER_MATCH_PROTOCOL = new BooleanJsConfigParameter("referer-match-protocol", "org.owasp.csrfguard.JavascriptServlet.refererMatchProtocol", true);
     public static final BooleanJsConfigParameter REFERER_MATCH_DOMAIN = new BooleanJsConfigParameter("referer-match-domain", "org.owasp.csrfguard.JavascriptServlet.refererMatchDomain", true);
 }

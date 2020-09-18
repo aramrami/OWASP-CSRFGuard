@@ -87,6 +87,8 @@ public final class JavaScriptServlet extends HttpServlet {
 
     private static final String INJECT_INTO_ATTRIBUTES_IDENTIFIER = "'%INJECT_ATTRIBUTES%'";
 
+    private static final String INJECT_INTO_DYNAMICALLY_CREATED_NODES = "'%INJECT_DYNAMIC_NODES%'";
+
     private static final String TOKENS_PER_PAGE_IDENTIFIER = "'%TOKENS_PER_PAGE%'";
 
     /* MIME Type constants */
@@ -205,6 +207,7 @@ public final class JavaScriptServlet extends HttpServlet {
                    .replace(INJECT_GET_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectGetForms()))
                    .replace(INJECT_FORM_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectFormAttributes()))
                    .replace(INJECT_INTO_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoAttributes()))
+                   .replace(INJECT_INTO_DYNAMICALLY_CREATED_NODES, String.valueOf(csrfGuard.isJavascriptInjectIntoDynamicallyCreatedNodes()))
                    .replace(INJECT_INTO_XHR_IDENTIFIER, String.valueOf(csrfGuard.isAjaxEnabled()))
                    .replace(TOKENS_PER_PAGE_IDENTIFIER, String.valueOf(csrfGuard.isTokenPerPageEnabled()))
                    .replace(UNPROTECTED_EXTENSIONS_IDENTIFIER, String.valueOf(csrfGuard.getJavascriptUnprotectedExtensions()))

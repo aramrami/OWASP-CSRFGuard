@@ -96,9 +96,11 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private final String domainOrigin;
 
-	private boolean javascriptParamsInitialized = false;
+	private final TemporalAmount pageTokenSynchronizationTolerance;
 
 	private final boolean validationWhenNoSessionExists;
+
+	private boolean javascriptParamsInitialized = false;
 
 	private String javascriptTemplateCode;
 
@@ -116,6 +118,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private boolean javascriptInjectIntoAttributes;
 
+	private boolean isJavascriptInjectIntoDynamicallyCreatedNodes;
+
 	private String javascriptXrequestedWith;
 
 	private boolean javascriptInjectGetForms;
@@ -129,8 +133,6 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	private LogicalSessionExtractor logicalSessionExtractor;
 
 	private TokenHolder tokenHolder;
-
-	private TemporalAmount pageTokenSynchronizationTolerance;
 
 	public PropertiesConfigurationProvider(final Properties properties) {
 		try {
@@ -317,7 +319,13 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		return this.javascriptInjectIntoAttributes;
 	}
 
-	@Override
+    @Override
+    public boolean isJavascriptInjectIntoDynamicallyCreatedNodes() {
+		this.javascriptInitParamsIfNeeded();
+		return this.isJavascriptInjectIntoDynamicallyCreatedNodes;
+    }
+
+    @Override
 	public String getJavascriptXrequestedWith() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptXrequestedWith;
@@ -342,8 +350,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	@Override
 	public boolean isJavascriptInjectGetForms() {
 		this.javascriptInitParamsIfNeeded();
-
-		return this.javascriptInjectGetForms && getUnprotectedMethods().stream().noneMatch(unProtectedMethod -> unProtectedMethod.equalsIgnoreCase("GET"));
+		return this.javascriptInjectGetForms;
 	}
 
 	@Override
@@ -513,6 +520,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				this.javascriptInjectGetForms = getProperty(JavaScriptConfigParameters.INJECT_GET_FORMS, servletConfig);
 				this.javascriptInjectFormAttributes = getProperty(JavaScriptConfigParameters.INJECT_FORM_ATTRIBUTES, servletConfig);
 				this.javascriptInjectIntoForms = getProperty(JavaScriptConfigParameters.INJECT_INTO_FORMS, servletConfig);
+				this.isJavascriptInjectIntoDynamicallyCreatedNodes = getProperty(JavaScriptConfigParameters.INJECT_INTO_DYNAMICALLY_CREATED_NODES, servletConfig);
 				this.javascriptRefererPattern = Pattern.compile(getProperty(JavaScriptConfigParameters.REFERER_PATTERN, servletConfig));
 				this.javascriptRefererMatchProtocol = getProperty(JavaScriptConfigParameters.REFERER_MATCH_PROTOCOL, servletConfig);
 				this.javascriptRefererMatchDomain = getProperty(JavaScriptConfigParameters.REFERER_MATCH_DOMAIN, servletConfig);

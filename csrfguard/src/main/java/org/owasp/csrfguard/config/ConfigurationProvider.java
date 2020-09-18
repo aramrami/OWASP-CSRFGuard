@@ -271,6 +271,12 @@ public interface ConfigurationProvider {
     boolean isJavascriptInjectIntoAttributes();
 
     /**
+     * TODO
+     * @return
+     */
+    boolean isJavascriptInjectIntoDynamicallyCreatedNodes();
+
+    /**
      * TODO document
      *
      * @return

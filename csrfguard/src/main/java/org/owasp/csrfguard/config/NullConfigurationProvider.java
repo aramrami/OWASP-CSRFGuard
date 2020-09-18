@@ -213,6 +213,11 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
     }
 
     @Override
+    public boolean isJavascriptInjectIntoDynamicallyCreatedNodes() {
+        return false;
+    }
+
+    @Override
     public String getJavascriptXrequestedWith() {
         return null;
     }
