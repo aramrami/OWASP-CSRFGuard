@@ -46,6 +46,7 @@ import org.owasp.csrfguard.token.service.TokenService;
 import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
 import org.owasp.csrfguard.token.transferobject.TokenTO;
+import org.owasp.csrfguard.util.CsrfGuardPropertiesToStringBuilder;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 import org.owasp.csrfguard.util.MessageConstants;
 import org.owasp.csrfguard.util.RegexValidationUtil;
@@ -58,12 +59,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public final class CsrfGuard {
-
-    private static final String NEW_LINE = "\r\n";
 
     /**
      * cache the configuration for a minute
@@ -310,41 +307,41 @@ public final class CsrfGuard {
         }
 
         /* create auto posting form */
-        final StringBuilder sb = new StringBuilder();
+        final StringBuilder stringBuilder = new StringBuilder();
 
         // TODO this HTML template should rather be extracted to a separate file
-        sb.append("<html>").append(NEW_LINE)
-          .append("<head>").append(NEW_LINE)
-          .append("<title>OWASP CSRFGuard Project - New Token Landing Page</title>").append(NEW_LINE)
-          .append("</head>").append(NEW_LINE)
-          .append("<body>").append(NEW_LINE)
-          .append("<script type=\"text/javascript\">").append(NEW_LINE)
-          .append("var form = document.createElement(\"form\");").append(NEW_LINE)
-          .append("form.setAttribute(\"method\", \"post\");").append(NEW_LINE)
-          .append("form.setAttribute(\"action\", \"")
-          .append(landingPage)
-          .append("\");").append(NEW_LINE);
+        stringBuilder.append("<html>")
+                     .append("<head>")
+                     .append("<title>OWASP CSRFGuard Project - New Token Landing Page</title>")
+                     .append("</head>")
+                     .append("<body>")
+                     .append("<script type=\"text/javascript\">")
+                     .append("var form = document.createElement(\"form\");")
+                     .append("form.setAttribute(\"method\", \"post\");")
+                     .append("form.setAttribute(\"action\", \"")
+                     .append(landingPage)
+                     .append("\");");
 
         /* only include token if needed */
         if (isProtectedPage(landingPage)) {
-            sb.append("var hiddenField = document.createElement(\"input\");").append(NEW_LINE)
-              .append("hiddenField.setAttribute(\"type\", \"hidden\");").append(NEW_LINE)
-              .append("hiddenField.setAttribute(\"name\", \"")
-              .append(getTokenName())
-              .append("\");").append(NEW_LINE)
-              .append("hiddenField.setAttribute(\"value\", \"")
-              .append(getTokenService().getTokenValue(logicalSessionKey, landingPage))
-              .append("\");").append(NEW_LINE)
-              .append("form.appendChild(hiddenField);").append(NEW_LINE);
+            stringBuilder.append("var hiddenField = document.createElement(\"input\");")
+                         .append("hiddenField.setAttribute(\"type\", \"hidden\");")
+                         .append("hiddenField.setAttribute(\"name\", \"")
+                         .append(getTokenName())
+                         .append("\");")
+                         .append("hiddenField.setAttribute(\"value\", \"")
+                         .append(getTokenService().getTokenValue(logicalSessionKey, landingPage))
+                         .append("\");")
+                         .append("form.appendChild(hiddenField);");
         }
 
-        sb.append("document.body.appendChild(form);").append(NEW_LINE)
-          .append("form.submit();").append(NEW_LINE)
-          .append("</script>").append(NEW_LINE)
-          .append("</body>").append(NEW_LINE)
-          .append("</html>").append(NEW_LINE);
+        stringBuilder.append("document.body.appendChild(form);")
+                     .append("form.submit();")
+                     .append("</script>")
+                     .append("</body>")
+                     .append("</html>");
 
-        final String code = sb.toString();
+        final String code = stringBuilder.toString();
 
         /* setup headers */
         response.setContentType("text/html");
@@ -385,33 +382,8 @@ public final class CsrfGuard {
 
     @Override
     public String toString() {
-        final String result;
-
-        if (isEnabled()) {
-            final String prefix = "*";
-            final String delimiter = Stream.generate(() -> prefix).limit(53).collect(Collectors.joining());
-
-            final StringBuilder sb = new StringBuilder();
-
-            sb.append(NEW_LINE).append(delimiter).append(NEW_LINE)
-              .append(prefix).append(' ').append("Owasp.CsrfGuard Properties").append(NEW_LINE)
-              .append(prefix).append(NEW_LINE)
-              .append(getConfigurationsToDisplay(prefix)).append(NEW_LINE);
-
-            for (final IAction action : getActions()) {
-                sb.append(prefix).append(" Action: ").append(action.getClass().getName()).append(NEW_LINE);
-
-                final String parameters = action.getParameterMap().entrySet().stream().map(e -> String.format("%s\tParameter: %s = %s", prefix, e.getKey(), e.getValue())).collect(Collectors.joining(NEW_LINE));
-                sb.append(parameters).append(NEW_LINE);
-            }
-
-            sb.append(delimiter).append(NEW_LINE);
-
-            result = sb.toString();
-        } else {
-            result = "OWASP CSRFGuard is disabled.";
-        }
-        return result;
+        return isEnabled() ? new CsrfGuardPropertiesToStringBuilder(config()).toString()
+                           : "OWASP CSRFGuard is disabled.";
     }
 
     private static boolean isUriPathMatch(final String testPath, final String requestPath) {
@@ -556,37 +528,6 @@ public final class CsrfGuard {
         configurationProvider = configurationProviderFactory.retrieveConfiguration(this.properties);
         configurationProviderExpirableCache.put(Boolean.TRUE, configurationProvider);
         return configurationProvider;
-    }
-
-    private String getConfigurationsToDisplay(final String prefix) {
-        final Map<Object, Object> configurations = new LinkedHashMap<>();
-
-        configurations.put("Logger", getLogger().getClass().getName());
-        configurations.put("NewTokenLandingPage", getNewTokenLandingPage());
-        configurations.put("PRNG", getPrng().getAlgorithm());
-        configurations.put("TokenLength", getTokenLength());
-        configurations.put("TokenName", getTokenName());
-        configurations.put("Ajax", isAjaxEnabled());
-        configurations.put("Rotate", isRotateEnabled());
-        configurations.put("JavaScript cache control", getJavascriptCacheControl());
-        configurations.put("JavaScript domain strict", isJavascriptDomainStrict());
-        configurations.put("JavaScript inject attributes", isJavascriptInjectIntoAttributes());
-        configurations.put("JavaScript inject forms", isJavascriptInjectIntoForms());
-        configurations.put("JavaScript referer pattern", getJavascriptRefererPattern());
-        configurations.put("JavaScript referer match protocol", isJavascriptRefererMatchProtocol());
-        configurations.put("JavaScript referer match domain", isJavascriptRefererMatchDomain());
-        configurations.put("JavaScript unprotected extensions", getJavascriptUnprotectedExtensions());
-        configurations.put("JavaScript source file", getJavascriptSourceFile());
-        configurations.put("JavaScript X requested with", getJavascriptXrequestedWith());
-        configurations.put("Protected methods", String.join(",", getProtectedMethods()));
-        configurations.put("Protected pages size", getProtectedPages().size());
-        configurations.put("Unprotected methods", String.join(",", getUnprotectedMethods()));
-        configurations.put("Unprotected pages size", getUnprotectedPages().size());
-        configurations.put("TokenPerPage", isTokenPerPageEnabled());
-        configurations.put("Enabled", isEnabled());
-        configurations.put("ValidateWhenNoSessionExists", isValidateWhenNoSessionExists());
-
-        return configurations.entrySet().stream().map(e -> String.format("%s %s: %s", prefix, e.getKey(), e.getValue())).collect(Collectors.joining(NEW_LINE));
     }
 
     /**
