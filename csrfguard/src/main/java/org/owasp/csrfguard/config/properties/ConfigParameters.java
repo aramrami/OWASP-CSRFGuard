@@ -46,7 +46,7 @@ public final class ConfigParameters {
     public static final SimpleBooleanConfigParameter CSRFGUARD_PROTECT = new SimpleBooleanConfigParameter("org.owasp.csrfguard.Protect", false);
 
     public static final SimpleIntConfigParameter TOKEN_LENGTH = new SimpleIntConfigParameter("org.owasp.csrfguard.TokenLength", 32);
-    public static final SimpleTemporalAmountParameter PAGE_TOKEN_SYNCHRONIZATION_TOLERANCE = new SimpleTemporalAmountParameter("org.owasp.csrfguard.PageTokenSynchronizationTolerance", Duration.of(2, ChronoUnit.SECONDS));
+    public static final SimpleDurationParameter PAGE_TOKEN_SYNCHRONIZATION_TOLERANCE = new SimpleDurationParameter("org.owasp.csrfguard.PageTokenSynchronizationTolerance", Duration.of(2, ChronoUnit.SECONDS));
 
     public static final Pair<String, String> TOKEN_NAME = Pair.of("org.owasp.csrfguard.TokenName", "OWASP-CSRFGUARD");
     public static final Pair<String, String> LOGGER = Pair.of("org.owasp.csrfguard.Logger", "org.owasp.csrfguard.log.ConsoleLogger");

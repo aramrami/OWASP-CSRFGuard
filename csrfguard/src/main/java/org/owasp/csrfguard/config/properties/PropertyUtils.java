@@ -34,7 +34,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 
 import java.time.Duration;
-import java.time.temporal.TemporalAmount;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Function;
@@ -71,8 +70,8 @@ public final class PropertyUtils {
         return getProperty(properties, configParameter.getName(), configParameter.getDefaultValue(), function);
     }
 
-    public static TemporalAmount getProperty(final Properties properties, final SimpleTemporalAmountParameter configParameter) {
-        return getProperty(properties, configParameter.getName(), configParameter.getDefaultValue(), Duration::parse);
+    public static Duration getProperty(final Properties properties, final SimpleDurationParameter configParameter) {
+        return getProperty(properties, configParameter.getName(), configParameter.getDefaultValue(), millis -> Duration.ofMillis(Long.parseLong(millis)));
     }
 
     public static <T> T getProperty(final Properties properties, final String propertyName, final T defaultValue, final Function<String, T> function) {

@@ -29,14 +29,13 @@
 package org.owasp.csrfguard.config.properties;
 
 import java.time.Duration;
-import java.time.temporal.TemporalAmount;
 
-public class SimpleTemporalAmountParameter implements SimpleConfigParameter<String, TemporalAmount> {
+public class SimpleDurationParameter implements SimpleConfigParameter<String, Duration> {
 
     private final String name;
     private final Duration defaultDuration;
 
-    public SimpleTemporalAmountParameter(final String name, final Duration defaultDuration) {
+    public SimpleDurationParameter(final String name, final Duration defaultDuration) {
         this.name = name;
         this.defaultDuration = defaultDuration;
     }
@@ -47,7 +46,7 @@ public class SimpleTemporalAmountParameter implements SimpleConfigParameter<Stri
     }
 
     @Override
-    public TemporalAmount getDefaultValue() {
+    public Duration getDefaultValue() {
         return this.defaultDuration;
     }
 }

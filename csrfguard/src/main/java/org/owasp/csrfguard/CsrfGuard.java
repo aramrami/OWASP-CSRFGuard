@@ -54,7 +54,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.time.temporal.TemporalAmount;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -365,7 +365,7 @@ public final class CsrfGuard {
         return config().getDomainOrigin();
     }
 
-    public TemporalAmount getPageTokenSynchronizationTolerance() {
+    public Duration getPageTokenSynchronizationTolerance() {
         return config().getPageTokenSynchronizationTolerance();
     }
 

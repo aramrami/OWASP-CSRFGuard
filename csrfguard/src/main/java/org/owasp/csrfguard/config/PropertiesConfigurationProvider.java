@@ -45,7 +45,7 @@ import org.owasp.csrfguard.util.CsrfGuardUtils;
 import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.time.temporal.TemporalAmount;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
@@ -96,7 +96,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private final String domainOrigin;
 
-	private final TemporalAmount pageTokenSynchronizationTolerance;
+	private final Duration pageTokenSynchronizationTolerance;
 
 	private final boolean validationWhenNoSessionExists;
 
@@ -381,7 +381,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	}
 
     @Override
-    public TemporalAmount getPageTokenSynchronizationTolerance() {
+    public Duration getPageTokenSynchronizationTolerance() {
         return this.pageTokenSynchronizationTolerance;
     }
 

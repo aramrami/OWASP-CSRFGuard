@@ -37,7 +37,7 @@ import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
 
 import java.security.SecureRandom;
-import java.time.temporal.TemporalAmount;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -243,7 +243,7 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
     }
 
     @Override
-    public TemporalAmount getPageTokenSynchronizationTolerance() {
+    public Duration getPageTokenSynchronizationTolerance() {
         return null;
     }
 }
