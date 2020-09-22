@@ -271,17 +271,19 @@ public final class CsrfGuard {
      * @param logicalSession a logical session implementation
      */
     public void onSessionCreated(final LogicalSession logicalSession) {
-        final String logicalSessionKey = logicalSession.getKey();
+        if (isEnabled()) {
+            final String logicalSessionKey = logicalSession.getKey();
 
-        final TokenService tokenService = getTokenService();
-        tokenService.createMasterTokenIfAbsent(logicalSessionKey);
+            final TokenService tokenService = getTokenService();
+            tokenService.createMasterTokenIfAbsent(logicalSessionKey);
 
-        if (isTokenPerPageEnabled()
-            && isTokenPerPagePrecreate()
-            && !logicalSession.areTokensGenerated()) {
+            if (isTokenPerPageEnabled()
+                && isTokenPerPagePrecreate()
+                && !logicalSession.areTokensGenerated()) {
 
-            tokenService.generateProtectedPageTokens(logicalSessionKey);
-            logicalSession.setTokensGenerated(true);
+                tokenService.generateProtectedPageTokens(logicalSessionKey);
+                logicalSession.setTokensGenerated(true);
+            }
         }
     }
 
@@ -293,7 +295,10 @@ public final class CsrfGuard {
      * @param logicalSession a logical session implementation
      */
     public void onSessionDestroyed(final LogicalSession logicalSession) {
-        getTokenHolder().remove(logicalSession.getKey());
+        final TokenHolder tokenHolder = getTokenHolder();
+        if (Objects.nonNull(tokenHolder)) {
+            tokenHolder.remove(logicalSession.getKey());
+        }
     }
 
     public void writeLandingPage(final HttpServletRequest request, final HttpServletResponse response, final String logicalSessionKey) throws IOException {
@@ -380,26 +385,33 @@ public final class CsrfGuard {
 
     @Override
     public String toString() {
-        final String prefix = "*";
-        final String delimiter = Stream.generate(() -> prefix).limit(53).collect(Collectors.joining());
+        final String result;
 
-        final StringBuilder sb = new StringBuilder();
+        if (isEnabled()) {
+            final String prefix = "*";
+            final String delimiter = Stream.generate(() -> prefix).limit(53).collect(Collectors.joining());
 
-        sb.append(NEW_LINE).append(delimiter).append(NEW_LINE)
-          .append(prefix).append(' ').append("Owasp.CsrfGuard Properties").append(NEW_LINE)
-          .append(prefix).append(NEW_LINE)
-          .append(getConfigurationsToDisplay(prefix)).append(NEW_LINE);
+            final StringBuilder sb = new StringBuilder();
 
-        for (final IAction action : getActions()) {
-            sb.append(prefix).append(" Action: ").append(action.getClass().getName()).append(NEW_LINE);
+            sb.append(NEW_LINE).append(delimiter).append(NEW_LINE)
+              .append(prefix).append(' ').append("Owasp.CsrfGuard Properties").append(NEW_LINE)
+              .append(prefix).append(NEW_LINE)
+              .append(getConfigurationsToDisplay(prefix)).append(NEW_LINE);
 
-            final String parameters = action.getParameterMap().entrySet().stream().map(e -> String.format("%s\tParameter: %s = %s", prefix, e.getKey(), e.getValue())).collect(Collectors.joining(NEW_LINE));
-            sb.append(parameters).append(NEW_LINE);
+            for (final IAction action : getActions()) {
+                sb.append(prefix).append(" Action: ").append(action.getClass().getName()).append(NEW_LINE);
+
+                final String parameters = action.getParameterMap().entrySet().stream().map(e -> String.format("%s\tParameter: %s = %s", prefix, e.getKey(), e.getValue())).collect(Collectors.joining(NEW_LINE));
+                sb.append(parameters).append(NEW_LINE);
+            }
+
+            sb.append(delimiter).append(NEW_LINE);
+
+            result = sb.toString();
+        } else {
+            result = "OWASP CSRFGuard is disabled.";
         }
-
-        sb.append(delimiter).append(NEW_LINE);
-
-        return sb.toString();
+        return result;
     }
 
     private static boolean isUriPathMatch(final String testPath, final String requestPath) {
@@ -444,7 +456,7 @@ public final class CsrfGuard {
 
     /**
      * Rotation in case of AJAX requests is not currently not supported because of the possible race conditions.
-     *
+     * <p>
      * A Single Page Application can fire multiple simultaneous requests.
      * If rotation is enabled, the first request might trigger a token change before the validation of the second request with the same token, causing
      * false-positive CSRF intrusion exceptions.

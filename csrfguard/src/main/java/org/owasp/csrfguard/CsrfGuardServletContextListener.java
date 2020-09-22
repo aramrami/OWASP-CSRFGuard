@@ -78,10 +78,10 @@ public class CsrfGuardServletContextListener implements ServletContextListener {
 		final ServletContext context = event.getServletContext();
 		servletContext = context.getContextPath();
 		// since this is just a prefix of a path, then if there is no servlet context, it is the empty string
-		if (servletContext == null || "/".equals(servletContext)) {
+		if (StringUtils.equals(servletContext, "/")) {
 			servletContext = "";
 		}
-		
+
 		configFileName = context.getInitParameter(CONFIG_PARAM);
 
 		if (configFileName == null) {
@@ -121,14 +121,20 @@ public class CsrfGuardServletContextListener implements ServletContextListener {
 	 * @see javax.servlet.ServletContext#log(String)
 	 */
 	public static void printConfigIfConfigured(final ServletContext context, final String prefix) {
-		String printConfig = context.getInitParameter(CONFIG_PRINT_PARAM);
+		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
 
-		if (StringUtils.isBlank(printConfig)) {
-			printConfig = CsrfGuard.getInstance().isPrintConfig() ? "true" : null;
-		}
-		
-		if (Boolean.parseBoolean(printConfig)) {
-			context.log(prefix + CsrfGuard.getInstance().toString());
+		if (csrfGuard.isEnabled()) {
+			String printConfig = context.getInitParameter(CONFIG_PRINT_PARAM);
+
+			if (StringUtils.isBlank(printConfig)) {
+				printConfig = csrfGuard.isPrintConfig() ? "true" : null;
+			}
+
+			if (Boolean.parseBoolean(printConfig)) {
+				context.log(prefix + csrfGuard.toString());
+			}
+		} else {
+			context.log("OWASP CSRFGuard is disabled.");
 		}
 	}
 

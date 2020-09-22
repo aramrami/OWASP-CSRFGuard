@@ -37,6 +37,7 @@ import org.owasp.csrfguard.config.properties.PropertyUtils;
 import org.owasp.csrfguard.config.properties.javascript.JavaScriptConfigParameters;
 import org.owasp.csrfguard.config.properties.javascript.JsConfigParameter;
 import org.owasp.csrfguard.log.ILogger;
+import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.servlet.JavaScriptServlet;
 import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
@@ -44,6 +45,8 @@ import org.owasp.csrfguard.util.CsrfGuardUtils;
 
 import javax.servlet.ServletConfig;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.*;
@@ -58,30 +61,6 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private final ILogger logger;
 
-	private final String tokenName;
-
-	private final int tokenLength;
-
-	private final boolean rotate;
-
-	private final boolean enabled;
-
-	private final boolean tokenPerPage;
-
-	private final boolean tokenPerPagePrecreate;
-
-	private final boolean printConfig;
-
-	private final SecureRandom prng;
-
-	private final String newTokenLandingPage;
-
-	private final boolean useNewTokenLandingPage;
-
-	private final boolean ajax;
-
-	private final boolean protect;
-
 	private final Set<String> protectedPages;
 
 	private final Set<String> unprotectedPages;
@@ -94,11 +73,35 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private final Properties propertiesCache;
 
-	private final String domainOrigin;
+	private final boolean enabled;
 
-	private final Duration pageTokenSynchronizationTolerance;
+	private String tokenName;
 
-	private final boolean validationWhenNoSessionExists;
+	private int tokenLength;
+
+	private boolean rotate;
+
+	private boolean tokenPerPage;
+
+	private boolean tokenPerPagePrecreate;
+
+	private boolean printConfig;
+
+	private SecureRandom prng;
+
+	private String newTokenLandingPage;
+
+	private boolean useNewTokenLandingPage;
+
+	private boolean ajax;
+
+	private boolean protect;
+
+	private String domainOrigin;
+
+	private Duration pageTokenSynchronizationTolerance;
+
+	private boolean validationWhenNoSessionExists;
 
 	private boolean javascriptParamsInitialized = false;
 
@@ -144,38 +147,40 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 			this.unprotectedMethods = new HashSet<>();
 
 			this.logger = CsrfGuardUtils.<ILogger>forName(PropertyUtils.getProperty(properties, ConfigParameters.LOGGER)).newInstance();
-			this.tokenName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_NAME);
-			this.tokenLength = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_LENGTH);
-			this.rotate = PropertyUtils.getProperty(properties, ConfigParameters.ROTATE);
-			this.tokenPerPage = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_PER_PAGE);
 
-			this.validationWhenNoSessionExists = PropertyUtils.getProperty(properties, ConfigParameters.VALIDATE_WHEN_NO_SESSION_EXISTS);
-			this.domainOrigin = PropertyUtils.getProperty(properties, ConfigParameters.DOMAIN_ORIGIN);
-			this.tokenPerPagePrecreate = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_PER_PAGE_PRECREATE);
+            this.enabled = PropertyUtils.getProperty(properties, ConfigParameters.CSRFGUARD_ENABLED);
 
-			this.prng = SecureRandom.getInstance(PropertyUtils.getProperty(properties, ConfigParameters.PRNG),
-												 PropertyUtils.getProperty(properties, ConfigParameters.PRNG_PROVIDER));
+            if (this.enabled) {
+				this.tokenName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_NAME);
+				this.tokenLength = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_LENGTH);
+				this.rotate = PropertyUtils.getProperty(properties, ConfigParameters.ROTATE);
+				this.tokenPerPage = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_PER_PAGE);
 
-			this.printConfig = PropertyUtils.getProperty(properties, ConfigParameters.PRINT_ENABLED);
+				this.validationWhenNoSessionExists = PropertyUtils.getProperty(properties, ConfigParameters.VALIDATE_WHEN_NO_SESSION_EXISTS);
+				this.domainOrigin = PropertyUtils.getProperty(properties, ConfigParameters.DOMAIN_ORIGIN);
+				this.tokenPerPagePrecreate = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_PER_PAGE_PRECREATE);
 
-			// TODO does it worth checking all this if it's not enabled?
-			this.enabled = PropertyUtils.getProperty(properties, ConfigParameters.CSRFGUARD_ENABLED);
-			this.protect = PropertyUtils.getProperty(properties, ConfigParameters.CSRFGUARD_PROTECT);
+				this.prng = getSecureRandomInstance(properties);
 
-			this.newTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.NEW_TOKEN_LANDING_PAGE);
-			this.useNewTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.getUseNewTokenLandingPage(this.newTokenLandingPage));
+				this.printConfig = PropertyUtils.getProperty(properties, ConfigParameters.PRINT_ENABLED);
 
-			this.ajax = PropertyUtils.getProperty(properties, ConfigParameters.AJAX_ENABLED);
+				this.protect = PropertyUtils.getProperty(properties, ConfigParameters.CSRFGUARD_PROTECT);
 
-			this.pageTokenSynchronizationTolerance = PropertyUtils.getProperty(properties, ConfigParameters.PAGE_TOKEN_SYNCHRONIZATION_TOLERANCE);
+				this.newTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.NEW_TOKEN_LANDING_PAGE);
+				this.useNewTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.getUseNewTokenLandingPage(this.newTokenLandingPage));
 
-			initializeTokenPersistenceConfigurations(properties);
+				this.ajax = PropertyUtils.getProperty(properties, ConfigParameters.AJAX_ENABLED);
 
-			initializeActionParameters(properties, instantiateActions(properties));
+				this.pageTokenSynchronizationTolerance = PropertyUtils.getProperty(properties, ConfigParameters.PAGE_TOKEN_SYNCHRONIZATION_TOLERANCE);
 
-			initializePageProtection(properties);
+				initializeTokenPersistenceConfigurations(properties);
 
-			initializeMethodProtection(properties);
+				initializeActionParameters(properties, instantiateActions(properties));
+
+				initializePageProtection(properties);
+
+				initializeMethodProtection(properties);
+			}
 		} catch (final Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -564,4 +569,18 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 			throw new IllegalArgumentException(String.format("Mandatory parameter [%s] is missing from the configuration!", ConfigParameters.LOGICAL_SESSION_EXTRACTOR_NAME));
 		}
 	}
+
+    private SecureRandom getSecureRandomInstance(final Properties properties) throws NoSuchAlgorithmException {
+        SecureRandom secureRandom;
+        final String algorithm = PropertyUtils.getProperty(properties, ConfigParameters.PRNG);
+        final String provider = PropertyUtils.getProperty(properties, ConfigParameters.PRNG_PROVIDER);
+
+        try {
+            secureRandom = SecureRandom.getInstance(algorithm, provider);
+        } catch (final NoSuchProviderException e) {
+            getLogger().log(LogLevel.Warning, String.format("Secure Random provider %s was not found, trying default providers.", provider));
+            secureRandom = SecureRandom.getInstance(algorithm);
+        }
+        return secureRandom;
+    }
 }
