@@ -42,6 +42,7 @@ public final class JavaScriptConfigParameters {
     public static final StringJsConfigParameter UNPROTECTED_EXTENSIONS = new StringJsConfigParameter("unprotected-extensions", "org.owasp.csrfguard.JavascriptServlet.UnprotectedExtensions", StringUtils.EMPTY);
     public static final StringJsConfigParameter SOURCE_FILE = new StringJsConfigParameter("source-file", "org.owasp.csrfguard.JavascriptServlet.sourceFile", null);
     public static final StringJsConfigParameter X_REQUESTED_WITH = new StringJsConfigParameter("x-requested-with", "org.owasp.csrfguard.JavascriptServlet.xRequestedWith", "OWASP CSRFGuard Project");
+    public static final StringJsConfigParameter DYNAMIC_NODE_CREATION_EVENT_NAME = new StringJsConfigParameter("dynamic-node-creation-event", "org.owasp.csrfguard.JavascriptServlet.dynamicNodeCreationEventName", null);
 
     public static final BooleanJsConfigParameter DOMAIN_STRICT = new BooleanJsConfigParameter("domain-strict", "org.owasp.csrfguard.JavascriptServlet.domainStrict", true);
     public static final BooleanJsConfigParameter INJECT_INTO_ATTRIBUTES = new BooleanJsConfigParameter("inject-into-attributes", "org.owasp.csrfguard.JavascriptServlet.injectIntoAttributes", true);

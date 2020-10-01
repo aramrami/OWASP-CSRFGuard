@@ -218,6 +218,11 @@ public final class NullConfigurationProvider implements ConfigurationProvider {
     }
 
     @Override
+    public String getJavascriptDynamicNodeCreationEventName() {
+        return null;
+    }
+
+    @Override
     public String getJavascriptXrequestedWith() {
         return null;
     }

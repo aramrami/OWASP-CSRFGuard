@@ -228,6 +228,10 @@ public final class CsrfGuard {
         return config().isJavascriptInjectIntoDynamicallyCreatedNodes();
     }
 
+    public String getJavascriptDynamicNodeCreationEventName() {
+        return config().getJavascriptDynamicNodeCreationEventName();
+    }
+
     public String getJavascriptXrequestedWith() {
         return config().getJavascriptXrequestedWith();
     }

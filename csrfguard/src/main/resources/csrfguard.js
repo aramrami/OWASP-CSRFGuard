@@ -546,26 +546,34 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
         }
 
         function handleDynamicallyCreatedNodes() {
-            if (MutationObserver) {
-                const formMutationObserver = new MutationObserver(function (mutations, observer) {
-                    for (let i in mutations) {
-                        const mutation = mutations[i];
-                        const addedNodes = mutation.addedNodes;
-                        if (mutation.type === 'childList' && addedNodes.length && addedNodes.length > 0) {
-                            injectToElements(addedNodes, tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
-                        }
-                    }
-                });
+            const dynamicNodeCreationEventName = '%DYNAMIC_NODE_CREATION_EVENT_NAME%';
 
-                formMutationObserver.observe(document, {attributes: false, childList: true, subtree: true});
-                addEvent(window, 'unload', formMutationObserver.disconnect);
-            } else {
-                addEvent(window, 'DOMNodeInserted', function (event) {
-                    const target = event.target || event.srcElement;
-                    if (event.type === 'DOMNodeInserted') {
-                        injectToElements(target, tokenName, masterTokenValue, pageTokenWrapper.pageTokens); // TODO review the target
-                    }
+            if (dynamicNodeCreationEventName && dynamicNodeCreationEventName.length > 0) {
+                addEvent(window, dynamicNodeCreationEventName, function (event) {
+                    injectToElements([event.detail], tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
                 });
+            }  else {
+                if (MutationObserver) {
+                    const formMutationObserver = new MutationObserver(function (mutations, observer) {
+                        for (let i in mutations) {
+                            const mutation = mutations[i];
+                            const addedNodes = mutation.addedNodes;
+                            if (mutation.type === 'childList' && addedNodes.length && addedNodes.length > 0) {
+                                injectToElements(addedNodes, tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
+                            }
+                        }
+                    });
+
+                    formMutationObserver.observe(document, {attributes: false, childList: true, subtree: true});
+                    addEvent(window, 'unload', formMutationObserver.disconnect);
+                } else {
+                    addEvent(window, 'DOMNodeInserted', function (event) {
+                        const target = event.target || event.srcElement;
+                        if (event.type === 'DOMNodeInserted') {
+                            injectToElements([target], tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
+                        }
+                    });
+                }
             }
         }
 

@@ -71,6 +71,8 @@ public final class JavaScriptServlet extends HttpServlet {
 
     private static final String UNPROTECTED_EXTENSIONS_IDENTIFIER = "%UNPROTECTED_EXTENSIONS%";
 
+    private static final String DYNAMIC_NODE_CREATION_EVENT_NAME_IDENTIFIER = "%DYNAMIC_NODE_CREATION_EVENT_NAME%";
+
     /**
      * Non-string configuration placeholder names that has to be replaced together with the single quotes
      * The single quotes around the attribute names are needed so the template code would be parsable by linters and automated code minifiers.
@@ -87,7 +89,7 @@ public final class JavaScriptServlet extends HttpServlet {
 
     private static final String INJECT_INTO_ATTRIBUTES_IDENTIFIER = "'%INJECT_ATTRIBUTES%'";
 
-    private static final String INJECT_INTO_DYNAMICALLY_CREATED_NODES = "'%INJECT_DYNAMIC_NODES%'";
+    private static final String INJECT_INTO_DYNAMIC_NODES_IDENTIFIER = "'%INJECT_DYNAMIC_NODES%'";
 
     private static final String TOKENS_PER_PAGE_IDENTIFIER = "'%TOKENS_PER_PAGE%'";
 
@@ -207,7 +209,8 @@ public final class JavaScriptServlet extends HttpServlet {
                    .replace(INJECT_GET_FORMS_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectGetForms()))
                    .replace(INJECT_FORM_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectFormAttributes()))
                    .replace(INJECT_INTO_ATTRIBUTES_IDENTIFIER, Boolean.toString(csrfGuard.isJavascriptInjectIntoAttributes()))
-                   .replace(INJECT_INTO_DYNAMICALLY_CREATED_NODES, String.valueOf(csrfGuard.isJavascriptInjectIntoDynamicallyCreatedNodes()))
+                   .replace(INJECT_INTO_DYNAMIC_NODES_IDENTIFIER, String.valueOf(csrfGuard.isJavascriptInjectIntoDynamicallyCreatedNodes()))
+                   .replace(DYNAMIC_NODE_CREATION_EVENT_NAME_IDENTIFIER, StringUtils.defaultString(csrfGuard.getJavascriptDynamicNodeCreationEventName()))
                    .replace(INJECT_INTO_XHR_IDENTIFIER, String.valueOf(csrfGuard.isAjaxEnabled()))
                    .replace(TOKENS_PER_PAGE_IDENTIFIER, String.valueOf(csrfGuard.isTokenPerPageEnabled()))
                    .replace(UNPROTECTED_EXTENSIONS_IDENTIFIER, String.valueOf(csrfGuard.getJavascriptUnprotectedExtensions()))

@@ -123,6 +123,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private boolean isJavascriptInjectIntoDynamicallyCreatedNodes;
 
+	private String javascriptDynamicNodeCreationEventName;
+
 	private String javascriptXrequestedWith;
 
 	private boolean javascriptInjectGetForms;
@@ -331,6 +333,12 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
     }
 
     @Override
+    public String getJavascriptDynamicNodeCreationEventName() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptDynamicNodeCreationEventName;
+    }
+
+    @Override
 	public String getJavascriptXrequestedWith() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptXrequestedWith;
@@ -526,6 +534,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				this.javascriptInjectFormAttributes = getProperty(JavaScriptConfigParameters.INJECT_FORM_ATTRIBUTES, servletConfig);
 				this.javascriptInjectIntoForms = getProperty(JavaScriptConfigParameters.INJECT_INTO_FORMS, servletConfig);
 				this.isJavascriptInjectIntoDynamicallyCreatedNodes = getProperty(JavaScriptConfigParameters.INJECT_INTO_DYNAMICALLY_CREATED_NODES, servletConfig);
+				this.javascriptDynamicNodeCreationEventName = getProperty(JavaScriptConfigParameters.DYNAMIC_NODE_CREATION_EVENT_NAME, servletConfig);
 				this.javascriptRefererPattern = Pattern.compile(getProperty(JavaScriptConfigParameters.REFERER_PATTERN, servletConfig));
 				this.javascriptRefererMatchProtocol = getProperty(JavaScriptConfigParameters.REFERER_MATCH_PROTOCOL, servletConfig);
 				this.javascriptRefererMatchDomain = getProperty(JavaScriptConfigParameters.REFERER_MATCH_DOMAIN, servletConfig);

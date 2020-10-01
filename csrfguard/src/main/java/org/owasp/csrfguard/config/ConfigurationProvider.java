@@ -277,6 +277,12 @@ public interface ConfigurationProvider {
     boolean isJavascriptInjectIntoDynamicallyCreatedNodes();
 
     /**
+     * TODO
+     * @return
+     */
+    String getJavascriptDynamicNodeCreationEventName();
+
+    /**
      * TODO document
      *
      * @return
