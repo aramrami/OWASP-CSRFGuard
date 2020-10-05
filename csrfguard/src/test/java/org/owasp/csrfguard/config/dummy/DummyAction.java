@@ -26,52 +26,40 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.config.dummy;
 
-package org.owasp.csrfguard.token.transferobject;
+import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.CsrfGuardException;
+import org.owasp.csrfguard.action.IAction;
 
-import org.junit.jupiter.api.Test;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Collections;
+import java.util.Map;
 
-import java.util.HashMap;
+public class DummyAction implements IAction {
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+    @Override
+    public void setName(final String name) {}
 
-class TokenTOTest {
-
-    @Test
-    void testMasterTokenToJson() {
-        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD");
-
-        assertEquals(tokenTO.toString(), "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\",\"pageTokens\":{}}");
+    @Override
+    public String getName() {
+        return null;
     }
 
-    @Test
-    void testEmptyTokenToJson() {
-        final TokenTO tokenTO = new TokenTO(null, null);
-        assertEquals(tokenTO.toString(), "{}");
+    @Override
+    public void setParameter(final String name, final String value) {}
+
+    @Override
+    public String getParameter(final String name) {
+        return null;
     }
 
-    @Test
-    void testPageTokensToJson() {
-        final HashMap<String, String> pageTokens = new HashMap<>();
-
-        pageTokens.put("/start", "start-Page-Token-Value");
-        pageTokens.put("/index.html", "index-Page-Token-Value");
-
-        final TokenTO tokenTO = new TokenTO(pageTokens);
-        assertEquals(tokenTO.toString(), "{\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\",\"/start\":\"start-Page-Token-Value\"}}");
+    @Override
+    public Map<String, String> getParameterMap() {
+        return Collections.emptyMap();
     }
 
-    @Test
-    void testMasterTokenPageTokensToJson() {
-        final HashMap<String, String> pageTokens = new HashMap<>();
-
-        pageTokens.put("/start", "start-Page-Token-Value");
-        pageTokens.put("/index.html", "index-Page-Token-Value");
-
-        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD", pageTokens);
-        final String expectedResult = "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\"," +
-                                      "\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\"," +
-                                      "\"/start\":\"start-Page-Token-Value\"}}";
-        assertEquals(tokenTO.toString(), expectedResult);
-    }
+    @Override
+    public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) {}
 }

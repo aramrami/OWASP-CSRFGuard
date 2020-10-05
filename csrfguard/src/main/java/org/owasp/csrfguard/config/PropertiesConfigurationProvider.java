@@ -33,6 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.owasp.csrfguard.action.IAction;
 import org.owasp.csrfguard.config.properties.ConfigParameters;
+import org.owasp.csrfguard.config.properties.HttpMethod;
 import org.owasp.csrfguard.config.properties.PropertyUtils;
 import org.owasp.csrfguard.config.properties.javascript.JavaScriptConfigParameters;
 import org.owasp.csrfguard.config.properties.javascript.JsConfigParameter;
@@ -45,14 +46,13 @@ import org.owasp.csrfguard.util.CsrfGuardUtils;
 
 import javax.servlet.ServletConfig;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * {@link ConfigurationProvider} based on a {@link java.util.Properties} object.
@@ -154,7 +154,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
             if (this.enabled) {
 				this.tokenName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_NAME);
-				this.tokenLength = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_LENGTH);
+				this.tokenLength = getTokenLength(properties);
 				this.rotate = PropertyUtils.getProperty(properties, ConfigParameters.ROTATE);
 				this.tokenPerPage = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_PER_PAGE);
 
@@ -398,7 +398,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
         return this.pageTokenSynchronizationTolerance;
     }
 
-    private Map<String, IAction> instantiateActions(final Properties properties) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    private Map<String, IAction> instantiateActions(final Properties properties) throws InstantiationException, IllegalAccessException {
 		final Map<String, IAction> actionsMap = new HashMap<>();
 
 		for (final Object obj : properties.keySet()) {
@@ -432,9 +432,12 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
 	private static Set<String> initializeMethodProtection(final Properties properties, final String configParameterName) {
 		final String methodProtectionValue = PropertyUtils.getProperty(properties, configParameterName);
-		// TODO create HTTP method enum and (ignore-case) validate the provided values against it
-		return StringUtils.isNotBlank(methodProtectionValue) ? Arrays.stream(methodProtectionValue.split(",")).map(String::trim).collect(Collectors.toSet())
-															 : Collections.emptySet();
+		if (StringUtils.isNotBlank(methodProtectionValue)) {
+			final Set<String> httpMethods = Arrays.stream(methodProtectionValue.split(",")).map(String::trim).collect(Collectors.toSet());
+			HttpMethod.validate(httpMethods);
+			return httpMethods;
+		}
+		return Collections.emptySet();
 	}
 
 	private void initializePageProtection(final Properties properties) {
@@ -467,10 +470,6 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 				final String actionName = directive.substring(0, index);
 				final IAction action = actionsMap.get(actionName);
 
-				if (action == null) {
-					throw new IOException(String.format("action class %s has not yet been specified", actionName));
-				}
-
 				final String parameterName = directive.substring(index + 1);
 				final String parameterValue = PropertyUtils.getProperty(properties, propertyKey);
 
@@ -479,8 +478,8 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		}
 
 		/* ensure at least one action was defined */
-		if (this.actions.size() <= 0) {
-			throw new IOException("failure to define at least one action");
+		if (this.actions.isEmpty()) {
+			throw new IOException("At least one action that will be called in case of CSRF attacks must be defined!");
 		}
 	}
 
@@ -579,17 +578,63 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		}
 	}
 
-    private SecureRandom getSecureRandomInstance(final Properties properties) throws NoSuchAlgorithmException {
-        SecureRandom secureRandom;
+	private int getTokenLength(final Properties properties) {
+		final int tokenLength = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_LENGTH);
+
+		if (tokenLength < 4) {
+			throw new IllegalArgumentException("The token length cannot be less than 4 characters. The recommended default value is: " + ConfigParameters.TOKEN_LENGTH.getDefaultValue());
+		}
+
+		return tokenLength;
+	}
+
+    private SecureRandom getSecureRandomInstance(final Properties properties) {
         final String algorithm = PropertyUtils.getProperty(properties, ConfigParameters.PRNG);
         final String provider = PropertyUtils.getProperty(properties, ConfigParameters.PRNG_PROVIDER);
 
-        try {
-            secureRandom = SecureRandom.getInstance(algorithm, provider);
-        } catch (final NoSuchProviderException e) {
-            getLogger().log(LogLevel.Warning, String.format("Secure Random provider %s was not found, trying default providers.", provider));
-            secureRandom = SecureRandom.getInstance(algorithm);
-        }
-        return secureRandom;
+        return getSecureRandomInstance(algorithm, provider);
     }
+
+    private SecureRandom getSecureRandomInstance(final String algorithm, final String provider) {
+		SecureRandom secureRandom;
+		try {
+			if (Objects.nonNull(provider)) {
+				secureRandom = Objects.nonNull(algorithm) ? SecureRandom.getInstance(algorithm, provider) : getDefaultSecureRandom();
+			} else {
+				secureRandom = Objects.nonNull(algorithm) ? SecureRandom.getInstance(algorithm) : getDefaultSecureRandom();
+			}
+		} catch (final NoSuchProviderException e) {
+			this.logger.log(LogLevel.Warning, String.format("The configured Secure Random Provider '%s' was not found, trying default providers.", provider));
+			this.logger.log(LogLevel.Info, getAvailableSecureRandomProvidersAndAlgorithms());
+
+			secureRandom = getSecureRandomInstance(algorithm, null);
+			logDefaultPrngProviderAndAlgorithm(secureRandom);
+		} catch (final NoSuchAlgorithmException nse) {
+			this.logger.log(LogLevel.Warning, String.format("The configured Secure Random Algorithm '%s' was not found, reverting to system defaults.", algorithm));
+			this.logger.log(LogLevel.Info, getAvailableSecureRandomProvidersAndAlgorithms());
+
+			secureRandom = getSecureRandomInstance(null, null);
+		}
+		return secureRandom;
+	}
+
+	private SecureRandom getDefaultSecureRandom() {
+		final SecureRandom defaultSecureRandom = new SecureRandom();
+		logDefaultPrngProviderAndAlgorithm(defaultSecureRandom);
+		return defaultSecureRandom;
+	}
+
+	private void logDefaultPrngProviderAndAlgorithm(final SecureRandom defaultSecureRandom) {
+		this.logger.log(LogLevel.Info, String.format("Using default Secure Random Provider '%s' and '%s' Algorithm.", defaultSecureRandom.getProvider().getName(), defaultSecureRandom.getAlgorithm()));
+	}
+
+	private static String getAvailableSecureRandomProvidersAndAlgorithms() {
+		final String prefix = "Available Secure Random providers and algorithms:" + System.lineSeparator();
+		return Stream.of(Security.getProviders())
+					 .map(Provider::getServices)
+					 .flatMap(Collection::stream)
+					 .filter(service -> SecureRandom.class.getSimpleName().equals(service.getType()))
+					 .map(service -> String.format("\tProvider: %s | Algorithm: %s", service.getProvider().getName(), service.getAlgorithm()))
+					 .collect(Collectors.joining(System.lineSeparator(), prefix, StringUtils.EMPTY));
+	}
 }

@@ -66,7 +66,7 @@ public final class ConfigParameters {
     public static final String CONFIG_OVERLAY_UPDATE_CHECK_PROPERTY_NAME = "org.owasp.csrfguard.configOverlay.secondsBetweenUpdateChecks";
     public static final String CONFIG_PROVIDER_FACTORY_PROPERTY_NAME = "org.owasp.csrfguard.configuration.provider.factory";
 
-    public final static String ACTION_PREFIX = "org.owasp.csrfguard.action.";
+    public static final String ACTION_PREFIX = "org.owasp.csrfguard.action.";
     public static final String ACTION_ATTRIBUTE_NAME = "AttributeName";
 
     public final static String PROTECTED_PAGE_PREFIX = "org.owasp.csrfguard.protected.";

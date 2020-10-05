@@ -89,8 +89,13 @@ public final class PropertyUtils {
      * @see #commonSubstitutions(String)
      */
     public static String getProperty(final Properties properties, final String propertyName, final String defaultValue) {
-        final String value = Objects.isNull(defaultValue) ? properties.getProperty(propertyName)
-                                                          : properties.getProperty(propertyName, defaultValue);
+        final String value;
+        if (Objects.isNull(defaultValue)) {
+            value = properties.getProperty(propertyName);
+        } else {
+            System.out.printf("The '%s' property was not defined, using '%s' as default value. %n", propertyName, defaultValue);
+            value = properties.getProperty(propertyName, defaultValue);
+        }
 
         return commonSubstitutions(value);
     }

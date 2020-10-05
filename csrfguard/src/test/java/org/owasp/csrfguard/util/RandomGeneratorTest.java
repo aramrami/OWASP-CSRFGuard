@@ -27,51 +27,37 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.owasp.csrfguard.token.transferobject;
+package org.owasp.csrfguard.util;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.owasp.csrfguard.MandatoryProperties;
+import org.owasp.csrfguard.config.PropertiesConfigurationProvider;
 
-import java.util.HashMap;
+import java.security.SecureRandom;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class TokenTOTest {
+class RandomGeneratorTest {
 
-    @Test
-    void testMasterTokenToJson() {
-        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD");
+    private SecureRandom secureRandom;
 
-        assertEquals(tokenTO.toString(), "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\",\"pageTokens\":{}}");
+    @BeforeEach
+    void setUp() {
+        final Properties properties = new MandatoryProperties().get();
+
+        final PropertiesConfigurationProvider configurationProvider = new PropertiesConfigurationProvider(properties);
+
+        this.secureRandom = configurationProvider.getPrng();
     }
 
     @Test
-    void testEmptyTokenToJson() {
-        final TokenTO tokenTO = new TokenTO(null, null);
-        assertEquals(tokenTO.toString(), "{}");
-    }
+    void testCustomTokenLength() {
+        final String randomToken = RandomGenerator.generateRandomId(this.secureRandom, 5);
 
-    @Test
-    void testPageTokensToJson() {
-        final HashMap<String, String> pageTokens = new HashMap<>();
-
-        pageTokens.put("/start", "start-Page-Token-Value");
-        pageTokens.put("/index.html", "index-Page-Token-Value");
-
-        final TokenTO tokenTO = new TokenTO(pageTokens);
-        assertEquals(tokenTO.toString(), "{\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\",\"/start\":\"start-Page-Token-Value\"}}");
-    }
-
-    @Test
-    void testMasterTokenPageTokensToJson() {
-        final HashMap<String, String> pageTokens = new HashMap<>();
-
-        pageTokens.put("/start", "start-Page-Token-Value");
-        pageTokens.put("/index.html", "index-Page-Token-Value");
-
-        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD", pageTokens);
-        final String expectedResult = "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\"," +
-                                      "\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\"," +
-                                      "\"/start\":\"start-Page-Token-Value\"}}";
-        assertEquals(tokenTO.toString(), expectedResult);
+        Assertions.assertEquals(randomToken.charAt(4), '-');
+        assertEquals(randomToken.length(), 6);
     }
 }

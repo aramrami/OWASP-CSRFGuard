@@ -26,52 +26,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard;
 
-package org.owasp.csrfguard.token.transferobject;
+import org.owasp.csrfguard.config.dummy.DummyAction;
+import org.owasp.csrfguard.config.dummy.DummyLogicalSessionExtractor;
+import org.owasp.csrfguard.config.properties.ConfigParameters;
 
-import org.junit.jupiter.api.Test;
+import java.util.Map;
+import java.util.Properties;
 
-import java.util.HashMap;
+public class MandatoryProperties {
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+    public final Properties properties = new Properties();
 
-class TokenTOTest {
-
-    @Test
-    void testMasterTokenToJson() {
-        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD");
-
-        assertEquals(tokenTO.toString(), "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\",\"pageTokens\":{}}");
+    public MandatoryProperties() {
+        this.properties.setProperty(ConfigParameters.LOGICAL_SESSION_EXTRACTOR_NAME, DummyLogicalSessionExtractor.class.getName());
+        this.properties.setProperty(ConfigParameters.ACTION_PREFIX + DummyAction.class.getSimpleName(), DummyAction.class.getName());
     }
 
-    @Test
-    void testEmptyTokenToJson() {
-        final TokenTO tokenTO = new TokenTO(null, null);
-        assertEquals(tokenTO.toString(), "{}");
+    public MandatoryProperties add(final String key, final String value) {
+        this.properties.put(key, value);
+        return this;
     }
 
-    @Test
-    void testPageTokensToJson() {
-        final HashMap<String, String> pageTokens = new HashMap<>();
-
-        pageTokens.put("/start", "start-Page-Token-Value");
-        pageTokens.put("/index.html", "index-Page-Token-Value");
-
-        final TokenTO tokenTO = new TokenTO(pageTokens);
-        assertEquals(tokenTO.toString(), "{\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\",\"/start\":\"start-Page-Token-Value\"}}");
+    public MandatoryProperties add(final Map<String, String> additionalProperties) {
+        this.properties.putAll(additionalProperties);
+        return this;
     }
 
-    @Test
-    void testMasterTokenPageTokensToJson() {
-        final HashMap<String, String> pageTokens = new HashMap<>();
-
-        pageTokens.put("/start", "start-Page-Token-Value");
-        pageTokens.put("/index.html", "index-Page-Token-Value");
-
-        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD", pageTokens);
-        final String expectedResult = "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\"," +
-                                      "\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\"," +
-                                      "\"/start\":\"start-Page-Token-Value\"}}";
-        assertEquals(tokenTO.toString(), expectedResult);
+    public Properties get() {
+        return this.properties;
     }
 }

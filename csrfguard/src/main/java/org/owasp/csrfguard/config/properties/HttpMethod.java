@@ -26,52 +26,23 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.owasp.csrfguard.config.properties;
 
-package org.owasp.csrfguard.token.transferobject;
+import java.util.Arrays;
+import java.util.Collection;
 
-import org.junit.jupiter.api.Test;
+public enum HttpMethod {
 
-import java.util.HashMap;
+    GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-class TokenTOTest {
-
-    @Test
-    void testMasterTokenToJson() {
-        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD");
-
-        assertEquals(tokenTO.toString(), "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\",\"pageTokens\":{}}");
+    public static void validate(final Collection<String> httpMethods) {
+        httpMethods.forEach(HttpMethod::validate);
     }
 
-    @Test
-    void testEmptyTokenToJson() {
-        final TokenTO tokenTO = new TokenTO(null, null);
-        assertEquals(tokenTO.toString(), "{}");
-    }
-
-    @Test
-    void testPageTokensToJson() {
-        final HashMap<String, String> pageTokens = new HashMap<>();
-
-        pageTokens.put("/start", "start-Page-Token-Value");
-        pageTokens.put("/index.html", "index-Page-Token-Value");
-
-        final TokenTO tokenTO = new TokenTO(pageTokens);
-        assertEquals(tokenTO.toString(), "{\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\",\"/start\":\"start-Page-Token-Value\"}}");
-    }
-
-    @Test
-    void testMasterTokenPageTokensToJson() {
-        final HashMap<String, String> pageTokens = new HashMap<>();
-
-        pageTokens.put("/start", "start-Page-Token-Value");
-        pageTokens.put("/index.html", "index-Page-Token-Value");
-
-        final TokenTO tokenTO = new TokenTO("AAAA-BBBB-CCCC-DDDD", pageTokens);
-        final String expectedResult = "{\"masterToken\":\"AAAA-BBBB-CCCC-DDDD\"," +
-                                      "\"pageTokens\":{\"/index.html\":\"index-Page-Token-Value\"," +
-                                      "\"/start\":\"start-Page-Token-Value\"}}";
-        assertEquals(tokenTO.toString(), expectedResult);
+    public static void validate(final String input) {
+        Arrays.stream(values())
+              .filter(value -> input.equalsIgnoreCase(value.toString()))
+              .findAny()
+              .orElseThrow(() -> new IllegalArgumentException(String.format("The provided input '%s' is not a valid HTTP method!", input)));
     }
 }
