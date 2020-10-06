@@ -93,7 +93,10 @@ public final class PropertyUtils {
         if (Objects.isNull(defaultValue)) {
             value = properties.getProperty(propertyName);
         } else {
-            System.out.printf("The '%s' property was not defined, using '%s' as default value. %n", propertyName, defaultValue);
+            if (!properties.containsKey(propertyName)) {
+                // TODO use Logger instead when SLF4J is in place
+                System.out.printf("The '%s' property was not defined, using '%s' as default value. %n", propertyName, defaultValue);
+            }
             value = properties.getProperty(propertyName, defaultValue);
         }
 
