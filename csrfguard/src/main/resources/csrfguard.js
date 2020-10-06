@@ -488,43 +488,15 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
             injectToElements(all, tokenName, tokenValue, pageTokens);
         }
 
-        function parsePageTokens(response) {
-            var name = '';
-            var value = '';
-            var nameContext = true;
-
-            let pageTokens = {};
-            for (var i = 0; i < response.length; i++) {
-                var character = response.charAt(i);
-
-                if (character === ':') {
-                    nameContext = false;
-                } else if (character !== ',') {
-                    if (nameContext === true) {
-                        name += character;
-                    } else {
-                        value += character;
-                    }
-                }
-
-                if (character === ',' || (i + 1) >= response.length) {
-                    pageTokens[name] = value;
-                    name = '';
-                    value = '';
-                    nameContext = true;
-                }
-            }
-
-            return pageTokens;
-        }
-
         /**
          *  obtain array of page specific tokens
          */
         function requestPageTokens(tokenName, tokenValue, callback) {
-            var xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject('Microsoft.XMLHTTP');
+            const xhr = window.XMLHttpRequest ? new window.XMLHttpRequest : new window.ActiveXObject('Microsoft.XMLHTTP');
 
             xhr.open('POST', '%SERVLET_PATH%');
+
+            /* if AJAX is enabled, the token header will be automatically added, no need to set it again */
             if ('%INJECT_XHR%' !== true) {
                 if (tokenName !== undefined && tokenValue !== undefined) {
                     xhr.setRequestHeader(tokenName, tokenValue);
@@ -534,7 +506,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
-                        let pageTokens = parsePageTokens(xhr.responseText);
+                        let pageTokens = JSON.parse(xhr.responseText)['pageTokens'];
                         callback.call(this, pageTokens);
                     } else {
                         alert(xhr.status + ': CSRF check failed');
@@ -615,32 +587,30 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 }
 
                 XMLHttpRequest.prototype.onsend = function (data) {
-                    if ('%INJECT_XHR%') {
-                        addEvent(this, 'readystatechange', function () {
-                            if (this.readyState === 4) {
-                                let tokenResponseHeader = this.getResponseHeader(tokenName);
-                                if (tokenResponseHeader != undefined) {
-                                    try {
-                                        let tokenTO = window.JSON.parse(tokenResponseHeader)
+                    addEvent(this, 'readystatechange', function () {
+                        if (this.readyState === 4) {
+                            let tokenResponseHeader = this.getResponseHeader(tokenName);
+                            if (tokenResponseHeader != undefined) {
+                                try {
+                                    let tokenTO = JSON.parse(tokenResponseHeader)
 
-                                        let newMasterToken = tokenTO['masterToken'];
-                                        if (newMasterToken !== undefined) {
-                                            masterTokenValue = newMasterToken;
-                                        }
-
-                                        let newPageTokens = tokenTO['pageTokens'];
-                                        if (newPageTokens !== undefined) {
-                                            Object.keys(newPageTokens).forEach(key => pageTokenWrapper.pageTokens[key] = newPageTokens[key]); // TODO do not use arrow functions because IE does not support it
-                                        }
-
-                                        injectTokens(tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
-                                    } catch (e) {
-                                        console.error("Error while updating tokens from response header.")
+                                    let newMasterToken = tokenTO['masterToken'];
+                                    if (newMasterToken !== undefined) {
+                                        masterTokenValue = newMasterToken;
                                     }
+
+                                    let newPageTokens = tokenTO['pageTokens'];
+                                    if (newPageTokens !== undefined) {
+                                        Object.keys(newPageTokens).forEach(key => pageTokenWrapper.pageTokens[key] = newPageTokens[key]); // TODO do not use arrow functions because IE does not support it
+                                    }
+
+                                    injectTokens(tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
+                                } catch (e) {
+                                    console.error("Error while updating tokens from response header.")
                                 }
                             }
-                        }, false)
-                    }
+                        }
+                    });
 
                     var computePageToken = function(modifiedUrl) {
                         let result = null;
@@ -704,17 +674,17 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 };
             }
 
-            let pageTokenRequestCallback = function (receivedPageTokens) {
-                pageTokenWrapper.pageTokens = receivedPageTokens;
-
-                pageTokenWrapper.pageTokensLoaded = true;
-
-                if (isLoadedWrapper.isDomContentLoaded) {
-                    injectTokens(tokenName, masterTokenValue, receivedPageTokens);
-                }
-            };
-
             if ('%TOKENS_PER_PAGE%') {
+                let pageTokenRequestCallback = function (receivedPageTokens) {
+                    pageTokenWrapper.pageTokens = receivedPageTokens;
+
+                    pageTokenWrapper.pageTokensLoaded = true;
+
+                    if (isLoadedWrapper.isDomContentLoaded) {
+                        injectTokens(tokenName, masterTokenValue, receivedPageTokens);
+                    }
+                };
+
                 requestPageTokens(tokenName, masterTokenValue, pageTokenRequestCallback);
             } else {
                 /* update nodes in DOM after load */

@@ -176,10 +176,6 @@ public final class CsrfGuard {
         return config().getActions();
     }
 
-    public String getJavascriptSourceFile() {
-        return config().getJavascriptSourceFile();
-    }
-
     /**
      * @return if inject
      * @see ConfigurationProvider#isJavascriptInjectFormAttributes()

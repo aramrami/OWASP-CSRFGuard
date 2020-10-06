@@ -35,8 +35,8 @@ import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
 import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.session.LogicalSession;
-import org.owasp.csrfguard.token.service.TokenService;
 import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
+import org.owasp.csrfguard.token.transferobject.TokenTO;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
 
 import javax.servlet.ServletConfig;
@@ -46,12 +46,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public final class JavaScriptServlet extends HttpServlet {
 
@@ -94,7 +94,7 @@ public final class JavaScriptServlet extends HttpServlet {
     private static final String TOKENS_PER_PAGE_IDENTIFIER = "'%TOKENS_PER_PAGE%'";
 
     /* MIME Type constants */
-    private static final String TEXT_PLAIN_MIME_TYPE = "text/plain";
+    private static final String JSON_MIME_TYPE = "application/json";
     private static final String JAVASCRIPT_MIME_TYPE = "text/javascript";
 
     /**
@@ -147,44 +147,28 @@ public final class JavaScriptServlet extends HttpServlet {
                 // TODO pass the logical session downstream, see whether the null check can be done from here
                 final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);
                 if (Objects.isNull(logicalSession)) {
-                    writeMasterToken(request, response);
+                    throw new IllegalStateException("This should not happen. A logical session should already exist at this point.");
                 } else {
                     final Map<String, String> pageTokens = csrfGuard.getTokenService().getPageTokens(logicalSession.getKey());
-                    writePageTokens(response, pageTokens);
+                    final TokenTO tokenTO = new TokenTO(pageTokens);
+                    writeTokens(response, tokenTO);
                 }
             } else {
-                writeMasterToken(request, response);
+                response.sendError(400, "This endpoint should not be invoked if the Token-Per-Page functionality is disabled!");
             }
         } else {
             response.sendError(403, "Master token missing from the request.");
         }
     }
 
-    private static void writeMasterToken(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
-        response.setContentType(TEXT_PLAIN_MIME_TYPE);
+    private static void writeTokens(final HttpServletResponse response, final TokenTO tokenTO) throws IOException {
+        final String jsonTokenTO = tokenTO.toString();
 
-        final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-        final TokenService tokenService = csrfGuard.getTokenService();
-        final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);
+        response.setContentType(JSON_MIME_TYPE);
+        response.setContentLength(jsonTokenTO.length());
+        response.setCharacterEncoding(Charset.defaultCharset().displayName());
 
-        if (Objects.isNull(logicalSession)) {
-            throw new IllegalStateException("This should not happen");
-        } else {
-            final String masterTokenNameAndValue = delimitTokenFromValue(csrfGuard.getTokenName(), tokenService.getMasterToken(logicalSession.getKey()));
-
-            response.getWriter().write(masterTokenNameAndValue);
-        }
-    }
-
-    private static void writePageTokens(final HttpServletResponse response, final Map<String, String> pageTokens) throws IOException {
-        final String aggregatedPageTokens = pageTokens.entrySet().stream()
-                                                      .map(e -> delimitTokenFromValue(e.getKey(), e.getValue()))
-                                                      .collect(Collectors.joining(","));
-
-        response.setContentType(TEXT_PLAIN_MIME_TYPE);
-        response.setContentLength(aggregatedPageTokens.length());
-
-        response.getWriter().write(aggregatedPageTokens);
+        response.getWriter().write(jsonTokenTO);
     }
 
     private static void writeJavaScript(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
@@ -237,10 +221,6 @@ public final class JavaScriptServlet extends HttpServlet {
             // Should not occur. javax.servlet.http.HttpServletRequest.getRequestURL should only returns valid URLs.
             return "INVALID_URL: " + url.toString();
         }
-    }
-
-    private static String delimitTokenFromValue(final String tokenName, final String tokenValue) {
-        return tokenName + ':' + tokenValue;
     }
 
     private void writeJavaScript(final CsrfGuard csrfGuard, final HttpServletRequest request, final HttpServletResponse response) throws IOException {
