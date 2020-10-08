@@ -327,25 +327,27 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
             var value = tokenValue;
             var action = form.getAttribute('action');
 
-            if (action !== null && isValidUrl(action)) {
-                var uri = parseUri(action);
-                value = pageTokens[uri] != null ? pageTokens[uri] : tokenValue;
-            }
+            if (isValidUrl(action)) {
+                if (action !== null) {
+                    var uri = parseUri(action);
+                    value = pageTokens[uri] != null ? pageTokens[uri] : tokenValue;
+                }
 
-            let hiddenTokenFields = Object.keys(form.elements).filter(i => form.elements[i].name === tokenName); // TODO do not use arrow functions because IE does not support it
+                let hiddenTokenFields = Object.keys(form.elements).filter(i => form.elements[i].name === tokenName); // TODO do not use arrow functions because IE does not support it
 
-            if (hiddenTokenFields.length === 0) {
-                var hidden = document.createElement('input');
+                if (hiddenTokenFields.length === 0) {
+                    var hidden = document.createElement('input');
 
-                hidden.setAttribute('type', 'hidden');
-                hidden.setAttribute('name', tokenName);
-                hidden.setAttribute('value', value);
+                    hidden.setAttribute('type', 'hidden');
+                    hidden.setAttribute('name', tokenName);
+                    hidden.setAttribute('value', value);
 
-                form.appendChild(hidden);
-                console.debug('Hidden input element [', hidden, '] was added to the form: ', form);
-            } else {
-                hiddenTokenFields.forEach(i => form.elements[i].value = value); // TODO do not use arrow functions because IE does not support it
-                console.debug('Hidden token fields [', hiddenTokenFields, '] of form [', form, '] were updated with new token value: ', value);
+                    form.appendChild(hidden);
+                    console.debug('Hidden input element [', hidden, '] was added to the form: ', form);
+                } else {
+                    hiddenTokenFields.forEach(i => form.elements[i].value = value); // TODO do not use arrow functions because IE does not support it
+                    console.debug('Hidden token fields [', hiddenTokenFields, '] of form [', form, '] were updated with new token value: ', value);
+                }
             }
         }
 
