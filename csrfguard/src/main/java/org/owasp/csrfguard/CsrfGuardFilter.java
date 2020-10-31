@@ -36,7 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
-public final class CsrfGuardFilter implements Filter {
+public class CsrfGuardFilter implements Filter {
 
     private FilterConfig filterConfig = null;
 
