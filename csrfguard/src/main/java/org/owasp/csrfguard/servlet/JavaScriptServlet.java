@@ -48,8 +48,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import sun.nio.cs.StandardCharsets;
-
 public final class JavaScriptServlet extends HttpServlet {
 
 	private static final long serialVersionUID = -1459584282530150483L;
