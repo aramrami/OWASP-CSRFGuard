@@ -48,6 +48,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import sun.nio.cs.StandardCharsets;
+
 public final class JavaScriptServlet extends HttpServlet {
 
 	private static final long serialVersionUID = -1459584282530150483L;
@@ -170,6 +172,7 @@ public final class JavaScriptServlet extends HttpServlet {
 
 		/** setup headers **/
 		response.setContentType("text/plain");
+		response.setCharacterEncoding("utf-8");
 
 		/** write dynamic javascript **/
 		response.getWriter().write(token_pair);
@@ -184,6 +187,7 @@ public final class JavaScriptServlet extends HttpServlet {
 
 		/** setup headers **/
 		response.setContentType("text/plain");
+		response.setCharacterEncoding("utf-8");
 		response.setContentLength(pageTokensString.length());
 
 		/** write dynamic javascript **/
@@ -204,6 +208,7 @@ public final class JavaScriptServlet extends HttpServlet {
 		}
 
 		response.setContentType("text/javascript");
+		response.setCharacterEncoding("utf-8");
 
 		/** build dynamic javascript **/
 		String code = CsrfGuard.getInstance().getJavascriptTemplateCode();
