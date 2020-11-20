@@ -30,6 +30,8 @@
 package org.owasp.csrfguard.http;
 
 import org.owasp.csrfguard.CsrfGuard;
+import org.owasp.csrfguard.CsrfValidator;
+import org.owasp.csrfguard.ProtectionResult;
 import org.owasp.csrfguard.session.LogicalSession;
 import org.owasp.csrfguard.token.service.TokenService;
 
@@ -60,7 +62,8 @@ public class InterceptRedirectResponse extends HttpServletResponseWrapper {
         final String sanitizedLocation = location.replaceAll("(\\r|\\n|%0D|%0A|%0a|%0d)", "");
 
         /* ensure token included in redirects */
-        if (!sanitizedLocation.contains("://") && this.csrfGuard.isProtectedPageAndMethod(sanitizedLocation, "GET")) {
+        final ProtectionResult protectionResult = new CsrfValidator().isProtectedPageAndMethod(sanitizedLocation, "GET");
+        if (!sanitizedLocation.contains("://") && protectionResult.isProtected()) {
             // Separate URL fragment from path, e.g. /myPath#myFragment becomes [0]: /myPath [1]: myFragment
             final String[] splitOnFragment = location.split("#", 2);
 

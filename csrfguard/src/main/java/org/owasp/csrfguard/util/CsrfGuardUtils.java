@@ -113,30 +113,6 @@ public final class CsrfGuardUtils {
         return ConfigPropertiesCascadeCommonUtils.newInstance(theClass);
     }
 
-    /**
-     * FIXME: taken from Tomcat - <a href="https://github.com/apache/tomcat/blob/master/java/org/apache/catalina/core/ApplicationFilterFactory.java">ApplicationFilterFactory#matchFiltersURL</a>
-     */
-    public static boolean isExtensionMatch(final String testPath, final String requestPath) {
-        final boolean result;
-        if (StringUtils.startsWith(testPath, "*.")) {
-            final int slash = requestPath.lastIndexOf('/');
-            final int period = requestPath.lastIndexOf('.');
-
-            if ((slash >= 0)
-                && (period > slash)
-                && (period != requestPath.length() - 1)
-                && ((requestPath.length() - period) == (testPath.length() - 1))) {
-                result = testPath.regionMatches(2, requestPath, period + 1, testPath.length() - 2);
-            } else {
-                result = false;
-            }
-        } else {
-            result = false;
-        }
-
-        return result;
-    }
-
     public static void addResponseTokenHeader(final CsrfGuard csrfGuard, final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final TokenTO tokenTO) {
         if (csrfGuard.isAjaxEnabled() && CsrfGuardUtils.isAjaxRequest(httpServletRequest)) {
             if (!tokenTO.isEmpty()) {

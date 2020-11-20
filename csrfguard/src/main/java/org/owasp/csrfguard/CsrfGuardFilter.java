@@ -48,7 +48,7 @@ public final class CsrfGuardFilter implements Filter {
     private FilterConfig filterConfig = null;
 
     @Override
-    public void init(final FilterConfig filterConfig) throws ServletException {
+    public void init(final FilterConfig filterConfig) {
         this.filterConfig = filterConfig;
     }
 
@@ -92,12 +92,13 @@ public final class CsrfGuardFilter implements Filter {
 
         if (logicalSession.isNew() && csrfGuard.isUseNewTokenLandingPage()) {
             csrfGuard.writeLandingPage(httpServletRequest, interceptRedirectResponse, logicalSessionKey);
-        } else if (csrfGuard.isValidRequest(httpServletRequest, interceptRedirectResponse)) {
+        } else if (new CsrfValidator().isValid(httpServletRequest, interceptRedirectResponse)) {
             filterChain.doFilter(httpServletRequest, interceptRedirectResponse);
         } else {
             logInvalidRequest(httpServletRequest, csrfGuard);
         }
 
+        // TODO this is not needed in case of un-protected pages
         final String requestURI = httpServletRequest.getRequestURI();
         final String generatedToken = csrfGuard.getTokenService().generateTokensIfAbsent(logicalSessionKey, httpServletRequest.getMethod(), requestURI);
 
@@ -107,7 +108,7 @@ public final class CsrfGuardFilter implements Filter {
     private void handleNoSession(final HttpServletRequest httpServletRequest, final HttpServletResponse httpServletResponse, final InterceptRedirectResponse interceptRedirectResponse, final FilterChain filterChain,
                                  final CsrfGuard csrfGuard) throws IOException, ServletException {
         if (csrfGuard.isValidateWhenNoSessionExists()) {
-            if (csrfGuard.isValidRequest(httpServletRequest, interceptRedirectResponse)) {
+            if (new CsrfValidator().isValid(httpServletRequest, interceptRedirectResponse)) {
                 filterChain.doFilter(httpServletRequest, interceptRedirectResponse);
             } else {
                 logInvalidRequest(httpServletRequest, csrfGuard);

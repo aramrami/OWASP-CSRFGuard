@@ -311,6 +311,30 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
             return uri;
         }
 
+        function calculatePageTokenForUri(pageTokens, uri) {
+            let value = null;
+            Object.keys(pageTokens).forEach(function (pageTokenKey) {
+                var pageToken = pageTokens[pageTokenKey];
+
+                if (uri === pageTokenKey) {
+                    value = pageToken;
+                } else if (pageTokenKey.startsWith('^') && pageTokenKey.endsWith('$')) { // regex matching
+                    if (new RegExp(pageTokenKey).test(uri)) {
+                        value = pageToken;
+                    }
+                } else if (pageTokenKey.startsWith('/*')) { // full path wildcard path matching
+                    value = pageToken;
+                } else if (pageTokenKey.endsWith('/*') || pageTokenKey.startsWith('.*')) { // 'partial path wildcard' and 'extension' matching
+                    // TODO implement
+                    console.warn("'Extension' and 'partial path wildcard' matching for page tokens is not supported properly yet! " +
+                        "Every resource will be assigned a new unique token instead of using the defined resource matcher token. " +
+                        "Although this is not a security issue, in case of a large REST application it can have an impact on performance." +
+                        "Consider using regular expressions instead.");
+                }
+            });
+            return value;
+        }
+
         /**
          *  inject tokens as hidden fields into forms
          */
@@ -327,13 +351,14 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
             var value = tokenValue;
             var action = form.getAttribute('action');
 
-            if (isValidUrl(action)) {
-                if (action !== null) {
-                    var uri = parseUri(action);
-                    value = pageTokens[uri] != null ? pageTokens[uri] : tokenValue;
-                }
+            if (action !== null && isValidUrl(action)) {
+                var uri = parseUri(action);
+                const calculatedPageToken = calculatePageTokenForUri(pageTokens, uri);
+                value = calculatedPageToken == null ? tokenValue : calculatedPageToken;
 
-                let hiddenTokenFields = Object.keys(form.elements).filter(i => form.elements[i].name === tokenName); // TODO do not use arrow functions because IE does not support it
+                let hiddenTokenFields = Object.keys(form.elements).filter(function (i) {
+                    return form.elements[i].name === tokenName;
+                });
 
                 if (hiddenTokenFields.length === 0) {
                     var hidden = document.createElement('input');
@@ -345,7 +370,9 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                     form.appendChild(hidden);
                     console.debug('Hidden input element [', hidden, '] was added to the form: ', form);
                 } else {
-                    hiddenTokenFields.forEach(i => form.elements[i].value = value); // TODO do not use arrow functions because IE does not support it
+                    hiddenTokenFields.forEach(function (i) {
+                        return form.elements[i].value = value;
+                    });
                     console.debug('Hidden token fields [', hiddenTokenFields, '] of form [', form, '] were updated with new token value: ', value);
                 }
             }
@@ -370,7 +397,8 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
 
             if (location != null && isValidUrl(location) && !isUnprotectedExtension(location)) {
                 const uri = parseUri(location);
-                const value = (pageTokens[uri] != null ? pageTokens[uri] : tokenValue);
+                const calculatedPageToken = calculatePageTokenForUri(pageTokens, uri);
+                const value = calculatedPageToken == null ? tokenValue : calculatedPageToken;
 
                 const tokenValueMatcher = new RegExp('(?:' + tokenName + '=)([^?|#|&]+)', 'gi');
                 const tokenMatches = tokenValueMatcher.exec(location);
@@ -396,7 +424,9 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                     }
                 } else {
                     let newLocation = location;
-                    tokenMatches.slice(1).forEach(match => newLocation = newLocation.replace(match, value)); // TODO do not use arrow functions because IE does not support it
+                    tokenMatches.slice(1).forEach(function (match) {
+                        return newLocation = newLocation.replace(match, value);
+                    });
 
                     element.setAttribute(attr, newLocation);
                     console.debug('Attribute [', attr, '] with value [', newLocation, '] set for element: ', element);
@@ -509,6 +539,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
                         let pageTokens = JSON.parse(xhr.responseText)['pageTokens'];
+                        console.debug('Received page tokens: ', pageTokens);
                         callback.call(this, pageTokens);
                     } else {
                         alert(xhr.status + ': CSRF check failed');
@@ -561,6 +592,7 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
         if (isValidDomain(document.domain, '%DOMAIN_ORIGIN%')) {
             var tokenName = '%TOKEN_NAME%';
             var masterTokenValue = '%TOKEN_VALUE%';
+            console.debug('Master token [' + tokenName + ']: ', masterTokenValue);
 
             var isLoadedWrapper = {isDomContentLoaded: false};
 
@@ -599,11 +631,15 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                                     let newMasterToken = tokenTO['masterToken'];
                                     if (newMasterToken !== undefined) {
                                         masterTokenValue = newMasterToken;
+                                        console.debug('New master token value received: ', masterTokenValue);
                                     }
 
                                     let newPageTokens = tokenTO['pageTokens'];
                                     if (newPageTokens !== undefined) {
-                                        Object.keys(newPageTokens).forEach(key => pageTokenWrapper.pageTokens[key] = newPageTokens[key]); // TODO do not use arrow functions because IE does not support it
+                                        Object.keys(newPageTokens).forEach(function (key) {
+                                            return pageTokenWrapper.pageTokens[key] = newPageTokens[key];
+                                        });
+                                        console.debug('New page token value(s) received: ', newPageTokens);
                                     }
 
                                     injectTokens(tokenName, masterTokenValue, pageTokenWrapper.pageTokens);
@@ -614,16 +650,16 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                         }
                     });
 
-                    var computePageToken = function(modifiedUrl) {
+                    var computePageToken = function(pageTokens, modifiedUri) {
                         let result = null;
 
                         let pathWithoutLeadingSlash = window.location.pathname.substring(1); // e.g. deploymentName/service/endpoint
                         let pathArray = pathWithoutLeadingSlash.split('/');
 
                         let builtPath = '';
-                        for (let i = 0; i < pathArray.length - 1; i++) { // the last part of the URL (endpoint) is disregarded because the modifiedUrl parameter is used instead
+                        for (let i = 0; i < pathArray.length - 1; i++) { // the last part of the URI (endpoint) is disregarded because the modifiedUri parameter is used instead
                             builtPath += '/' + pathArray[i];
-                            let pageTokenValue = pageTokenWrapper.pageTokens[builtPath + modifiedUrl];
+                            let pageTokenValue = calculatePageTokenForUri(pageTokens, builtPath + modifiedUri);
                             if (pageTokenValue != undefined) {
                                 result = pageTokenValue;
                                 break;
@@ -643,6 +679,10 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                             return index > 0 ? currentUrl.substring(0, index) : currentUrl;
                         }
 
+                        /*
+                         * TODO should other checks be done here like in the isValidUrl?
+                         * Could the url parameter contain full URLs with protocol domain, port etc?
+                         */
                         let normalizedUrl = url.startsWith('/') ? url : '/' + url;
 
                         normalizedUrl = removeParameters(normalizedUrl, '?');
@@ -659,9 +699,9 @@ if (owaspCSRFGuardScriptHasLoaded !== true) {
                         if (pageTokenWrapper.pageTokens === null) {
                             this.setRequestHeader(tokenName, masterTokenValue);
                         } else {
-                            let pageToken = pageTokenWrapper.pageTokens[normalizedUrl];
+                            let pageToken = calculatePageTokenForUri(pageTokenWrapper.pageTokens, normalizedUrl);
                             if (pageToken == undefined) {
-                                let computedPageToken = computePageToken(normalizedUrl);
+                                let computedPageToken = computePageToken(pageTokenWrapper.pageTokens, normalizedUrl);
 
                                 if (computedPageToken === null) {
                                     this.setRequestHeader(tokenName, masterTokenValue);

@@ -33,6 +33,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardServletContextListener;
+import org.owasp.csrfguard.CsrfValidator;
 import org.owasp.csrfguard.log.LogLevel;
 import org.owasp.csrfguard.session.LogicalSession;
 import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
@@ -142,7 +143,7 @@ public final class JavaScriptServlet extends HttpServlet {
     public void doPost(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
         final CsrfGuard csrfGuard = CsrfGuard.getInstance();
 
-        if (csrfGuard.isValidRequest(request, response)) {
+        if (new CsrfValidator().isValid(request, response)) {
             if (csrfGuard.isTokenPerPageEnabled()) {
                 // TODO pass the logical session downstream, see whether the null check can be done from here
                 final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);

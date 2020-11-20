@@ -37,19 +37,12 @@ import org.owasp.csrfguard.config.PropertiesConfigurationProviderFactory;
 import org.owasp.csrfguard.config.overlay.ExpirableCache;
 import org.owasp.csrfguard.config.properties.ConfigParameters;
 import org.owasp.csrfguard.log.ILogger;
-import org.owasp.csrfguard.log.LogLevel;
-import org.owasp.csrfguard.servlet.JavaScriptServlet;
 import org.owasp.csrfguard.session.LogicalSession;
-import org.owasp.csrfguard.token.businessobject.TokenBO;
-import org.owasp.csrfguard.token.mapper.TokenMapper;
 import org.owasp.csrfguard.token.service.TokenService;
 import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
-import org.owasp.csrfguard.token.transferobject.TokenTO;
 import org.owasp.csrfguard.util.CsrfGuardPropertiesToStringBuilder;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
-import org.owasp.csrfguard.util.MessageConstants;
-import org.owasp.csrfguard.util.RegexValidationUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -57,10 +50,9 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-public final class CsrfGuard {
+public class CsrfGuard {
 
     /**
      * cache the configuration for a minute
@@ -83,6 +75,10 @@ public final class CsrfGuard {
     public static void load(final Properties theProperties) {
         getInstance().properties = theProperties;
         configurationProviderExpirableCache.clear();
+    }
+
+    public Map<String, Pattern> getRegexPatternCache() {
+        return this.regexPatternCache;
     }
 
     public ILogger getLogger() {
@@ -244,20 +240,45 @@ public final class CsrfGuard {
         return new TokenService(this);
     }
 
-    public boolean isValidRequest(final HttpServletRequest request, final HttpServletResponse response) {
-        final boolean isValid;
+    public boolean isPrintConfig() {
+        return config().isPrintConfig();
+    }
 
-        final ILogger logger = getLogger();
-        final String normalizedResourceURI = CsrfGuardUtils.normalizeResourceURI(request);
-        if (isProtectedPageAndMethod(request)) {
-            logger.log(LogLevel.Debug, String.format("CSRFGuard analyzing protected resource: '%s'", normalizedResourceURI));
-            isValid = isTokenValidInRequest(request, response);
-        } else {
-            logger.log(LogLevel.Debug, String.format("Unprotected page: %s", normalizedResourceURI));
-            isValid = true;
-        }
+    public String getDomainOrigin() {
+        return config().getDomainOrigin();
+    }
 
-        return isValid;
+    public Duration getPageTokenSynchronizationTolerance() {
+        return config().getPageTokenSynchronizationTolerance();
+    }
+
+    /**
+     * if there are methods specified, then they (e.g. GET) are unprotected, and all others are protected
+     *
+     * @return the unprotected HTTP methods
+     */
+    public Set<String> getUnprotectedMethods() {
+        return config().getUnprotectedMethods();
+    }
+
+    @Override
+    public String toString() {
+        return isEnabled() ? new CsrfGuardPropertiesToStringBuilder(config()).toString()
+                           : "OWASP CSRFGuard is disabled.";
+    }
+
+    /**
+     * Rotation in case of AJAX requests is not currently not supported because of the possible race conditions.
+     * <p>
+     * A Single Page Application can fire multiple simultaneous requests.
+     * If rotation is enabled, the first request might trigger a token change before the validation of the second request with the same token, causing
+     * false-positive CSRF intrusion exceptions.
+     *
+     * @param request the current request
+     * @return True if rotation is enabled and possible
+     */
+    public boolean isRotateEnabled(final HttpServletRequest request) {
+        return isRotateEnabled() && !CsrfGuardUtils.isAjaxRequest(request);
     }
 
     /**
@@ -276,6 +297,7 @@ public final class CsrfGuard {
 
             if (isTokenPerPageEnabled()
                 && isTokenPerPagePrecreate()
+                && isProtectEnabled()
                 && !logicalSession.areTokensGenerated()) {
 
                 tokenService.generateProtectedPageTokens(logicalSessionKey);
@@ -323,7 +345,7 @@ public final class CsrfGuard {
                      .append("\");");
 
         /* only include token if needed */
-        if (isProtectedPage(landingPage)) {
+        if (new CsrfValidator().isProtectedPage(landingPage).isProtected()) {
             stringBuilder.append("var hiddenField = document.createElement(\"input\");")
                          .append("hiddenField.setAttribute(\"type\", \"hidden\");")
                          .append("hiddenField.setAttribute(\"name\", \"")
@@ -351,147 +373,6 @@ public final class CsrfGuard {
         response.getWriter().write(code);
     }
 
-    public boolean isProtectedPageAndMethod(final String page, final String method) {
-        return (isProtectedPage(CsrfGuardUtils.normalizeResourceURI(page)) && isProtectedMethod(method));
-    }
-
-    public boolean isProtectedPageAndMethod(final HttpServletRequest request) {
-        return isProtectedPageAndMethod(request.getRequestURI(), request.getMethod());
-    }
-
-    public boolean isPrintConfig() {
-        return config().isPrintConfig();
-    }
-
-    public String getDomainOrigin() {
-        return config().getDomainOrigin();
-    }
-
-    public Duration getPageTokenSynchronizationTolerance() {
-        return config().getPageTokenSynchronizationTolerance();
-    }
-
-    /**
-     * if there are methods specified, then they (e.g. GET) are unprotected, and all others are protected
-     *
-     * @return the unprotected HTTP methods
-     */
-    public Set<String> getUnprotectedMethods() {
-        return config().getUnprotectedMethods();
-    }
-
-    @Override
-    public String toString() {
-        return isEnabled() ? new CsrfGuardPropertiesToStringBuilder(config()).toString()
-                           : "OWASP CSRFGuard is disabled.";
-    }
-
-    private static boolean isUriPathMatch(final String testPath, final String requestPath) {
-        return testPath.equals("/*") || (testPath.endsWith("/*")
-                                         && (testPath.regionMatches(0, requestPath, 0, testPath.length() - 2)
-                                             && (requestPath.length() == (testPath.length() - 2) || '/' == requestPath.charAt(testPath.length() - 2))));
-    }
-
-    private boolean isTokenValidInRequest(final HttpServletRequest request, final HttpServletResponse response) {
-        boolean isValid = false;
-
-        final CsrfGuard csrfGuard = CsrfGuard.getInstance();
-        final LogicalSession logicalSession = csrfGuard.getLogicalSessionExtractor().extract(request);
-
-        if (Objects.nonNull(logicalSession)) {
-            final TokenService tokenService = getTokenService();
-            final String logicalSessionKey = logicalSession.getKey();
-            final String masterToken = tokenService.getMasterToken(logicalSessionKey);
-
-            if (Objects.nonNull(masterToken)) {
-                try {
-                    final TokenBO tokenBO = tokenService.verifyToken(request, logicalSessionKey, masterToken);
-
-                    final TokenTO tokenTO = isRotateEnabled(request) ? tokenService.rotateUsedToken(logicalSessionKey, request.getRequestURI(), tokenBO)
-                                                                     : TokenMapper.toTransferObject(tokenBO);
-
-                    CsrfGuardUtils.addResponseTokenHeader(csrfGuard, request, response, tokenTO);
-
-                    isValid = true;
-                } catch (final CsrfGuardException csrfe) {
-                    callActionsOnError(request, response, csrfe);
-                }
-            } else {
-                callActionsOnError(request, response, new CsrfGuardException(MessageConstants.TOKEN_MISSING_FROM_STORAGE_MSG));
-            }
-        } else {
-            callActionsOnError(request, response, new CsrfGuardException(MessageConstants.TOKEN_MISSING_FROM_STORAGE_MSG));
-        }
-
-        return isValid;
-    }
-
-    /**
-     * Rotation in case of AJAX requests is not currently not supported because of the possible race conditions.
-     * <p>
-     * A Single Page Application can fire multiple simultaneous requests.
-     * If rotation is enabled, the first request might trigger a token change before the validation of the second request with the same token, causing
-     * false-positive CSRF intrusion exceptions.
-     *
-     * @param request the current request
-     * @return True if rotation is enabled and possible
-     */
-    private boolean isRotateEnabled(final HttpServletRequest request) {
-        return isRotateEnabled() && !CsrfGuardUtils.isAjaxRequest(request);
-    }
-
-    private boolean isProtectedPage(final String normalizedResourceUri) {
-        /* if this is a javascript page, let it go through */
-        if (JavaScriptServlet.getJavascriptUris().contains(normalizedResourceUri)) {
-            return false;
-        }
-
-        final Predicate<String> predicate = page -> isUriMatch(page, normalizedResourceUri);
-        return isProtectEnabled() ? getProtectedPages().stream().anyMatch(predicate)     /* all links are unprotected, except the ones that were explicitly specified */
-                                  : getUnprotectedPages().stream().noneMatch(predicate); /* all links are protected, except the ones were explicitly excluded */
-    }
-
-    /**
-     * Whether or not the HTTP method is protected, i.e. should be checked for token.
-     *
-     * @param method The method to check for protection status
-     * @return true when the given method name is in the protected methods set and not in the unprotected methods set
-     */
-    private boolean isProtectedMethod(final String method) {
-        boolean isProtected = true;
-
-        final Set<String> protectedMethods = getProtectedMethods();
-        if (!protectedMethods.isEmpty() && !protectedMethods.contains(method)) {
-            isProtected = false;
-        }
-
-        final Set<String> unprotectedMethods = getUnprotectedMethods();
-        if (!unprotectedMethods.isEmpty() && unprotectedMethods.contains(method)) {
-            isProtected = false;
-        }
-
-        return isProtected;
-    }
-
-    /**
-     * FIXME: partially taken from Tomcat - <a href="https://github.com/apache/tomcat/blob/master/java/org/apache/catalina/core/ApplicationFilterFactory.java">ApplicationFilterFactory#matchFiltersURL</a>
-     *
-     * @param testPath    the pattern to match.
-     * @param requestPath the current request path.
-     * @return {@code true} if {@code requestPath} matches {@code testPath}.
-     */
-    private boolean isUriMatch(final String testPath, final String requestPath) {
-        return Objects.nonNull(testPath) && (testPath.equals(requestPath)
-                                             || isUriPathMatch(testPath, requestPath)
-                                             || CsrfGuardUtils.isExtensionMatch(testPath, requestPath)
-                                             || isUriRegexMatch(testPath, requestPath));
-    }
-
-    private boolean isUriRegexMatch(final String testPath, final String requestPath) {
-        return RegexValidationUtil.isTestPathRegex(testPath) && this.regexPatternCache.computeIfAbsent(testPath, k -> Pattern.compile(testPath))
-                                                                                      .matcher(requestPath)
-                                                                                      .matches();
-    }
 
     private ConfigurationProvider config() {
         if (this.properties == null) {
@@ -528,25 +409,6 @@ public final class CsrfGuard {
         configurationProvider = configurationProviderFactory.retrieveConfiguration(this.properties);
         configurationProviderExpirableCache.put(Boolean.TRUE, configurationProvider);
         return configurationProvider;
-    }
-
-    /**
-     * Invoked when there was a CsrfGuardException such as a token mismatch error.
-     * Calls the configured actions.
-     *
-     * @param request  The HttpServletRequest
-     * @param response The HttpServletResponse
-     * @param csrfe    The exception that triggered the actions call. Passed to the action.
-     * @see IAction#execute(HttpServletRequest, HttpServletResponse, CsrfGuardException, CsrfGuard)
-     */
-    private void callActionsOnError(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe) {
-        for (final IAction action : getActions()) {
-            try {
-                action.execute(request, response, csrfe, this);
-            } catch (final CsrfGuardException exception) {
-                getLogger().log(LogLevel.Error, exception);
-            }
-        }
     }
 
     private static final class SingletonHolder {

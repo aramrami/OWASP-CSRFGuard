@@ -30,6 +30,8 @@ package org.owasp.csrfguard.token.service;
 
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardException;
+import org.owasp.csrfguard.CsrfValidator;
+import org.owasp.csrfguard.ProtectionResult;
 import org.owasp.csrfguard.session.LogicalSession;
 import org.owasp.csrfguard.token.TokenUtils;
 import org.owasp.csrfguard.token.businessobject.TokenBO;
@@ -115,8 +117,9 @@ public class TokenService {
         final TokenHolder tokenHolder = this.csrfGuard.getTokenHolder();
 
         if (this.csrfGuard.isTokenPerPageEnabled()) {
-            if (this.csrfGuard.isProtectedPageAndMethod(requestURI, httpMethod)) {
-                return tokenHolder.createPageTokenIfAbsent(logicalSessionKey, CsrfGuardUtils.normalizeResourceURI(requestURI), TokenUtils::generateRandomToken);
+            final ProtectionResult protectionResult = new CsrfValidator().isProtectedPageAndMethod(requestURI, httpMethod);
+            if (protectionResult.isProtected()) {
+                return tokenHolder.createPageTokenIfAbsent(logicalSessionKey, protectionResult.getResourceIdentifier(), TokenUtils::generateRandomToken);
             }
         }
 
@@ -161,7 +164,6 @@ public class TokenService {
      * @return a TokenTO transfer object containing the updated token values that will be sent back to the client
      */
     public TokenTO rotateUsedToken(final String logicalSessionKey, final String requestURI, final TokenBO usedValidToken) {
-        final String normalizedResourceURI = CsrfGuardUtils.normalizeResourceURI(requestURI);
         final TokenHolder tokenHolder = this.csrfGuard.getTokenHolder();
 
         final String newTokenValue = TokenUtils.generateRandomToken();
@@ -170,8 +172,8 @@ public class TokenService {
             tokenHolder.setMasterToken(logicalSessionKey, newTokenValue);
             usedValidToken.setUpdatedMasterToken(newTokenValue);
         } else {
-            tokenHolder.setPageToken(logicalSessionKey, normalizedResourceURI, newTokenValue);
-            usedValidToken.setUpdatedPageToken(normalizedResourceURI, newTokenValue);
+            tokenHolder.setPageToken(logicalSessionKey, requestURI, newTokenValue);
+            usedValidToken.setUpdatedPageToken(requestURI, newTokenValue);
         }
 
         return TokenMapper.toTransferObject(usedValidToken);
@@ -214,12 +216,13 @@ public class TokenService {
      * <p>
      *
      * @param request           current HTTP Servlet Request
+     * @param resourceIdentifier the requested resource identifier
      * @param logicalSessionKey identifies the current logical session uniquely
      * @param masterToken       the master token
      * @return The TokenBO business object that contains the updated tokens and the token used to validate the current request
      * @throws CsrfGuardException if the request does not have a valid token associated
      */
-    public TokenBO verifyToken(final HttpServletRequest request, final String logicalSessionKey, final String masterToken) throws CsrfGuardException {
+    public TokenBO verifyToken(final HttpServletRequest request, final String resourceIdentifier, final String logicalSessionKey, final String masterToken) throws CsrfGuardException {
         final String tokenName = this.csrfGuard.getTokenName();
 
         final boolean isAjaxRequest = this.csrfGuard.isAjaxEnabled() && CsrfGuardUtils.isAjaxRequest(request);
@@ -228,7 +231,7 @@ public class TokenService {
         if (Objects.isNull(tokenFromRequest)) {
             throw new CsrfGuardException(MessageConstants.REQUEST_MISSING_TOKEN_MSG);
         } else {
-            tokenBO = this.csrfGuard.isTokenPerPageEnabled() ? verifyPageToken(logicalSessionKey, masterToken, tokenFromRequest, CsrfGuardUtils.normalizeResourceURI(request), isAjaxRequest)
+            tokenBO = this.csrfGuard.isTokenPerPageEnabled() ? verifyPageToken(logicalSessionKey, masterToken, tokenFromRequest, resourceIdentifier, isAjaxRequest)
                                                              : verifyMasterToken(masterToken, tokenFromRequest);
         }
 

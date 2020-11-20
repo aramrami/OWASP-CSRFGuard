@@ -43,6 +43,7 @@ import org.owasp.csrfguard.servlet.JavaScriptServlet;
 import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
 import org.owasp.csrfguard.token.storage.TokenHolder;
 import org.owasp.csrfguard.util.CsrfGuardUtils;
+import org.owasp.csrfguard.util.RegexValidationUtil;
 
 import javax.servlet.ServletConfig;
 import java.io.IOException;
@@ -507,17 +508,34 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 		return result;
 	}
 
-	private static String getPageProperty(final Properties properties, final String propertyKey, final String propertyKeyPrefix) {
+	private String getPageProperty(final Properties properties, final String propertyKey, final String propertyKeyPrefix) {
 		String result = null;
 		final String pageProperty = getPrimaryPropertyDirective(propertyKey, propertyKeyPrefix);
 
 		if (Objects.nonNull(pageProperty)) {
 			final String pageUri = PropertyUtils.getProperty(properties, propertyKey);
 
-			result = CsrfGuardUtils.normalizeResourceURI(pageUri);
+			result = isSpecialUriDescriptor(pageUri) ? pageUri
+													 : CsrfGuardUtils.normalizeResourceURI(pageUri);
 		}
 
 		return result;
+	}
+
+	/**
+	 * Decides whether the given resourceUri is a static descriptor or a matching rule
+	 * Has to be in sync with org.owasp.csrfguard.CsrfValidator.isUriMatch(java.lang.String, java.lang.String) and calculatePageTokenForUri in the JS logic
+	 */
+	private boolean isSpecialUriDescriptor(final String resourceUri) {
+		if (this.tokenPerPage && (resourceUri.endsWith("/*") || resourceUri.startsWith("*."))) {
+			// FIXME implement in the JS logic (calculatePageTokenForUri)
+			this.logger.log(LogLevel.Warning, "'Extension' and 'partial path wildcard' matching for page tokens is not supported properly yet! " +
+											  "Every resource will be assigned a new unique token instead of using the defined resource matcher token. " +
+											  "Although this is not a security issue, in case of a large REST application it can have an impact on performance." +
+											  "Consider using regular expressions instead.");
+		}
+
+		return RegexValidationUtil.isTestPathRegex(resourceUri) || resourceUri.startsWith("/*") || resourceUri.endsWith("/*") || resourceUri.startsWith("*.");
 	}
 
 	private void javascriptInitParamsIfNeeded() {
