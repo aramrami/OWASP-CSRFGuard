@@ -82,7 +82,7 @@ public final class CsrfValidator {
                                                                              : new ProtectionResult(false, normalizedResourceUri);
     }
 
-    ProtectionResult isProtectedPage(final String normalizedResourceUri) {
+    public ProtectionResult isProtectedPage(final String normalizedResourceUri) {
         final ProtectionResult protectionResult;
 
         if (JavaScriptServlet.getJavascriptUris().contains(normalizedResourceUri)) {

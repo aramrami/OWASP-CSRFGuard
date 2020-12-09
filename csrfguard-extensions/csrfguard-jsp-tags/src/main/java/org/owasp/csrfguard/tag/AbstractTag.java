@@ -29,19 +29,33 @@
 
 package org.owasp.csrfguard.tag;
 
+import org.owasp.csrfguard.CsrfValidator;
+import org.owasp.csrfguard.ProtectionResult;
+
 import javax.servlet.jsp.tagext.TagSupport;
 
 public abstract class AbstractTag extends TagSupport {
 
 	private final static long serialVersionUID = 0xadede854;
 
-	public String buildUri(final String page) {
-		String uri = page;
+	public String buildUri(final String uri) {
+		return calculateExtendedPageDescriptorUri(normalizeUri(uri));
+	}
 
-		if (!page.startsWith("/")) {
-			uri = this.pageContext.getServletContext().getContextPath() + "/" + page;
-		}
+	/**
+	 * @param normalizedUri the current normalizedUri
+	 * @return if the protected/un-protected page descriptors were defined using wildcards or regexes, this method
+	 * will return the extended page descriptor definition of the normalizedUri, otherwise returns itself
+	 */
+	private String calculateExtendedPageDescriptorUri(final String normalizedUri) {
+		final ProtectionResult protectionResult = new CsrfValidator().isProtectedPage(normalizedUri);
 
-		return uri;
+		return protectionResult.isProtected() ? protectionResult.getResourceIdentifier()
+											  : normalizedUri;
+	}
+
+	private String normalizeUri(final String uri) {
+		return uri.startsWith("/") ? uri
+								   : this.pageContext.getServletContext().getContextPath() + '/' + uri;
 	}
 }

@@ -34,7 +34,6 @@ import org.owasp.csrfguard.session.LogicalSession;
 import org.owasp.csrfguard.util.BrowserEncoder;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.DynamicAttributes;
 import java.io.IOException;
 import java.util.HashMap;
@@ -44,7 +43,7 @@ import java.util.Objects;
 public final class ATag extends AbstractUriTag implements DynamicAttributes {
 
 	private final static long serialVersionUID = 0x00202937;
-	
+
 	private final Map<String, String> attributes = new HashMap<>();
 
 	@Override
@@ -76,7 +75,7 @@ public final class ATag extends AbstractUriTag implements DynamicAttributes {
 	}
 
 	@Override
-	public void setDynamicAttribute(final String arg0, final String arg1, final Object arg2) throws JspException {
+	public void setDynamicAttribute(final String arg0, final String arg1, final Object arg2) {
 		this.attributes.put(arg1.toLowerCase(), String.valueOf(arg2));
 	}
 
