@@ -1,0 +1,94 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.owasp</groupId>
+        <artifactId>csrfguard-test</artifactId>
+        <version>3.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>csrfguard-test-jsp</artifactId>
+    <packaging>war</packaging>
+
+    <name>OWASP CSRFGuard JSP Test WebApp</name>
+
+    <properties>
+        <tomcat7-maven-plugin.version>2.1</tomcat7-maven-plugin.version>
+        <skip.run.webapp>true</skip.run.webapp>
+    </properties>
+
+    <profiles>
+        <profile>
+            <id>deploy-jsp-webapp</id>
+            <properties>
+                <skip.run.webapp>false</skip.run.webapp>
+            </properties>
+        </profile>
+    </profiles>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>csrfguard</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>csrfguard-extension-session</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>csrfguard-jsp-tags</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!-- TODO move the TAGS extension TLD file under the WEB-INF/csrfguard.tld when creating the war -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.tomcat.maven</groupId>
+                <artifactId>tomcat7-maven-plugin</artifactId>
+                <version>${tomcat7-maven-plugin.version}</version>
+                <configuration>
+                    <path>/</path>
+                    <port>8080</port>
+                    <skip>${skip.run.webapp}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>deploy-jsp-war</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>run-war</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>shutdown-tomcat</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>shutdown</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

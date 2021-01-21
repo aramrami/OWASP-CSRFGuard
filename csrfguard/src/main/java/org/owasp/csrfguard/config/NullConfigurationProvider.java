@@ -1,19 +1,19 @@
-/**
+/*
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Copyright (c) 2011, Eric Sheridan (eric@infraredsecurity.com)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of OWASP nor the names of its contributors may be used
- *       to endorse or promote products derived from this software without specific
- *       prior written permission.
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *        this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *     3. Neither the name of OWASP nor the names of its contributors may be used
+ *        to endorse or promote products derived from this software without specific
+ *        prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -26,257 +26,229 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.owasp.csrfguard.config;
 
+import org.owasp.csrfguard.action.IAction;
+import org.owasp.csrfguard.config.properties.ConfigParameters;
+import org.owasp.csrfguard.log.ConsoleLogger;
+import org.owasp.csrfguard.log.ILogger;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
+import org.owasp.csrfguard.token.storage.TokenHolder;
+
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.owasp.csrfguard.action.IAction;
-import org.owasp.csrfguard.log.ConsoleLogger;
-import org.owasp.csrfguard.log.ILogger;
-
 /**
- * ConfigurationProvider which returns all null or empty values (except for the logger).
+ * {@link ConfigurationProvider} which returns all null or empty values (except for the logger).
  * Used before initialization has occurred.
  */
 public final class NullConfigurationProvider implements ConfigurationProvider {
 
-	private static final ILogger logger = new ConsoleLogger();
-	
-	public NullConfigurationProvider() {
-	}
+    private static final ILogger LOGGER = new ConsoleLogger();
 
-	@Override
-	public ILogger getLogger() {
-		return logger;
-	}
+    public NullConfigurationProvider() {}
 
-	@Override
-	public String getTokenName() {
-		return null;
-	}
+    @Override
+    public boolean isCacheable() {
+        return true;
+    }
 
-	@Override
-	public int getTokenLength() {
-		return 0;
-	}
+    @Override
+    public boolean isPrintConfig() {
+        return false;
+    }
 
-	@Override
-	public boolean isRotateEnabled() {
-		return false;
-	}
+    @Override
+    public ILogger getLogger() {
+        return LOGGER;
+    }
 
-	@Override
-	public boolean isTokenPerPageEnabled() {
-		return false;
-	}
+    @Override
+    public String getTokenName() {
+        return null;
+    }
 
-	@Override
-	public boolean isTokenPerPagePrecreateEnabled() {
-		return false;
-	}
+    @Override
+    public boolean isValidateWhenNoSessionExists() {
+        return false;
+    }
 
-	@Override
-	public SecureRandom getPrng() {
-		try {
-			return SecureRandom.getInstance("SHA1PRNG", "SUN");
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+    @Override
+    public int getTokenLength() {
+        return 0;
+    }
 
-	@Override
-	public String getNewTokenLandingPage() {
-		return null;
-	}
+    @Override
+    public boolean isRotateEnabled() {
+        return false;
+    }
 
-	@Override
-	public boolean isUseNewTokenLandingPage() {
-		return false;
-	}
+    @Override
+    public boolean isTokenPerPageEnabled() {
+        return false;
+    }
 
-	@Override
-	public boolean isAjaxEnabled() {
-		return false;
-	}
+    @Override
+    public boolean isTokenPerPagePrecreateEnabled() {
+        return false;
+    }
 
-	@Override
-	public boolean isProtectEnabled() {
-		return false;
-	}
+    @Override
+    public SecureRandom getPrng() {
+        try {
+            return SecureRandom.getInstance(ConfigParameters.DEFAULT_PRNG.getValue(), ConfigParameters.DEFAULT_PRNG.getKey());
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	@Override
-	public String getSessionKey() {
-		return null;
-	}
+    @Override
+    public String getNewTokenLandingPage() {
+        return null;
+    }
 
-	@Override
-	public Set<String> getProtectedPages() {
-		return Collections.emptySet();
-	}
+    @Override
+    public boolean isUseNewTokenLandingPage() {
+        return false;
+    }
 
-	@Override
-	public Set<String> getUnprotectedPages() {
-		return Collections.emptySet();
-	}
+    @Override
+    public boolean isAjaxEnabled() {
+        return false;
+    }
 
-	@Override
-	public Set<String> getProtectedMethods() {
-		return Collections.emptySet();
-	}
+    @Override
+    public boolean isProtectEnabled() {
+        return false;
+    }
 
-	@Override
-	public List<IAction> getActions() {
-		return Collections.emptyList();
-	}
+    @Override
+    public Set<String> getProtectedPages() {
+        return Collections.emptySet();
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isPrintConfig()
-	 */
-	@Override
-	public boolean isPrintConfig() {
-		return false;
-	}
+    @Override
+    public Set<String> getUnprotectedPages() {
+        return Collections.emptySet();
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptSourceFile()
-	 */
-	@Override
-	public String getJavascriptSourceFile() {
-		return null;
-	}
+    @Override
+    public Set<String> getProtectedMethods() {
+        return Collections.emptySet();
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptDomainStrict()
-	 */
-	@Override
-	public boolean isJavascriptDomainStrict() {
-		return false;
-	}
+    @Override
+    public Set<String> getUnprotectedMethods() {
+        return Collections.emptySet();
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptCacheControl()
-	 */
-	@Override
-	public String getJavascriptCacheControl() {
-		return null;
-	}
+    @Override
+    public boolean isEnabled() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptRefererPattern()
-	 */
-	@Override
-	public Pattern getJavascriptRefererPattern() {
-		return null;
-	}
+    @Override
+    public List<IAction> getActions() {
+        return Collections.emptyList();
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectIntoForms()
-	 */
-	@Override
-	public boolean isJavascriptInjectIntoForms() {
-		return false;
-	}
+    @Override
+    public String getJavascriptSourceFile() {
+        return null;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectIntoAttributes()
-	 */
-	@Override
-	public boolean isJavascriptInjectIntoAttributes() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptDomainStrict() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptXrequestedWith()
-	 */
-	@Override
-	public String getJavascriptXrequestedWith() {
-		return null;
-	}
+    @Override
+    public String getDomainOrigin() {
+        return null;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptTemplateCode()
-	 */
-	@Override
-	public String getJavascriptTemplateCode() {
-		return null;
-	}
+    @Override
+    public String getJavascriptCacheControl() {
+        return null;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isCacheable()
-	 */
-	public boolean isCacheable() {
-		return true;
-	}
+    @Override
+    public Pattern getJavascriptRefererPattern() {
+        return null;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getUnprotectedMethods()
-	 */
-	public Set<String> getUnprotectedMethods() {
-		return Collections.emptySet();
-	}
+    @Override
+    public boolean isJavascriptInjectGetForms() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptRefererMatchProtocol()
-	 */
-	@Override
-	public boolean isJavascriptRefererMatchProtocol() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptInjectFormAttributes() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptRefererMatchDomain()
-	 */
-	@Override
-	public boolean isJavascriptRefererMatchDomain() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptInjectIntoForms() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isEnabled()
-	 */
-	@Override
-	public boolean isEnabled() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptRefererMatchProtocol() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isValidateWhenNoSessionExists()
-	 */
-	@Override
-	public boolean isValidateWhenNoSessionExists() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptRefererMatchDomain() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectGetForms()
-	 */
-	public boolean isJavascriptInjectGetForms() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptInjectIntoAttributes() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectFormAttributes()
-	 */
-	public boolean isJavascriptInjectFormAttributes() {
-		return false;
-	}
+    @Override
+    public boolean isJavascriptInjectIntoDynamicallyCreatedNodes() {
+        return false;
+    }
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
-	 */
-	@Override
-	public String getDomainOrigin() {
-		return null;
-	}
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptUnprotectedExtensions()
-	 */
-	@Override
-	public String getJavascriptUnprotectedExtensions() {
-		return null;
-	}
+    @Override
+    public String getJavascriptDynamicNodeCreationEventName() {
+        return null;
+    }
+
+    @Override
+    public String getJavascriptXrequestedWith() {
+        return null;
+    }
+
+    @Override
+    public String getJavascriptTemplateCode() {
+        return null;
+    }
+
+    @Override
+    public String getJavascriptUnprotectedExtensions() {
+        return null;
+    }
+
+    @Override
+    public TokenHolder getTokenHolder() {
+        return null;
+    }
+
+    @Override
+    public LogicalSessionExtractor getLogicalSessionExtractor() {
+        return null;
+    }
+
+    @Override
+    public Duration getPageTokenSynchronizationTolerance() {
+        return null;
+    }
 }

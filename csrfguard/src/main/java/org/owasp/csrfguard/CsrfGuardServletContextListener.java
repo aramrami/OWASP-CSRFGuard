@@ -1,17 +1,46 @@
+/*
+ * The OWASP CSRFGuard Project, BSD License
+ * Copyright (c) 2011, Eric Sheridan (eric@infraredsecurity.com)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *        this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *     3. Neither the name of OWASP nor the names of its contributors may be used
+ *        to endorse or promote products derived from this software without specific
+ *        prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 package org.owasp.csrfguard;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
+import org.apache.commons.lang3.StringUtils;
+import org.owasp.csrfguard.config.overlay.ConfigurationOverlayProvider;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-
-import org.owasp.csrfguard.config.overlay.ConfigurationOverlayProvider;
-import org.owasp.csrfguard.util.Streams;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.Properties;
 
 public class CsrfGuardServletContextListener implements ServletContextListener {
 
@@ -45,44 +74,43 @@ public class CsrfGuardServletContextListener implements ServletContextListener {
 	}
 	
 	@Override
-	public void contextInitialized(ServletContextEvent event) {
-		ServletContext context = event.getServletContext();
+	public void contextInitialized(final ServletContextEvent event) {
+		final ServletContext context = event.getServletContext();
 		servletContext = context.getContextPath();
-		//since this is just a prefix of a path, then if there is no servlet context, it is the empty string
-		if (servletContext == null || "/".equals(servletContext)) {
+		// since this is just a prefix of a path, then if there is no servlet context, it is the empty string
+		if (StringUtils.equals(servletContext, "/")) {
 			servletContext = "";
 		}
-		
+
 		configFileName = context.getInitParameter(CONFIG_PARAM);
 
 		if (configFileName == null) {
 			configFileName = ConfigurationOverlayProvider.OWASP_CSRF_GUARD_PROPERTIES;
 		}
 
-		InputStream is = null;
-		Properties properties = new Properties();
+		try (final InputStream configFileInputStream = getResourceStream(configFileName, context, false)) {
+			if (Objects.isNull(configFileInputStream)) {
+				try (final InputStream metaInfInputStream = getResourceStream(ConfigurationOverlayProvider.META_INF_CSRFGUARD_PROPERTIES, context, false)) {
+					if (Objects.isNull(metaInfInputStream)) {
+						throw new RuntimeException("Can't find default OWASP CSRFGuard properties file: " + configFileName);
+					}
 
-		try {
-			is = getResourceStream(configFileName, context, false);
-			
-			if (is == null) {
-				is = getResourceStream(ConfigurationOverlayProvider.META_INF_CSRFGUARD_PROPERTIES, context, false);
+					loadProperties(metaInfInputStream);
+				}
 			}
 
-			if (is == null) {
-				throw new RuntimeException("Cant find default owasp csrfguard properties file: " + configFileName);
-			}
-			
-			properties.load(is);
-			CsrfGuard.load(properties);
-		} catch (Exception e) {
+			loadProperties(configFileInputStream);
+		} catch (final Exception e) {
 			throw new RuntimeException(e);
-		} finally {
-			Streams.close(is);
 		}
 
+		printConfigIfConfigured(context, "Printing properties before JavaScript servlet, note, the JavaScript properties might not be initialized yet: ");
+	}
 
-		printConfigIfConfigured(context, "Printing properties before Javascript servlet, note, the javascript properties might not be initialized yet: ");
+	private void loadProperties(final InputStream resourceStream) throws IOException {
+		final Properties properties = new Properties();
+		properties.load(resourceStream);
+		CsrfGuard.load(properties);
 	}
 
 	/**
@@ -92,57 +120,61 @@ public class CsrfGuardServletContextListener implements ServletContextListener {
 	 * @param prefix  The string used as a prefix when printing the configuration to the log
 	 * @see javax.servlet.ServletContext#log(String)
 	 */
-	public static void printConfigIfConfigured(ServletContext context, String prefix) {
-		String printConfig = context.getInitParameter(CONFIG_PRINT_PARAM);
+	public static void printConfigIfConfigured(final ServletContext context, final String prefix) {
+		final CsrfGuard csrfGuard = CsrfGuard.getInstance();
 
-		if (printConfig == null || "".equals(printConfig.trim())) {
-			printConfig = CsrfGuard.getInstance().isPrintConfig() ? "true" : null;
-		}
-		
-		if (printConfig != null && Boolean.parseBoolean(printConfig)) {
-			context.log(prefix 
-					+ CsrfGuard.getInstance().toString());
+		if (csrfGuard.isEnabled()) {
+			String printConfig = context.getInitParameter(CONFIG_PRINT_PARAM);
+
+			if (StringUtils.isBlank(printConfig)) {
+				printConfig = csrfGuard.isPrintConfig() ? "true" : null;
+			}
+
+			if (Boolean.parseBoolean(printConfig)) {
+				context.log(prefix + csrfGuard.toString());
+			}
+		} else {
+			context.log("OWASP CSRFGuard is disabled.");
 		}
 	}
 
 	@Override
-	public void contextDestroyed(ServletContextEvent event) {
-		/** nothing to do **/
+	public void contextDestroyed(final ServletContextEvent event) {
+		/* nothing to do */
 	}
 
-	private InputStream getResourceStream(String resourceName, ServletContext context, boolean failIfNotFound) throws IOException {
-		InputStream is = null;
+	private InputStream getResourceStream(final String resourceName, final ServletContext context, final boolean failIfNotFound) throws IOException {
+		InputStream inputStream;
 
-		/** try classpath **/
-		is = getClass().getClassLoader().getResourceAsStream(resourceName);
+		/* try classpath */
+		inputStream = getClass().getClassLoader().getResourceAsStream(resourceName);
 
-		/** try web context **/
-		if (is == null) {
-			String fileName = context.getRealPath(resourceName);
+		/* try web context */
+		if (inputStream == null) {
+			final String fileName = context.getRealPath(resourceName);
             if (fileName != null) {
-                File file = new File(fileName);
+                final File file = new File(fileName);
 
                 if (file.exists()) {
-                    is = new FileInputStream(fileName);
+                    inputStream = new FileInputStream(fileName);
                 }
             }
 		}
 
-		/** try current directory **/
-		if (is == null) {
-			File file = new File(resourceName);
+		/* try current directory */
+		if (inputStream == null) {
+			final File file = new File(resourceName);
 
 			if (file.exists()) {
-				is = new FileInputStream(resourceName);
+				inputStream = new FileInputStream(resourceName);
 			}
 		}
 
-		/** fail if still empty **/
-		if (is == null && failIfNotFound) {
+		/* fail if still empty */
+		if (inputStream == null && failIfNotFound) {
 			throw new IOException(String.format("unable to locate resource - %s", resourceName));
 		}
 
-		return is;
+		return inputStream;
 	}
-
 }

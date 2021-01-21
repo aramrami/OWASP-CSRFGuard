@@ -1,4 +1,4 @@
-/**
+/*
  * The OWASP CSRFGuard Project, BSD License
  * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011
  * All rights reserved.
@@ -30,20 +30,16 @@ package org.owasp.csrfguard.util;
 
 /**
  * MessageConstants - Maintains all the message constant literals.
- *
- * @author - srijas
- * @since - 11/7/2019.
  */
-public class MessageConstants {
+public final class MessageConstants {
 
     private MessageConstants() {
-        //Utility Class
+        // Utility Class
     }
 
-    public static final String MISSING_TOKEN_MSG = "Required Token is missing from the Request";
+    public static final String REQUEST_MISSING_TOKEN_MSG = "Required Token is missing from the Request";
     public static final String MISMATCH_PAGE_TOKEN_MSG = "Request Token does not match Page Token";
-    public static final String MISMATCH_SESSION_TOKEN_MSG = "Request Token does not match Session Token";
+    public static final String MISMATCH_MASTER_TOKEN_MSG = "Request Token does not match the Master Token";
     public static final String RANDOM_TOKEN_FAILURE_MSG = "Unable to generate the Random Token";
-    public static final String SESSION_TOKEN_MSG = "CSRFGuard expects the token to exist in " +
-            "session at this point";
+    public static final String TOKEN_MISSING_FROM_STORAGE_MSG = "The token should exist in the storage at this point";
 }

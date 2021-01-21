@@ -11,7 +11,7 @@ type: tool
 ---
 <!-- rebuild 40 -->
 
-The OWASP CSRFGuard is one of the world’s most popular free security tools and is actively maintained by a pool of international volunteers*. It can help you automatically find security vulnerabilities in your web applications while you are developing and testing your applications. Its also a great tool for experienced pentesters to use for manual security testing.
+The OWASP CSRFGuard is one of the world’s most popular free security tools and is actively maintained by a pool of international volunteers*. It can help you automatically find security vulnerabilities in your web applications while you are developing and testing your applications. It's also a great tool for experienced pentesters to use for manual security testing.
 
 Welcome to the home of the OWASP CSRFGuard Project! OWASP CSRFGuard is a library that implements a variant of the synchronizer token pattern to mitigate the risk of Cross-Site Request Forgery (CSRF) attacks. 
 

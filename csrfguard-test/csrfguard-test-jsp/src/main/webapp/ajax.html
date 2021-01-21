@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<script src="/JavaScriptServlet" type="text/javascript"></script>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <title>Ajax Header Verification</title>
+    <script type="text/javascript">
+        function ajax(method, uri, body) {
+            const xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200 && xhr.responseURL.endsWith(uri)) {
+                        alert('200: CSRF check passed!');
+                    } else {
+                        alert('CSRF check FAILED!\nStatus code: ' + xhr.status + '\nResponse URL:\n' + xhr.responseURL);
+                    }
+                }
+            }
+
+            xhr.open(method, uri, true);
+            xhr.send(body);
+        }
+
+        function sendForm() {
+            let body = 'text=' + document.getElementById('text').value;
+            body = body + '&submit=' + document.getElementById('submit').value;
+
+            ajax('POST', 'protect.html', body);
+        }
+
+        function domTest() {
+            const div = document.getElementById('ajax');
+
+            const internalAnchor = document.createElement('a');
+            internalAnchor.setAttribute('href', 'protect.html');
+            internalAnchor.appendChild(document.createTextNode('protect.html'));
+
+            div.appendChild(internalAnchor);
+            div.appendChild(document.createElement('br'));
+            div.appendChild(document.createElement('br'));
+
+            const externalAnchor = document.createElement('a');
+            externalAnchor.setAttribute('href', 'https://www.google.com');
+            externalAnchor.appendChild(document.createTextNode('google.com'));
+
+            div.appendChild(externalAnchor);
+            div.appendChild(document.createElement('br'));
+            div.appendChild(document.createElement('br'));
+        }
+    </script>
+</head>
+<body onload="javascript:domTest();">
+	<h3>Test Link(s)</h3>
+	<ul>
+		<li><a href="#" onclick="ajax('GET', 'protect.html', '')">protect.html</a></li>
+		<li><a href="#" onclick="ajax('GET', '/protect.html', '')">/protect.html</a></li>
+		<li><a href="#" onclick="ajax('GET', '/test.html', '')">test.html</a></li>
+		<li><a href="#">javascript:alert('test')</a></li>
+	</ul>
+	<br/>
+	<h3>Test Form(s)</h3>
+	<form id="form" name="test1" action="#" onsubmit="return false">
+		<input id="text" type="text" name="text" value="text"/>
+		<input id="submit" type="submit" name="submit" value="submit" onclick="sendForm()"/>
+	</form>
+	<h3>Dom Test</h3>
+	<div id="ajax"></div>
+</body>
+</html>

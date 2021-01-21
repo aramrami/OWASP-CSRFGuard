@@ -1,19 +1,19 @@
-/**
+/*
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Copyright (c) 2011, Eric Sheridan (eric@infraredsecurity.com)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of OWASP nor the names of its contributors may be used
- *       to endorse or promote products derived from this software without specific
- *       prior written permission.
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *        this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *     3. Neither the name of OWASP nor the names of its contributors may be used
+ *        to endorse or promote products derived from this software without specific
+ *        prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -26,40 +26,40 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.owasp.csrfguard.log;
 
-import java.util.*;
+import java.util.Date;
 
 public class ConsoleLogger implements ILogger {
 
 	private static final long serialVersionUID = 3139970112597740777L;
 
 	@Override
-	public void log(String msg) {
+	public void log(final String msg) {
 		log(LogLevel.Info, msg);
 	}
 
 	@Override
-	public void log(LogLevel level, String msg) {
-		if(LogLevel.Error.equals(level)) {
-			System.err.println(String.format("[%s] [%s] %s", new Date(), String.valueOf(level), msg));
+	public void log(final LogLevel level, final String msg) {
+		if (LogLevel.Error.equals(level)) {
+			System.err.printf("[%s] [%s] %s%n", new Date(), level, msg);
 		} else {
-			System.out.println(String.format("[%s] [%s] %s", new Date(), String.valueOf(level), msg));
+			System.out.printf("[%s] [%s] %s%n", new Date(), level, msg);
 		}
 	}
 
 	@Override
-	public void log(Exception exception) {
+	public void log(final Exception exception) {
 		log(LogLevel.Error, exception);
 	}
 
 	@Override
-	public void log(LogLevel level, Exception exception) {
-		if(LogLevel.Error.equals(level)) {
-			System.err.println(String.format("[%s] [%s] %s", new Date(), String.valueOf(level), String.valueOf(exception)));
+	public void log(final LogLevel level, final Exception exception) {
+		if (LogLevel.Error.equals(level)) {
+			System.err.printf("[%s] [%s] %s%n", new Date(), level, exception);
 		} else {
-			System.out.println(String.format("[%s] [%s] %s", new Date(), String.valueOf(level), String.valueOf(exception)));
+			System.out.printf("[%s] [%s] %s%n", new Date(), level, exception);
 		}
 	}
-	
 }

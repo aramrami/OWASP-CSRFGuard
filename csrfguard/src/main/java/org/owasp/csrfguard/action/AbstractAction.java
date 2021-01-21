@@ -1,19 +1,19 @@
-/**
+/*
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Copyright (c) 2011, Eric Sheridan (eric@infraredsecurity.com)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of OWASP nor the names of its contributors may be used
- *       to endorse or promote products derived from this software without specific
- *       prior written permission.
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *        this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *     3. Neither the name of OWASP nor the names of its contributors may be used
+ *        to endorse or promote products derived from this software without specific
+ *        prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -26,9 +26,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.owasp.csrfguard.action;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class AbstractAction implements IAction {
 
@@ -36,26 +38,26 @@ public abstract class AbstractAction implements IAction {
 
 	private String name = null;
 	
-	private Map<String, String> parameters = new HashMap<String, String>();
+	private final Map<String, String> parameters = new HashMap<>();
 
 	@Override
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
 	@Override
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	@Override
-	public void setParameter(String name, String value) {
-		parameters.put(name, value);
+	public void setParameter(final String name, final String value) {
+		this.parameters.put(name, value);
 	}
 
 	@Override
-	public String getParameter(String parameterName) {
-		String value = parameters.get(parameterName);
+	public String getParameter(final String parameterName) {
+		final String value = this.parameters.get(parameterName);
 
 		if (value == null) {
 			throw new RuntimeException(String.format("unable to locate expected parameter %s", parameterName));
@@ -66,7 +68,6 @@ public abstract class AbstractAction implements IAction {
 
 	@Override
 	public Map<String, String> getParameterMap() {
-		return parameters;
+		return this.parameters;
 	}
-	
 }

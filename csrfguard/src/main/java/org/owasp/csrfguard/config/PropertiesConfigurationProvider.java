@@ -1,19 +1,19 @@
-/**
+/*
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Copyright (c) 2011, Eric Sheridan (eric@infraredsecurity.com)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of OWASP nor the names of its contributors may be used
- *       to endorse or promote products derived from this software without specific
- *       prior written permission.
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *        this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *     3. Neither the name of OWASP nor the names of its contributors may be used
+ *        to endorse or promote products derived from this software without specific
+ *        prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -26,67 +26,42 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.owasp.csrfguard.config;
 
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.owasp.csrfguard.action.IAction;
+import org.owasp.csrfguard.config.properties.ConfigParameters;
+import org.owasp.csrfguard.config.properties.HttpMethod;
+import org.owasp.csrfguard.config.properties.PropertyUtils;
+import org.owasp.csrfguard.config.properties.javascript.JavaScriptConfigParameters;
+import org.owasp.csrfguard.config.properties.javascript.JsConfigParameter;
+import org.owasp.csrfguard.log.ILogger;
+import org.owasp.csrfguard.log.LogLevel;
+import org.owasp.csrfguard.servlet.JavaScriptServlet;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
+import org.owasp.csrfguard.token.storage.TokenHolder;
+import org.owasp.csrfguard.util.CsrfGuardUtils;
+import org.owasp.csrfguard.util.RegexValidationUtil;
 
 import javax.servlet.ServletConfig;
-
-import org.owasp.csrfguard.CsrfGuardServletContextListener;
-import org.owasp.csrfguard.action.IAction;
-import org.owasp.csrfguard.log.ILogger;
-import org.owasp.csrfguard.servlet.JavaScriptServlet;
-import org.owasp.csrfguard.util.CsrfGuardUtils;
+import java.io.IOException;
+import java.security.*;
+import java.time.Duration;
+import java.util.*;
+import java.util.function.IntPredicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- * ConfifgurationProvider based on a java.util.Properties object.
- *
+ * {@link ConfigurationProvider} based on a {@link java.util.Properties} object.
  */
 public class PropertiesConfigurationProvider implements ConfigurationProvider {
 
-	private final static String ACTION_PREFIX = "org.owasp.csrfguard.action.";
-
-	private final static String PROTECTED_PAGE_PREFIX = "org.owasp.csrfguard.protected.";
-	
-	private final static String UNPROTECTED_PAGE_PREFIX = "org.owasp.csrfguard.unprotected.";
-
 	private final ILogger logger;
 
-	private final String tokenName;
-
-	private final int tokenLength;
-
-	private final boolean rotate;
-
-	private final boolean enabled;
-	
-	private final boolean tokenPerPage;
-
-	private final boolean tokenPerPagePrecreate;
-
-	private final boolean printConfig;
-	
-	private final SecureRandom prng;
-
-	private final String newTokenLandingPage;
-
-	private final boolean useNewTokenLandingPage;
-
-	private final boolean ajax;
-	
-	private final boolean protect;
-	
-	private final String sessionKey;
-	
 	private final Set<String> protectedPages;
 
 	private final Set<String> unprotectedPages;
@@ -96,523 +71,588 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider {
 	private final Set<String> unprotectedMethods;
 
 	private final List<IAction> actions;
-	
-	private Properties propertiesCache;
-	
+
+	private final Properties propertiesCache;
+
+	private final boolean enabled;
+
+	private String tokenName;
+
+	private int tokenLength;
+
+	private boolean rotate;
+
+	private boolean tokenPerPage;
+
+	private boolean tokenPerPagePrecreate;
+
+	private boolean printConfig;
+
+	private SecureRandom prng;
+
+	private String newTokenLandingPage;
+
+	private boolean useNewTokenLandingPage;
+
+	private boolean ajax;
+
+	private boolean protect;
+
 	private String domainOrigin;
-	
-	public PropertiesConfigurationProvider(Properties properties) {
-		try {
-			this.propertiesCache = properties;
-			actions = new ArrayList<IAction>();
-			protectedPages = new HashSet<String>();
-			unprotectedPages = new HashSet<String>();
-			protectedMethods = new HashSet<String>();
-			unprotectedMethods = new HashSet<String>();
-			/** load simple properties **/
-			logger = (ILogger) Class.forName(propertyString(properties, "org.owasp.csrfguard.Logger", "org.owasp.csrfguard.log.ConsoleLogger")).newInstance();
-			tokenName = propertyString(properties, "org.owasp.csrfguard.TokenName", "OWASP-CSRFGUARD");
-			tokenLength = Integer.parseInt(propertyString(properties, "org.owasp.csrfguard.TokenLength", "32"));
-			rotate = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.Rotate", "false"));
-			tokenPerPage = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.TokenPerPage", "false"));
 
-			this.validationWhenNoSessionExists = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.ValidateWhenNoSessionExists", "true"));
-			this.domainOrigin = propertyString(properties, "org.owasp.csrfguard.domainOrigin", null);
-			tokenPerPagePrecreate = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.TokenPerPagePrecreate", "false"));
-			prng = SecureRandom.getInstance(propertyString(properties, "org.owasp.csrfguard.PRNG", "SHA1PRNG"), propertyString(properties, "org.owasp.csrfguard.PRNG.Provider", "SUN"));
-			newTokenLandingPage = propertyString(properties, "org.owasp.csrfguard.NewTokenLandingPage");
-	
-			printConfig = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.Config.Print", "false"));
+	private Duration pageTokenSynchronizationTolerance;
 
-			this.enabled = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.Enabled", "true"));
-			
-			//default to false if newTokenLandingPage is not set; default to true if set.
-			if (newTokenLandingPage == null) {
-				useNewTokenLandingPage = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.UseNewTokenLandingPage", "false"));
-			} else {
-				useNewTokenLandingPage = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.UseNewTokenLandingPage", "true"));
-			}
-			sessionKey = propertyString(properties, "org.owasp.csrfguard.SessionKey", "OWASP_CSRFGUARD_KEY");
-			ajax = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.Ajax", "false"));
-			protect = Boolean.valueOf(propertyString(properties, "org.owasp.csrfguard.Protect", "false"));
-	
-			/** first pass: instantiate actions **/
-			Map<String, IAction> actionsMap = new HashMap<String, IAction>();
-	
-			for (Object obj : properties.keySet()) {
-				String key = (String) obj;
-	
-				if (key.startsWith(ACTION_PREFIX)) {
-					String directive = key.substring(ACTION_PREFIX.length());
-					int index = directive.indexOf('.');
-	
-					/** action name/class **/
-					if (index < 0) {
-						String actionClass = propertyString(properties, key);
-						IAction action = (IAction) Class.forName(actionClass).newInstance();
-	
-						action.setName(directive);
-						actionsMap.put(action.getName(), action);
-						actions.add(action);
-					}
-				}
-			}
-	
-			/** second pass: initialize action parameters **/
-			for (Object obj : properties.keySet()) {
-				String key = (String) obj;
-	
-				if (key.startsWith(ACTION_PREFIX)) {
-					String directive = key.substring(ACTION_PREFIX.length());
-					int index = directive.indexOf('.');
-	
-					/** action name/class **/
-					if (index >= 0) {
-						String actionName = directive.substring(0, index);
-						IAction action = actionsMap.get(actionName);
-	
-						if (action == null) {
-							throw new IOException(String.format("action class %s has not yet been specified", actionName));
-						}
-	
-						String parameterName = directive.substring(index + 1);
-						String parameterValue = propertyString(properties, key);
-	
-						action.setParameter(parameterName, parameterValue);
-					}
-				}
-			}
-	
-			/** ensure at least one action was defined **/
-			if (actions.size() <= 0) {
-				throw new IOException("failure to define at least one action");
-			}
-	
-			/** initialize protected, unprotected pages **/
-			for (Object obj : properties.keySet()) {
-				String key = (String) obj;
-				
-				if (key.startsWith(PROTECTED_PAGE_PREFIX)) {
-					String directive = key.substring(PROTECTED_PAGE_PREFIX.length());
-					int index = directive.indexOf('.');
-	
-					/** page name/class **/
-					if (index < 0) {
-						String pageUri = propertyString(properties, key);
-						
-						protectedPages.add(pageUri);
-					}
-				}
-	
-				if (key.startsWith(UNPROTECTED_PAGE_PREFIX)) {
-					String directive = key.substring(UNPROTECTED_PAGE_PREFIX.length());
-					int index = directive.indexOf('.');
-	
-					/** page name/class **/
-					if (index < 0) {
-						String pageUri = propertyString(properties, key);
-						
-						unprotectedPages.add(pageUri);
-					}
-				}
-			}
-	
-			/** initialize protected methods **/
-			String methodList = propertyString(properties, "org.owasp.csrfguard.ProtectedMethods");
-			if (methodList != null && methodList.trim().length() != 0) {
-				for (String method : methodList.split(",")) {
-					protectedMethods.add(method.trim());
-				}
-			}
-			/** initialize unprotected methods **/
-			methodList = propertyString(properties, "org.owasp.csrfguard.UnprotectedMethods");
-			if (methodList != null && methodList.trim().length() != 0) {
-				for (String method : methodList.split(",")) {
-					unprotectedMethods.add(method.trim());
-				}
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	private boolean javascriptParamsInitted = false;
-	
-	private void javascriptInitParamsIfNeeded() {
-		if (!this.javascriptParamsInitted) {
-			ServletConfig servletConfig = JavaScriptServlet.getStaticServletConfig();
-			
-			if (servletConfig != null) {
-				
-				this.javascriptCacheControl = CsrfGuardUtils.getInitParameter(servletConfig, "cache-control",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.cacheControl"), "private, maxage=28800");
-				this.javascriptDomainStrict = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "domain-strict",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.domainStrict"), "true"));
-				this.javascriptInjectIntoAttributes = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "inject-into-attributes",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.injectIntoAttributes"), "true"));
+	private boolean validationWhenNoSessionExists;
 
-				this.javascriptInjectGetForms = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "inject-get-forms",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.injectGetForms"), "true"));
-
-				this.javascriptInjectFormAttributes = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "inject-form-attributes",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.injectFormAttributes"), "true"));
-
-				this.javascriptInjectIntoForms = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "inject-into-forms",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.injectIntoForms"), "true"));
-				
-				this.javascriptRefererPattern = Pattern.compile(CsrfGuardUtils.getInitParameter(servletConfig, "referer-pattern",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererPattern"), ".*"));
-
-				this.javascriptRefererMatchProtocol = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "referer-match-protocol",
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererMatchProtocol"), "true"));
-
-				this.javascriptRefererMatchDomain = Boolean.valueOf(CsrfGuardUtils.getInitParameter(servletConfig, "referer-match-domain",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.refererMatchDomain"), "true"));
-				
-				/* unprotectedExtensions - default to none unless specified */
-				this.javascriptUnprotectedExtensions = CsrfGuardUtils.getInitParameter(servletConfig, "unprotected-extensions",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.UnprotectedExtensions"), "");
-
-				this.javascriptSourceFile = CsrfGuardUtils.getInitParameter(servletConfig, "source-file",
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.sourceFile"), null);
-				this.javascriptXrequestedWith = CsrfGuardUtils.getInitParameter(servletConfig, "x-requested-with",  
-						propertyString(this.propertiesCache, "org.owasp.csrfguard.JavascriptServlet.xRequestedWith"), "OWASP CSRFGuard Project");
-	            if(this.javascriptSourceFile == null) {
-	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent("META-INF/csrfguard.js", true);
-	            } else if (this.javascriptSourceFile.startsWith("META-INF/")) {
-	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(this.javascriptSourceFile, true);
-	            } else if (this.javascriptSourceFile.startsWith("classpath:")) {
-	                final String location = this.javascriptSourceFile.substring("classpath:".length()).trim();
-	                this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(location, true);
-	            } else if (this.javascriptSourceFile.startsWith("file:")) {
-	                final String location = this.javascriptSourceFile.substring("file:".length()).trim();
-	                this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(location);
-	            } else if (servletConfig.getServletContext().getRealPath(this.javascriptSourceFile) != null) {
-	            	this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(
-	            			servletConfig.getServletContext().getRealPath(this.javascriptSourceFile));
-	            } else {
-                    throw new IllegalStateException("getRealPath failed for file " + this.javascriptSourceFile);
-                }
-										
-	    		this.javascriptParamsInitted = true;
-			}
-		}
-	}
-
-	/**
-	 * property string and substitutions
-	 * @param properties The properties from which to fetch a value
-	 * @param propertyName The name of the desired property
-	 * @return the value, with common substitutions performed
-	 * @see #commonSubstitutions(String)
-	 */
-	public static String propertyString(Properties properties, String propertyName) {
-		String value = properties.getProperty(propertyName);
-		value = commonSubstitutions(value);
-		return value;
-	}
-
-	/**
-	 * property string and substitutions
-	 * @param properties The properties from which to fetch a value
-	 * @param propertyName The name of the desired property
-	 * @param defaultValue The value to use when the propertyName does not exist
-	 * @return the value, with common substitutions performed
-	 * @see #commonSubstitutions(String)
-	 */
-	public static String propertyString(Properties properties, String propertyName, String defaultValue) {
-		String value = properties.getProperty(propertyName, defaultValue);
-		value = commonSubstitutions(value);
-		return value;
-	}
-	
-	public ILogger getLogger() {
-		return logger;
-	}
-
-	public String getTokenName() {
-		return tokenName;
-	}
-
-	public int getTokenLength() {
-		return tokenLength;
-	}
-
-	public boolean isRotateEnabled() {
-		return rotate;
-	}
-
-	/**
-	 * @see ConfigurationProvider#isValidateWhenNoSessionExists()
-	 */
-	@Override
-	public boolean isValidateWhenNoSessionExists() {
-		return this.validationWhenNoSessionExists;
-	}
-
-	/**
-	 * If csrf guard filter should check even if there is no session for the user
-	 * Note: this changed in 2014/04, the default behavior used to be to 
-	 * not check if there is no session.  If you want the legacy behavior (if your app
-	 * is not susceptible to CSRF if the user has no session), set this to false
-	 */
-	private final boolean validationWhenNoSessionExists;
-	
-	public boolean isTokenPerPageEnabled() {
-		return tokenPerPage;
-	}
-
-	public boolean isTokenPerPagePrecreateEnabled() {
-		return tokenPerPagePrecreate;
-	}
-
-	public SecureRandom getPrng() {
-		return prng;
-	}
-
-	public String getNewTokenLandingPage() {
-		return newTokenLandingPage;
-	}
-
-	public boolean isUseNewTokenLandingPage() {
-		return useNewTokenLandingPage;
-	}
-
-	public boolean isAjaxEnabled() {
-		return ajax;
-	}
-
-	public boolean isProtectEnabled() {
-		return protect;
-	}
-
-	public String getSessionKey() {
-		return sessionKey;
-	}
-
-	public Set<String> getProtectedPages() {
-		return protectedPages;
-	}
-
-	public Set<String> getUnprotectedPages() {
-		return unprotectedPages;
-	}
-
-	public Set<String> getProtectedMethods () {
-		return protectedMethods;
-	}
-
-	/**
-	 * if there are methods here, they are unprotected (e.g. GET), and all others are protected
-	 * @return the unprotected methods
-	 */
-	@Override
-	public Set<String> getUnprotectedMethods () {
-		return this.unprotectedMethods;
-	}
-
-	public List<IAction> getActions() {
-		return actions;
-	}
-
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isPrintConfig()
-	 */
-	public boolean isPrintConfig() {
-		return this.printConfig;
-	}
+	private boolean javascriptParamsInitialized = false;
 
 	private String javascriptTemplateCode;
 
 	private String javascriptSourceFile;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptSourceFile()
-	 */
-	@Override
-	public String getJavascriptSourceFile() {
-		this.javascriptInitParamsIfNeeded();
-		return javascriptSourceFile;
-	}
 
 	private boolean javascriptDomainStrict;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptDomainStrict()
-	 */
-	@Override
-	public boolean isJavascriptDomainStrict() {
-		this.javascriptInitParamsIfNeeded();
-		return javascriptDomainStrict;
-	}
 
 	private String javascriptCacheControl;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptCacheControl()
-	 */
-	@Override
-	public String getJavascriptCacheControl() {
-		this.javascriptInitParamsIfNeeded();
-		return javascriptCacheControl;
-	}
 
 	private Pattern javascriptRefererPattern;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptRefererPattern()
-	 */
-	@Override
-	public Pattern getJavascriptRefererPattern() {
-		this.javascriptInitParamsIfNeeded();
-		return javascriptRefererPattern;
-	}
 
 	private boolean javascriptInjectIntoForms;
 
 	private boolean javascriptRefererMatchProtocol;
 
-	/**
-	 * if the referer must match domain
-	 */
+	private boolean javascriptInjectIntoAttributes;
+
+	private boolean isJavascriptInjectIntoDynamicallyCreatedNodes;
+
+	private String javascriptDynamicNodeCreationEventName;
+
+	private String javascriptXrequestedWith;
+
+	private boolean javascriptInjectGetForms;
+
 	private boolean javascriptRefererMatchDomain;
 
-	/**
-	 * if the referer protocol must match protocol on the domain
-	 * @return the isJavascriptRefererMatchProtocol
-	 */
+	private boolean javascriptInjectFormAttributes;
+
+	private String javascriptUnprotectedExtensions;
+
+	private LogicalSessionExtractor logicalSessionExtractor;
+
+	private TokenHolder tokenHolder;
+
+	public PropertiesConfigurationProvider(final Properties properties) {
+		try {
+			this.propertiesCache = properties;
+			this.actions = new ArrayList<>();
+			this.protectedPages = new HashSet<>();
+			this.unprotectedPages = new HashSet<>();
+			this.protectedMethods = new HashSet<>();
+			this.unprotectedMethods = new HashSet<>();
+
+			this.logger = CsrfGuardUtils.<ILogger>forName(PropertyUtils.getProperty(properties, ConfigParameters.LOGGER)).newInstance();
+
+            this.enabled = PropertyUtils.getProperty(properties, ConfigParameters.CSRFGUARD_ENABLED);
+
+            if (this.enabled) {
+				this.tokenName = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_NAME);
+				this.tokenLength = getTokenLength(properties);
+				this.rotate = PropertyUtils.getProperty(properties, ConfigParameters.ROTATE);
+				this.tokenPerPage = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_PER_PAGE);
+
+				this.validationWhenNoSessionExists = PropertyUtils.getProperty(properties, ConfigParameters.VALIDATE_WHEN_NO_SESSION_EXISTS);
+				this.domainOrigin = PropertyUtils.getProperty(properties, ConfigParameters.DOMAIN_ORIGIN);
+				this.tokenPerPagePrecreate = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_PER_PAGE_PRECREATE);
+
+				this.prng = getSecureRandomInstance(properties);
+
+				this.printConfig = PropertyUtils.getProperty(properties, ConfigParameters.PRINT_ENABLED);
+
+				this.protect = PropertyUtils.getProperty(properties, ConfigParameters.CSRFGUARD_PROTECT);
+
+				this.newTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.NEW_TOKEN_LANDING_PAGE);
+				this.useNewTokenLandingPage = PropertyUtils.getProperty(properties, ConfigParameters.getUseNewTokenLandingPage(this.newTokenLandingPage));
+
+				this.ajax = PropertyUtils.getProperty(properties, ConfigParameters.AJAX_ENABLED);
+
+				this.pageTokenSynchronizationTolerance = PropertyUtils.getProperty(properties, ConfigParameters.PAGE_TOKEN_SYNCHRONIZATION_TOLERANCE);
+
+				initializeTokenPersistenceConfigurations(properties);
+
+				initializeActionParameters(properties, instantiateActions(properties));
+
+				initializePageProtection(properties);
+
+				initializeMethodProtection(properties);
+			}
+		} catch (final Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	public ILogger getLogger() {
+		return this.logger;
+	}
+
+	@Override
+	public String getTokenName() {
+		return this.tokenName;
+	}
+
+	@Override
+	public int getTokenLength() {
+		return this.tokenLength;
+	}
+
+	@Override
+	public boolean isRotateEnabled() {
+		return this.rotate;
+	}
+
+	@Override
+	public boolean isValidateWhenNoSessionExists() {
+		return this.validationWhenNoSessionExists;
+	}
+
+	@Override
+	public boolean isTokenPerPageEnabled() {
+		return this.tokenPerPage;
+	}
+
+	@Override
+	public boolean isTokenPerPagePrecreateEnabled() {
+		return this.tokenPerPagePrecreate;
+	}
+
+	@Override
+	public SecureRandom getPrng() {
+		return this.prng;
+	}
+
+	@Override
+	public String getNewTokenLandingPage() {
+		return this.newTokenLandingPage;
+	}
+
+	@Override
+	public boolean isUseNewTokenLandingPage() {
+		return this.useNewTokenLandingPage;
+	}
+
+	@Override
+	public boolean isAjaxEnabled() {
+		return this.ajax;
+	}
+
+	@Override
+	public boolean isProtectEnabled() {
+		return this.protect;
+	}
+
+	@Override
+	public Set<String> getProtectedPages() {
+		return this.protectedPages;
+	}
+
+	@Override
+	public Set<String> getUnprotectedPages() {
+		return this.unprotectedPages;
+	}
+
+	@Override
+	public Set<String> getProtectedMethods () {
+		return this.protectedMethods;
+	}
+
+	@Override
+	public Set<String> getUnprotectedMethods () {
+		return this.unprotectedMethods;
+	}
+
+	@Override
+	public List<IAction> getActions() {
+		return this.actions;
+	}
+
+	@Override
+	public boolean isPrintConfig() {
+		return this.printConfig;
+	}
+
+	@Override
+	public String getJavascriptSourceFile() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptSourceFile;
+	}
+
+	@Override
+	public boolean isJavascriptDomainStrict() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptDomainStrict;
+	}
+
+	@Override
+	public String getJavascriptCacheControl() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptCacheControl;
+	}
+
+	@Override
+	public Pattern getJavascriptRefererPattern() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptRefererPattern;
+	}
+
 	@Override
 	public boolean isJavascriptRefererMatchProtocol() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptRefererMatchProtocol;
 	}
 
-	/**
-	 * if the referer must match domain
-	 * @return the javascriptRefererMatchDomain
-	 */
 	@Override
 	public boolean isJavascriptRefererMatchDomain() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptRefererMatchDomain;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectIntoForms()
-	 */
 	@Override
 	public boolean isJavascriptInjectIntoForms() {
 		this.javascriptInitParamsIfNeeded();
-		return javascriptInjectIntoForms;
+		return this.javascriptInjectIntoForms;
 	}
 
-	private boolean javascriptInjectIntoAttributes;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectIntoAttributes()
-	 */
 	@Override
 	public boolean isJavascriptInjectIntoAttributes() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptInjectIntoAttributes;
 	}
 
-	private String javascriptXrequestedWith;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptXrequestedWith()
-	 */
-	@Override
+    @Override
+    public boolean isJavascriptInjectIntoDynamicallyCreatedNodes() {
+		this.javascriptInitParamsIfNeeded();
+		return this.isJavascriptInjectIntoDynamicallyCreatedNodes;
+    }
+
+    @Override
+    public String getJavascriptDynamicNodeCreationEventName() {
+		this.javascriptInitParamsIfNeeded();
+		return this.javascriptDynamicNodeCreationEventName;
+    }
+
+    @Override
 	public String getJavascriptXrequestedWith() {
 		this.javascriptInitParamsIfNeeded();
-		return javascriptXrequestedWith;
+		return this.javascriptXrequestedWith;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getJavascriptTemplateCode()
-	 */
 	@Override
 	public String getJavascriptTemplateCode() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptTemplateCode;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isCacheable()
-	 */
 	public boolean isCacheable() {
-		//dont cache this until the javascript params are all set
-		//i.e. the javascript servlet is 
-		return this.javascriptParamsInitted;
+		/* don't cache this until the javascript params are all set i.e. the javascript servlet is */
+		return this.javascriptParamsInitialized;
 	}
 
-
-	/**
-	 * Replaces percent-bounded expressions such as "%servletContext%."
-	 * common subsitutions in config values
-	 * @param input A string with expressions that should be replaced
-	 * @return new string with "common" expressions replaced by configuration values
-	 */
-	public static String commonSubstitutions(String input) {
-		if (input == null || !input.contains("%")) {
-			return input;
-		}
-		input = input.replace("%servletContext%", CsrfGuardUtils.defaultString(CsrfGuardServletContextListener.getServletContext()));
-		return input;
-	}
-
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isEnabled()
-	 */
 	@Override
 	public boolean isEnabled() {
 		return this.enabled;
 	}
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectGetForms()
-	 */
-	private boolean javascriptInjectGetForms;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectGetForms()
-	 */
+
+	@Override
 	public boolean isJavascriptInjectGetForms() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptInjectGetForms;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectFormAttributes()
-	 */
-	private boolean javascriptInjectFormAttributes;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#isJavascriptInjectFormAttributes()
-	 */
+	@Override
 	public boolean isJavascriptInjectFormAttributes() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptInjectFormAttributes;
 	}
 
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
-	 */
 	@Override
 	public String getDomainOrigin() {
-		return domainOrigin;
+		return this.domainOrigin;
 	}
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
-	 */
-	private String javascriptUnprotectedExtensions;
-	
-	/**
-	 * @see org.owasp.csrfguard.config.ConfigurationProvider#getDomainOrigin()
-	 */
+
 	@Override
 	public String getJavascriptUnprotectedExtensions() {
 		this.javascriptInitParamsIfNeeded();
 		return this.javascriptUnprotectedExtensions;
+	}
+
+	@Override
+	public TokenHolder getTokenHolder() {
+		return this.tokenHolder;
+	}
+
+	@Override
+	public LogicalSessionExtractor getLogicalSessionExtractor() {
+		return this.logicalSessionExtractor;
+	}
+
+    @Override
+    public Duration getPageTokenSynchronizationTolerance() {
+        return this.pageTokenSynchronizationTolerance;
+    }
+
+    private Map<String, IAction> instantiateActions(final Properties properties) throws InstantiationException, IllegalAccessException {
+		final Map<String, IAction> actionsMap = new HashMap<>();
+
+		for (final Object obj : properties.keySet()) {
+			final String propertyKey = (String) obj;
+
+			final String actionProperty = getPrimaryPropertyDirective(propertyKey, ConfigParameters.ACTION_PREFIX);
+
+			if (Objects.nonNull(actionProperty)) {
+				final String actionClass = PropertyUtils.getProperty(properties, propertyKey);
+				final IAction action = CsrfGuardUtils.<IAction>forName(actionClass).newInstance();
+
+				action.setName(actionProperty);
+				actionsMap.put(action.getName(), action);
+				this.actions.add(action);
+			}
+		}
+		return actionsMap;
+	}
+
+	private void initializeMethodProtection(final Properties properties) {
+		this.protectedMethods.addAll(initializeMethodProtection(properties, ConfigParameters.PROTECTED_METHODS));
+		this.unprotectedMethods.addAll(initializeMethodProtection(properties, ConfigParameters.UNPROTECTED_METHODS));
+
+		final HashSet<String> intersection = new HashSet<>(this.protectedMethods);
+		intersection.retainAll(this.unprotectedMethods);
+
+		if (!intersection.isEmpty()) {
+			throw new IllegalArgumentException(String.format("The %s HTTP method(s) cannot be both protected and unprotected.", intersection.toString()));
+		}
+	}
+
+	private static Set<String> initializeMethodProtection(final Properties properties, final String configParameterName) {
+		final String methodProtectionValue = PropertyUtils.getProperty(properties, configParameterName);
+		if (StringUtils.isNotBlank(methodProtectionValue)) {
+			final Set<String> httpMethods = Arrays.stream(methodProtectionValue.split(",")).map(String::trim).collect(Collectors.toSet());
+			HttpMethod.validate(httpMethods);
+			return httpMethods;
+		}
+		return Collections.emptySet();
+	}
+
+	private void initializePageProtection(final Properties properties) {
+		for (final Object obj : properties.keySet()) {
+			final String propertyKey = (String) obj;
+
+			final String protectedPage = getPageProperty(properties, propertyKey, ConfigParameters.PROTECTED_PAGE_PREFIX);
+
+			if (Objects.nonNull(protectedPage)) {
+				this.protectedPages.add(protectedPage);
+			} else {
+				final String unProtectedPage = getPageProperty(properties, propertyKey, ConfigParameters.UNPROTECTED_PAGE_PREFIX);
+				if (Objects.nonNull(unProtectedPage)) {
+					this.unprotectedPages.add(unProtectedPage);
+				}
+			}
+		}
+	}
+
+	private void initializeActionParameters(final Properties properties, final Map<String, IAction> actionsMap) throws IOException {
+		for (final Object obj : properties.keySet()) {
+			final String propertyKey = (String) obj;
+
+			final Pair<String, Integer> actionParameterProperty = getParameterPropertyDirective(propertyKey, ConfigParameters.ACTION_PREFIX);
+
+			if (Objects.nonNull(actionParameterProperty)) {
+				final String directive = actionParameterProperty.getKey();
+				final int index = actionParameterProperty.getValue();
+
+				final String actionName = directive.substring(0, index);
+				final IAction action = actionsMap.get(actionName);
+
+				final String parameterName = directive.substring(index + 1);
+				final String parameterValue = PropertyUtils.getProperty(properties, propertyKey);
+
+				action.setParameter(parameterName, parameterValue);
+			}
+		}
+
+		/* ensure at least one action was defined */
+		if (this.actions.isEmpty()) {
+			throw new IOException("At least one action that will be called in case of CSRF attacks must be defined!");
+		}
+	}
+
+	private static Pair<String, Integer> getParameterPropertyDirective(final String propertyKey, final String propertyKeyPrefix) {
+		return getPropertyDirective(propertyKey, propertyKeyPrefix, i -> i >= 0);
+	}
+
+	private static String getPrimaryPropertyDirective(final String propertyKey, final String propertyKeyPrefix) {
+		final Pair<String, Integer> propertyDirective = getPropertyDirective(propertyKey, propertyKeyPrefix, i -> i < 0);
+
+		return Objects.isNull(propertyDirective) ? null : propertyDirective.getKey();
+	}
+
+	private static Pair<String, Integer> getPropertyDirective(final String propertyKey, final String propertyKeyPrefix, final IntPredicate directivePredicate) {
+		Pair<String, Integer> result = null;
+		if (propertyKey.startsWith(propertyKeyPrefix)) {
+			final String directive = propertyKey.substring(propertyKeyPrefix.length());
+			final int index = directive.indexOf('.');
+
+			if (directivePredicate.test(index)) {
+				result = Pair.of(directive, index);
+			}
+		}
+
+		return result;
+	}
+
+	private String getPageProperty(final Properties properties, final String propertyKey, final String propertyKeyPrefix) {
+		String result = null;
+		final String pageProperty = getPrimaryPropertyDirective(propertyKey, propertyKeyPrefix);
+
+		if (Objects.nonNull(pageProperty)) {
+			final String pageUri = PropertyUtils.getProperty(properties, propertyKey);
+
+			result = isSpecialUriDescriptor(pageUri) ? pageUri
+													 : CsrfGuardUtils.normalizeResourceURI(pageUri);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Decides whether the given resourceUri is a static descriptor or a matching rule
+	 * Has to be in sync with org.owasp.csrfguard.CsrfValidator.isUriMatch(java.lang.String, java.lang.String) and calculatePageTokenForUri in the JS logic
+	 */
+	private boolean isSpecialUriDescriptor(final String resourceUri) {
+		if (this.tokenPerPage && (resourceUri.endsWith("/*") || resourceUri.startsWith("*."))) {
+			// FIXME implement in the JS logic (calculatePageTokenForUri)
+			this.logger.log(LogLevel.Warning, "'Extension' and 'partial path wildcard' matching for page tokens is not supported properly yet! " +
+											  "Every resource will be assigned a new unique token instead of using the defined resource matcher token. " +
+											  "Although this is not a security issue, in case of a large REST application it can have an impact on performance." +
+											  "Consider using regular expressions instead.");
+		}
+
+		return RegexValidationUtil.isTestPathRegex(resourceUri) || resourceUri.startsWith("/*") || resourceUri.endsWith("/*") || resourceUri.startsWith("*.");
+	}
+
+	private void javascriptInitParamsIfNeeded() {
+		if (!this.javascriptParamsInitialized) {
+			final ServletConfig servletConfig = JavaScriptServlet.getStaticServletConfig();
+
+			if (servletConfig != null) {
+
+				this.javascriptCacheControl = getProperty(JavaScriptConfigParameters.CACHE_CONTROL, servletConfig);
+				this.javascriptDomainStrict = getProperty(JavaScriptConfigParameters.DOMAIN_STRICT, servletConfig);
+				this.javascriptInjectIntoAttributes = getProperty(JavaScriptConfigParameters.INJECT_INTO_ATTRIBUTES, servletConfig);
+				this.javascriptInjectGetForms = getProperty(JavaScriptConfigParameters.INJECT_GET_FORMS, servletConfig);
+				this.javascriptInjectFormAttributes = getProperty(JavaScriptConfigParameters.INJECT_FORM_ATTRIBUTES, servletConfig);
+				this.javascriptInjectIntoForms = getProperty(JavaScriptConfigParameters.INJECT_INTO_FORMS, servletConfig);
+				this.isJavascriptInjectIntoDynamicallyCreatedNodes = getProperty(JavaScriptConfigParameters.INJECT_INTO_DYNAMICALLY_CREATED_NODES, servletConfig);
+				this.javascriptDynamicNodeCreationEventName = getProperty(JavaScriptConfigParameters.DYNAMIC_NODE_CREATION_EVENT_NAME, servletConfig);
+				this.javascriptRefererPattern = Pattern.compile(getProperty(JavaScriptConfigParameters.REFERER_PATTERN, servletConfig));
+				this.javascriptRefererMatchProtocol = getProperty(JavaScriptConfigParameters.REFERER_MATCH_PROTOCOL, servletConfig);
+				this.javascriptRefererMatchDomain = getProperty(JavaScriptConfigParameters.REFERER_MATCH_DOMAIN, servletConfig);
+				this.javascriptUnprotectedExtensions = getProperty(JavaScriptConfigParameters.UNPROTECTED_EXTENSIONS, servletConfig);
+				this.javascriptSourceFile = getProperty(JavaScriptConfigParameters.SOURCE_FILE, servletConfig);
+				this.javascriptXrequestedWith = getProperty(JavaScriptConfigParameters.X_REQUESTED_WITH, servletConfig);
+
+				if (StringUtils.isBlank(this.javascriptSourceFile)) {
+					this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent("META-INF/csrfguard.js");
+				} else if (this.javascriptSourceFile.startsWith("META-INF/")) {
+					this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(this.javascriptSourceFile);
+				} else if (this.javascriptSourceFile.startsWith("classpath:")) {
+					final String location = this.javascriptSourceFile.substring("classpath:".length()).trim();
+					this.javascriptTemplateCode = CsrfGuardUtils.readResourceFileContent(location);
+				} else if (this.javascriptSourceFile.startsWith("file:")) {
+					final String location = this.javascriptSourceFile.substring("file:".length()).trim();
+					this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(location);
+				} else if (servletConfig.getServletContext().getRealPath(this.javascriptSourceFile) != null) {
+					this.javascriptTemplateCode = CsrfGuardUtils.readFileContent(servletConfig.getServletContext().getRealPath(this.javascriptSourceFile));
+				} else {
+					throw new IllegalStateException("getRealPath failed for file " + this.javascriptSourceFile);
+				}
+
+				this.javascriptParamsInitialized = true;
+			}
+		}
+	}
+
+	private <T> T getProperty(final JsConfigParameter<T> jsConfigParameter, final ServletConfig servletConfig) {
+		return jsConfigParameter.getProperty(servletConfig, this.propertiesCache);
+	}
+
+	private void initializeTokenPersistenceConfigurations(final Properties properties) throws InstantiationException, IllegalAccessException {
+		final String logicalSessionExtractorName = PropertyUtils.getProperty(properties, ConfigParameters.LOGICAL_SESSION_EXTRACTOR_NAME);
+		if (StringUtils.isNoneBlank(logicalSessionExtractorName)) {
+			this.logicalSessionExtractor = CsrfGuardUtils.<LogicalSessionExtractor>forName(logicalSessionExtractorName).newInstance();
+
+			final String tokenHolderClassName = StringUtils.defaultIfBlank(PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_HOLDER), ConfigParameters.TOKEN_HOLDER.getValue());
+			this.tokenHolder = CsrfGuardUtils.<TokenHolder>forName(tokenHolderClassName).newInstance();
+		} else {
+			throw new IllegalArgumentException(String.format("Mandatory parameter [%s] is missing from the configuration!", ConfigParameters.LOGICAL_SESSION_EXTRACTOR_NAME));
+		}
+	}
+
+	private int getTokenLength(final Properties properties) {
+		final int tokenLength = PropertyUtils.getProperty(properties, ConfigParameters.TOKEN_LENGTH);
+
+		if (tokenLength < 4) {
+			throw new IllegalArgumentException("The token length cannot be less than 4 characters. The recommended default value is: " + ConfigParameters.TOKEN_LENGTH.getDefaultValue());
+		}
+
+		return tokenLength;
+	}
+
+    private SecureRandom getSecureRandomInstance(final Properties properties) {
+        final String algorithm = PropertyUtils.getProperty(properties, ConfigParameters.PRNG);
+        final String provider = PropertyUtils.getProperty(properties, ConfigParameters.PRNG_PROVIDER);
+
+        return getSecureRandomInstance(algorithm, provider);
+    }
+
+    private SecureRandom getSecureRandomInstance(final String algorithm, final String provider) {
+		SecureRandom secureRandom;
+		try {
+			if (Objects.nonNull(provider)) {
+				secureRandom = Objects.nonNull(algorithm) ? SecureRandom.getInstance(algorithm, provider) : getDefaultSecureRandom();
+			} else {
+				secureRandom = Objects.nonNull(algorithm) ? SecureRandom.getInstance(algorithm) : getDefaultSecureRandom();
+			}
+		} catch (final NoSuchProviderException e) {
+			this.logger.log(LogLevel.Warning, String.format("The configured Secure Random Provider '%s' was not found, trying default providers.", provider));
+			this.logger.log(LogLevel.Info, getAvailableSecureRandomProvidersAndAlgorithms());
+
+			secureRandom = getSecureRandomInstance(algorithm, null);
+			logDefaultPrngProviderAndAlgorithm(secureRandom);
+		} catch (final NoSuchAlgorithmException nse) {
+			this.logger.log(LogLevel.Warning, String.format("The configured Secure Random Algorithm '%s' was not found, reverting to system defaults.", algorithm));
+			this.logger.log(LogLevel.Info, getAvailableSecureRandomProvidersAndAlgorithms());
+
+			secureRandom = getSecureRandomInstance(null, null);
+		}
+		return secureRandom;
+	}
+
+	private SecureRandom getDefaultSecureRandom() {
+		final SecureRandom defaultSecureRandom = new SecureRandom();
+		logDefaultPrngProviderAndAlgorithm(defaultSecureRandom);
+		return defaultSecureRandom;
+	}
+
+	private void logDefaultPrngProviderAndAlgorithm(final SecureRandom defaultSecureRandom) {
+		this.logger.log(LogLevel.Info, String.format("Using default Secure Random Provider '%s' and '%s' Algorithm.", defaultSecureRandom.getProvider().getName(), defaultSecureRandom.getAlgorithm()));
+	}
+
+	private static String getAvailableSecureRandomProvidersAndAlgorithms() {
+		final String prefix = "Available Secure Random providers and algorithms:" + System.lineSeparator();
+		return Stream.of(Security.getProviders())
+					 .map(Provider::getServices)
+					 .flatMap(Collection::stream)
+					 .filter(service -> SecureRandom.class.getSimpleName().equals(service.getType()))
+					 .map(service -> String.format("\tProvider: %s | Algorithm: %s", service.getProvider().getName(), service.getAlgorithm()))
+					 .collect(Collectors.joining(System.lineSeparator(), prefix, StringUtils.EMPTY));
 	}
 }

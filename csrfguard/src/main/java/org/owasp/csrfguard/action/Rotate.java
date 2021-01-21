@@ -1,19 +1,19 @@
-/**
+/*
  * The OWASP CSRFGuard Project, BSD License
- * Eric Sheridan (eric@infraredsecurity.com), Copyright (c) 2011 
+ * Copyright (c) 2011, Eric Sheridan (eric@infraredsecurity.com)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of OWASP nor the names of its contributors may be used
- *       to endorse or promote products derived from this software without specific
- *       prior written permission.
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *        this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *     3. Neither the name of OWASP nor the names of its contributors may be used
+ *        to endorse or promote products derived from this software without specific
+ *        prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -26,70 +26,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.owasp.csrfguard.action;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.owasp.csrfguard.CsrfGuard;
 import org.owasp.csrfguard.CsrfGuardException;
-import org.owasp.csrfguard.util.RandomGenerator;
+import org.owasp.csrfguard.session.LogicalSession;
+import org.owasp.csrfguard.token.storage.LogicalSessionExtractor;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Objects;
 
 public class Rotate extends AbstractAction {
 
-	private static final long serialVersionUID = -3164557586544451406L;
+    private static final long serialVersionUID = -3164557586544451406L;
 
-	@Override
-	public void execute(HttpServletRequest request, HttpServletResponse response, CsrfGuardException csrfe, CsrfGuard csrfGuard) throws CsrfGuardException {
-		HttpSession session = request.getSession(false);
+    @Override
+    public void execute(final HttpServletRequest request, final HttpServletResponse response, final CsrfGuardException csrfe, final CsrfGuard csrfGuard) throws CsrfGuardException {
+        final LogicalSessionExtractor logicalSessionExtractor = csrfGuard.getLogicalSessionExtractor();
+        final LogicalSession logicalSession = logicalSessionExtractor.extract(request);
 
-		if (session != null) {
-			updateSessionToken(session, csrfGuard);
-
-			if (csrfGuard.isTokenPerPageEnabled()) {
-				updatePageTokens(session, csrfGuard);
-			}
-		}
-	}
-
-	private void updateSessionToken(HttpSession session, CsrfGuard csrfGuard) throws CsrfGuardException {
-		String token;
-
-		try {
-			token = RandomGenerator.generateRandomId(csrfGuard.getPrng(),
-					csrfGuard.getTokenLength());
-		} catch (Exception e) {
-			throw new CsrfGuardException(String.format("unable to generate the random token - %s", e.getLocalizedMessage()), e);
-		}
-
-		session.setAttribute(csrfGuard.getSessionKey(), token);
-	}
-
-	private void updatePageTokens(HttpSession session, CsrfGuard csrfGuard) throws CsrfGuardException {
-		@SuppressWarnings("unchecked")
-		Map<String, String> pageTokens = (Map<String, String>) session.getAttribute(CsrfGuard.PAGE_TOKENS_KEY);
-		List<String> pages = new ArrayList<String>();
-
-		if(pageTokens != null) {
-			pages.addAll(pageTokens.keySet());
-		}
-
-		for (String page : pages) {
-			String token;
-
-			try {
-				token = RandomGenerator.generateRandomId(csrfGuard.getPrng(), csrfGuard.getTokenLength());
-			} catch (Exception e) {
-				throw new CsrfGuardException(String.format("unable to generate the random token - %s", e.getLocalizedMessage()), e);
-			}
-			
-			pageTokens.put(page, token);
-		}
-	}
-	
+        if (Objects.nonNull(logicalSession)) {
+            csrfGuard.getTokenService().rotateAllTokens(logicalSession.getKey());
+        }
+    }
 }

@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <script src="/JavaScriptServlet" type="text/javascript"></script>
+    <title>JavaScript Token Injection</title>
+    <script type="text/javascript">
+        window.addEventListener('DOMContentLoaded', function () {
+            const observer = new MutationObserver(function (mutations) {
+                alert('If the "org.owasp.csrfguard.JavascriptServlet.domainStrict" is set to TRUE, the EVIL form should not be modified by the CSRFGuard JS logic!');
+                console.debug(mutations);
+            });
+
+            const evilForm = document.getElementById('evilForm');
+
+            if (evilForm !== null) {
+                observer.observe(evilForm, {attributes: true, childList: true, subtree: true});
+            }
+        }, false);
+    </script>
+</head>
+<body>
+    <h3>Test Link(s)</h3>
+    <ul>
+        <li><a href="protect.html">protect.html</a></li>
+        <li><a href="/protect.html">/protect.html</a></li>
+        <li><a href="http://localhost/test.html">http://localhost/test.html</a></li>
+        <li><a href="javascript:alert('test')">javascript:alert('test')</a></li>
+    </ul>
+    <br/>
+
+    <h3>Test Form(s)</h3>
+    <form name="test1" action="protect.html">
+        <input type="text" name="text" value="text"/>
+        <input type="submit" name="submit" value="submit"/>
+    </form>
+    <br/><br/>
+
+    <h3>Evil Form(s)</h3>
+    <p>Tokens should not be injected into links referencing different domains if the domainStrict property is set to true.</p>
+    <form name="test2" id="evilForm" action="http://www.evilsite.com/protect.html">
+        <input type="text" name="text" value="text"/>
+        <input type="submit" name="submit" value="submit"/>
+    </form>
+    <br/><br/>
+
+    <h3>IFrame</h3>
+    <p>Aims to test token injection for referenced protected pages that are loaded before user interaction.<p>
+    <iframe src="/protect.html"></iframe>
+    <br/><br/>
+
+    <h3>Image Tag</h3>
+    <p>Aims to test token injection for referenced protected pages that are loaded before user interaction.<p>
+    <img src="protect.html" alt="protect.html"/>
+    <img src="/protect.html" alt="/protect.html"/>
+</body>
+</html>
