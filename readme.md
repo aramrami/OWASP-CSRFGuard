@@ -2,9 +2,7 @@
 
 We are working on a new version of CSRFGuard including a lot of merge request with good proposals and new code to fix known issues on XSS attacks that bypass CSRFGuard.
 
-## Target date for the new release 4.0 : 2021
-
-Pleasse open all request and issue in the official OWASP CSRFGuard repo here:
+## Pleasse open all request and issue in the official OWASP CSRFGuard repo here:
 
 https://github.com/OWASP/www-project-csrfguard
 
